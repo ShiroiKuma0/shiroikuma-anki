@@ -237,8 +237,10 @@ abstract class NavigationDrawerActivity(
         drawerToggle.isDrawerSlideAnimationEnabled = animationEnabled()
         drawerLayout.addDrawerListener(drawerToggle)
 
-        // Fork: style the drawer menu (yellow on black by default, configurable)
+        // Fork: style the drawer menu (yellow on black by default, configurable),
+        // and the hamburger icon with the toolbar icon colour
         ShiroikumaUi.applyToNavigationDrawer(navigationView!!)
+        drawerToggle.drawerArrowDrawable.color = ShiroikumaUi.toolbarIconColor(this)
 
         enablePostShortcut(this)
     }

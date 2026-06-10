@@ -48,6 +48,50 @@
             android:valueTo="30"
             android:stepSize="1"
             app:displayFormat="@string/sk_format_sp"/>
+        <Preference
+            android:key="@string/pref_sk_menu_font_preview_key"
+            android:persistent="false"
+            android:selectable="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_deck_picker">
+        <Preference
+            android:key="@string/pref_sk_deck_name_color_key"
+            android:title="@string/sk_deck_name_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_toolbar_icon_color_key"
+            android:title="@string/sk_toolbar_icon_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_studied_today_color_key"
+            android:title="@string/sk_studied_today_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_text_color_key"
+            android:title="@string/sk_study_text_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_border_color_key"
+            android:title="@string/sk_study_border_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_background_key"
+            android:title="@string/sk_study_background"
+            android:persistent="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_settings">
+        <Preference
+            android:key="@string/pref_sk_settings_title_color_key"
+            android:title="@string/sk_settings_title_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_summary_color_key"
+            android:title="@string/sk_settings_summary_color"
+            android:persistent="false"/>
     </PreferenceCategory>
 
     <PreferenceCategory

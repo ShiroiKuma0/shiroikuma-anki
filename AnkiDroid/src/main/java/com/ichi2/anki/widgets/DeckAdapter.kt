@@ -24,6 +24,7 @@ import com.ichi2.anki.common.utils.ext.requireAutoMirroredDrawable
 import com.ichi2.anki.databinding.ItemDeckBinding
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.libanki.DeckId
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import kotlinx.coroutines.runBlocking
 import net.ankiweb.rsdroid.RustCleanup
 import com.ichi2.anki.common.android.R as CommonR
@@ -246,7 +247,8 @@ class DeckAdapter(
         newCountColor = ta.getColor(1, context.getColor(CommonR.color.black))
         learnCountColor = ta.getColor(2, context.getColor(CommonR.color.black))
         reviewCountColor = ta.getColor(3, context.getColor(CommonR.color.black))
-        deckNameDefaultColor = ta.getColor(4, context.getColor(CommonR.color.black))
+        // Fork: deck names use the 白い熊 暗記 UI colour (yellow by default)
+        deckNameDefaultColor = ShiroikumaUi.deckNameColor(context)
         deckNameDynColor = ta.getColor(5, context.getColor(CommonR.color.material_blue_A700))
         expandImage = context.requireAutoMirroredDrawable(CommonR.drawable.ic_chevron_right)
         collapseImage = context.requireAutoMirroredDrawable(CommonR.drawable.ic_expand_more)

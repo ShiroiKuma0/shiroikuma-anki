@@ -186,6 +186,7 @@ import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.settings.enums.DayTheme
 import com.ichi2.anki.settings.uiConfigPrefs
 import com.ichi2.anki.shareddeck.SharedDecksActivity
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.snackbar.showSnackbar
@@ -872,6 +873,10 @@ open class DeckPicker :
 
         fun onStudiedTodayChanged(studiedToday: String) {
             deckPickerBinding.reviewSummaryTextView.text = studiedToday
+            // Fork: studied-today line uses the 白い熊 暗記 UI colour (yellow by default)
+            deckPickerBinding.reviewSummaryTextView.setTextColor(
+                ShiroikumaUi.studiedTodayColor(deckPickerBinding.reviewSummaryTextView.context),
+            )
         }
 
         fun onCollectionStatusChanged(isInInitialState: Boolean) {
@@ -1293,6 +1298,8 @@ open class DeckPicker :
         updateMenuFromState(menu)
         updateSearchVisibilityFromState(menu)
         restoreSearchState(menu)
+        // Fork: toolbar icons use the 白い熊 暗記 UI colour (yellow by default)
+        ShiroikumaUi.tintToolbarIcons(this, menu, findViewById(R.id.toolbar))
         // ...then launch a task to possibly update the visible icons.
         // Store the job so that tests can easily await it. In the future
         // this may be better done by injecting a custom test scheduler
@@ -1304,6 +1311,8 @@ open class DeckPicker :
                 restoreSearchState(menu)
                 updateDeckRelatedMenuItems(menu)
                 updateMenuFromState(menu)
+                // Fork: re-tint after the async icon updates above
+                ShiroikumaUi.tintToolbarIcons(this@DeckPicker, menu, findViewById(R.id.toolbar))
             }
         return super.onCreateOptionsMenu(menu)
     }

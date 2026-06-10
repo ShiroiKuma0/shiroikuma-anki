@@ -13,6 +13,15 @@
     <string name="pref_sk_menu_font_reset_key">sk_menu_font_reset</string>
     <string name="pref_sk_menu_font_size_key">sk_menu_font_size</string>
     <string name="pref_sk_menu_show_header_key">sk_menu_show_header</string>
+    <string name="pref_sk_menu_font_preview_key">sk_menu_font_preview</string>
+    <string name="pref_sk_deck_name_color_key">sk_deck_name_color</string>
+    <string name="pref_sk_toolbar_icon_color_key">sk_toolbar_icon_color</string>
+    <string name="pref_sk_studied_today_color_key">sk_studied_today_color</string>
+    <string name="pref_sk_study_text_color_key">sk_study_text_color</string>
+    <string name="pref_sk_study_border_color_key">sk_study_border_color</string>
+    <string name="pref_sk_study_background_key">sk_study_background</string>
+    <string name="pref_sk_settings_title_color_key">sk_settings_title_color</string>
+    <string name="pref_sk_settings_summary_color_key">sk_settings_summary_color</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
     <!-- Page -->
@@ -37,6 +46,20 @@
 
     <string name="sk_menu_show_header">Show header image</string>
     <string name="sk_menu_show_header_summary">Show the picture above the menu items</string>
+
+    <string name="sk_menu_font_preview_text">白い熊 暗記 — Anki 123</string>
+
+    <string name="sk_cat_deck_picker">Deck picker — colours</string>
+    <string name="sk_deck_name_color">Deck names</string>
+    <string name="sk_toolbar_icon_color">Toolbar icons</string>
+    <string name="sk_studied_today_color">Studied-today line</string>
+    <string name="sk_study_text_color">Study button text</string>
+    <string name="sk_study_border_color">Study button border</string>
+    <string name="sk_study_background">Study button background</string>
+
+    <string name="sk_cat_settings">Settings — colours</string>
+    <string name="sk_settings_title_color">Titles</string>
+    <string name="sk_settings_summary_color">Secondary text</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
