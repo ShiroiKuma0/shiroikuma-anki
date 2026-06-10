@@ -15,11 +15,18 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextPaint
 import android.text.style.AbsoluteSizeSpan
+import android.text.style.ForegroundColorSpan
 import android.text.style.MetricAffectingSpan
+import android.util.TypedValue
+import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
 import com.ichi2.anki.R
 import com.ichi2.anki.common.preferences.sharedPrefs
@@ -41,6 +48,15 @@ object ShiroikumaUi {
     const val DEFAULT_MENU_SELECTED = 0xFFFFC107.toInt()
     const val DEFAULT_MENU_SELECTED_BACKGROUND = 0xFF332E00.toInt()
     const val DEFAULT_MENU_FONT_SIZE_SP = 14
+
+    const val DEFAULT_DECK_NAME = 0xFFFFFF00.toInt()
+    const val DEFAULT_TOOLBAR_ICON = 0xFFFFFF00.toInt()
+    const val DEFAULT_STUDIED_TODAY = 0xFFFFFF00.toInt()
+    const val DEFAULT_STUDY_TEXT = 0xFFFFFF00.toInt()
+    const val DEFAULT_STUDY_BORDER = 0xFFFFFF00.toInt()
+    const val DEFAULT_STUDY_BACKGROUND = 0xFF000000.toInt()
+    const val DEFAULT_SETTINGS_TITLE = 0xFFFFFF00.toInt()
+    const val DEFAULT_SETTINGS_SUMMARY = 0xFF9E9E9E.toInt()
 
     private const val FONT_DIR = "shiroikuma_fonts"
     private const val MENU_FONT_FILE = "menu_font"
@@ -120,6 +136,80 @@ object ShiroikumaUi {
         item.title = title
     }
 
+    /** Tints a toolbar's action icons, overflow and navigation icon (deck picker top bar) */
+    fun tintToolbarIcons(
+        context: Context,
+        menu: Menu,
+        toolbar: androidx.appcompat.widget.Toolbar?,
+    ) {
+        val color = color(context, R.string.pref_sk_toolbar_icon_color_key, DEFAULT_TOOLBAR_ICON)
+        for (i in 0 until menu.size()) {
+            menu.getItem(i).icon?.setTint(color)
+        }
+        toolbar?.overflowIcon?.setTint(color)
+        toolbar?.navigationIcon?.setTint(color)
+    }
+
+    fun toolbarIconColor(context: Context): Int = color(context, R.string.pref_sk_toolbar_icon_color_key, DEFAULT_TOOLBAR_ICON)
+
+    /** Yellow border and text on black, configurable — the deck study button */
+    fun applyStudyButton(button: MaterialButton?) {
+        if (button == null) return
+        val context = button.context
+        button.setTextColor(color(context, R.string.pref_sk_study_text_color_key, DEFAULT_STUDY_TEXT))
+        button.backgroundTintList =
+            ColorStateList.valueOf(color(context, R.string.pref_sk_study_background_key, DEFAULT_STUDY_BACKGROUND))
+        button.strokeColor =
+            ColorStateList.valueOf(color(context, R.string.pref_sk_study_border_color_key, DEFAULT_STUDY_BORDER))
+        button.strokeWidth =
+            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, context.resources.displayMetrics).toInt()
+    }
+
+    fun deckNameColor(context: Context): Int = color(context, R.string.pref_sk_deck_name_color_key, DEFAULT_DECK_NAME)
+
+    fun studiedTodayColor(context: Context): Int = color(context, R.string.pref_sk_studied_today_color_key, DEFAULT_STUDIED_TODAY)
+
+    /**
+     * Colours every preference row of a settings list as it binds: titles
+     * (including category headers) and summaries, each configurable.
+     */
+    fun styleSettingsList(
+        list: RecyclerView,
+        context: Context,
+    ) {
+        val titleColor = color(context, R.string.pref_sk_settings_title_color_key, DEFAULT_SETTINGS_TITLE)
+        val summaryColor = color(context, R.string.pref_sk_settings_summary_color_key, DEFAULT_SETTINGS_SUMMARY)
+        list.addOnChildAttachStateChangeListener(
+            object : RecyclerView.OnChildAttachStateChangeListener {
+                override fun onChildViewAttachedToWindow(view: View) {
+                    view.findViewById<TextView>(android.R.id.title)?.setTextColor(titleColor)
+                    view.findViewById<TextView>(android.R.id.summary)?.setTextColor(summaryColor)
+                }
+
+                override fun onChildViewDetachedFromWindow(view: View) {}
+            },
+        )
+    }
+
+    /** Sample line rendering the configured menu font, size and text colour */
+    fun buildMenuFontPreview(
+        context: Context,
+        sizeSp: Int = menuFontSizeSp(context),
+    ): CharSequence {
+        val text = SpannableString(context.getString(R.string.sk_menu_font_preview_text))
+        text.setSpan(AbsoluteSizeSpan(sizeSp, true), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        text.setSpan(
+            ForegroundColorSpan(color(context, R.string.pref_sk_menu_text_color_key, DEFAULT_MENU_TEXT)),
+            0,
+            text.length,
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE,
+        )
+        menuTypeface(context)?.let {
+            text.setSpan(TypefaceSpanCompat(it), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        }
+        return text
+    }
+
     // Font management
 
     fun menuFontFile(context: Context): File = File(File(context.filesDir, FONT_DIR), MENU_FONT_FILE)
@@ -182,6 +272,14 @@ object ShiroikumaUi {
                 R.string.pref_sk_menu_selected_background_key,
                 R.string.pref_sk_menu_font_size_key,
                 R.string.pref_sk_menu_show_header_key,
+                R.string.pref_sk_deck_name_color_key,
+                R.string.pref_sk_toolbar_icon_color_key,
+                R.string.pref_sk_studied_today_color_key,
+                R.string.pref_sk_study_text_color_key,
+                R.string.pref_sk_study_border_color_key,
+                R.string.pref_sk_study_background_key,
+                R.string.pref_sk_settings_title_color_key,
+                R.string.pref_sk_settings_summary_color_key,
             )) {
                 remove(context.getString(keyRes))
             }

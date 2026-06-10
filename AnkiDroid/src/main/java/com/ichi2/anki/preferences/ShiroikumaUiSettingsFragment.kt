@@ -45,12 +45,23 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
     override fun initSubscreen() {
         setupColorPreference(R.string.pref_sk_menu_background_key, ShiroikumaUi.DEFAULT_MENU_BACKGROUND)
-        setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT)
+        setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT, ::refreshFontPreview)
         setupColorPreference(R.string.pref_sk_menu_icon_color_key, ShiroikumaUi.DEFAULT_MENU_ICON)
         setupColorPreference(R.string.pref_sk_menu_selected_color_key, ShiroikumaUi.DEFAULT_MENU_SELECTED)
         setupColorPreference(R.string.pref_sk_menu_selected_background_key, ShiroikumaUi.DEFAULT_MENU_SELECTED_BACKGROUND)
 
+        setupColorPreference(R.string.pref_sk_deck_name_color_key, ShiroikumaUi.DEFAULT_DECK_NAME)
+        setupColorPreference(R.string.pref_sk_toolbar_icon_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_ICON)
+        setupColorPreference(R.string.pref_sk_studied_today_color_key, ShiroikumaUi.DEFAULT_STUDIED_TODAY)
+        setupColorPreference(R.string.pref_sk_study_text_color_key, ShiroikumaUi.DEFAULT_STUDY_TEXT)
+        setupColorPreference(R.string.pref_sk_study_border_color_key, ShiroikumaUi.DEFAULT_STUDY_BORDER)
+        setupColorPreference(R.string.pref_sk_study_background_key, ShiroikumaUi.DEFAULT_STUDY_BACKGROUND)
+
+        setupColorPreference(R.string.pref_sk_settings_title_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TITLE)
+        setupColorPreference(R.string.pref_sk_settings_summary_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SUMMARY)
+
         refreshFontSummary()
+        refreshFontPreview()
         requirePreference<Preference>(R.string.pref_sk_menu_font_key).setOnPreferenceClickListener {
             fontPicker.launch(arrayOf("*/*"))
             true
@@ -58,6 +69,11 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.pref_sk_menu_font_reset_key).setOnPreferenceClickListener {
             ShiroikumaUi.resetMenuFont(requireContext())
             refreshFontSummary()
+            refreshFontPreview()
+            true
+        }
+        requirePreference<Preference>(R.string.pref_sk_menu_font_size_key).setOnPreferenceChangeListener { _, newValue ->
+            refreshFontPreview(newValue as Int)
             true
         }
 
@@ -85,9 +101,17 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                 ?: getString(R.string.sk_menu_font_summary_default)
     }
 
+    private fun refreshFontPreview() = refreshFontPreview(ShiroikumaUi.menuFontSizeSp(requireContext()))
+
+    private fun refreshFontPreview(sizeSp: Int) {
+        requirePreference<Preference>(R.string.pref_sk_menu_font_preview_key).title =
+            ShiroikumaUi.buildMenuFontPreview(requireContext(), sizeSp)
+    }
+
     private fun setupColorPreference(
         @StringRes keyRes: Int,
         default: Int,
+        extraOnChanged: (() -> Unit)? = null,
     ) {
         val preference = requirePreference<Preference>(keyRes)
 
@@ -95,6 +119,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             val color = ShiroikumaUi.color(requireContext(), keyRes, default)
             preference.icon = ShiroikumaUi.swatch(color)
             preference.summary = ShiroikumaUi.toHex(color)
+            extraOnChanged?.invoke()
         }
         refresh()
 
