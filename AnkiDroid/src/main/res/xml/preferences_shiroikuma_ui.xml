@@ -199,6 +199,21 @@
             android:persistent="false"/>
 
         <Preference
+            android:title="@string/sk_sub_rows"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_deck_row_padding_key"
+            android:title="@string/sk_deck_row_padding"
+            android:summary="@string/sk_deck_row_padding_summary"
+            android:defaultValue="12"
+            android:valueFrom="0"
+            android:valueTo="24"
+            android:stepSize="1"
+            app:displayFormat="@string/sk_format_dp"/>
+
+        <Preference
             android:title="@string/sk_sub_pane_divider"
             android:layout="@layout/sk_preference_subheader"
             android:selectable="false"
