@@ -29,6 +29,7 @@
     <string name="pref_sk_pane_divider_width_key">sk_pane_divider_width</string>
     <string name="pref_sk_settings_icon_color_key">sk_settings_icon_color</string>
     <string name="pref_sk_settings_toggle_color_key">sk_settings_toggle_color</string>
+    <string name="pref_sk_settings_slider_color_key">sk_settings_slider_color</string>
     <string name="pref_sk_settings_header_color_key">sk_settings_header_color</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
@@ -70,6 +71,7 @@
     <string name="sk_settings_summary_color">Secondary text</string>
     <string name="sk_settings_icon_color">Icons</string>
     <string name="sk_settings_toggle_color">Toggles</string>
+    <string name="sk_settings_slider_color">Sliders</string>
     <string name="sk_settings_header_color">Screen headers</string>
 
     <string name="sk_toolbar_title_color">Toolbar title</string>
@@ -94,8 +96,6 @@
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
     <string name="sk_reset_all_confirm">Reset all 白い熊 暗記 UI settings to their defaults?</string>
 
-    <string name="sk_color_dialog_hint">RRGGBB or AARRGGBB</string>
-    <string name="sk_color_invalid">Not a valid colour</string>
     <string name="sk_font_import_failed">Could not load that font file</string>
     <string name="sk_default">Default</string>
 </resources>
