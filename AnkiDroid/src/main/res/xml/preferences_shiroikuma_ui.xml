@@ -1,44 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fork: the 白い熊 暗記 UI page — colour and font management for the app UI. -->
+<!-- Fork: the 白い熊 暗記 UI page — colour and font management for the app UI.
+     Organized into sections (yellow divider above each) with indented items
+     under subheadings. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/shiroikuma_ui_title"
     android:key="@string/pref_shiroikuma_ui_screen_key">
 
     <PreferenceCategory
-        android:title="@string/sk_cat_menu_colours">
+        android:title="@string/sk_section_menu"
+        android:layout="@layout/sk_preference_category">
+        <Preference
+            android:title="@string/sk_sub_colours"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_background_key"
             android:title="@string/sk_menu_background"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_text_color_key"
             android:title="@string/sk_menu_text_color"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_icon_color_key"
             android:title="@string/sk_menu_icon_color"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_selected_color_key"
             android:title="@string/sk_menu_selected_color"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_selected_background_key"
             android:title="@string/sk_menu_selected_background"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
-    </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_cat_menu_font">
+        <Preference
+            android:title="@string/sk_sub_font"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_font_key"
             android:title="@string/sk_menu_font"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_font_reset_key"
             android:title="@string/sk_menu_font_reset"
             android:summary="@string/sk_menu_font_reset_summary"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <com.ichi2.preferences.SliderPreference
             android:key="@string/pref_sk_menu_font_size_key"
@@ -50,52 +67,15 @@
             app:displayFormat="@string/sk_format_sp"/>
         <Preference
             android:key="@string/pref_sk_menu_font_preview_key"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"
             android:selectable="false"/>
-    </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_cat_deck_picker">
         <Preference
-            android:key="@string/pref_sk_deck_name_color_key"
-            android:title="@string/sk_deck_name_color"
+            android:title="@string/sk_sub_header"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
             android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_toolbar_icon_color_key"
-            android:title="@string/sk_toolbar_icon_color"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_studied_today_color_key"
-            android:title="@string/sk_studied_today_color"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_text_color_key"
-            android:title="@string/sk_study_text_color"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_border_color_key"
-            android:title="@string/sk_study_border_color"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_background_key"
-            android:title="@string/sk_study_background"
-            android:persistent="false"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="@string/sk_cat_settings">
-        <Preference
-            android:key="@string/pref_sk_settings_title_color_key"
-            android:title="@string/sk_settings_title_color"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_summary_color_key"
-            android:title="@string/sk_settings_summary_color"
-            android:persistent="false"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="@string/sk_cat_menu_header">
         <SwitchPreferenceCompat
             android:key="@string/pref_sk_menu_show_header_key"
             android:defaultValue="true"
@@ -104,7 +84,129 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/sk_cat_reset">
+        android:title="@string/sk_section_deck_picker"
+        android:layout="@layout/sk_preference_category">
+        <Preference
+            android:title="@string/sk_sub_colours"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_deck_name_color_key"
+            android:title="@string/sk_deck_name_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_studied_today_color_key"
+            android:title="@string/sk_studied_today_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_deck_detail_name_color_key"
+            android:title="@string/sk_deck_detail_name_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+
+        <Preference
+            android:title="@string/sk_sub_toolbar"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_toolbar_title_color_key"
+            android:title="@string/sk_toolbar_title_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_toolbar_subtitle_color_key"
+            android:title="@string/sk_toolbar_subtitle_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_toolbar_icon_color_key"
+            android:title="@string/sk_toolbar_icon_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+
+        <Preference
+            android:title="@string/sk_sub_study_button"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_text_color_key"
+            android:title="@string/sk_study_text_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_border_color_key"
+            android:title="@string/sk_study_border_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_study_background_key"
+            android:title="@string/sk_study_background"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+
+        <Preference
+            android:title="@string/sk_sub_pane_divider"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_pane_divider_color_key"
+            android:title="@string/sk_pane_divider_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_pane_divider_width_key"
+            android:title="@string/sk_pane_divider_width"
+            android:defaultValue="1"
+            android:valueFrom="0"
+            android:valueTo="8"
+            android:stepSize="1"
+            app:displayFormat="@string/sk_format_dp"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_section_settings"
+        android:layout="@layout/sk_preference_category">
+        <Preference
+            android:title="@string/sk_sub_colours"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_title_color_key"
+            android:title="@string/sk_settings_title_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_summary_color_key"
+            android:title="@string/sk_settings_summary_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_icon_color_key"
+            android:title="@string/sk_settings_icon_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_toggle_color_key"
+            android:title="@string/sk_settings_toggle_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_header_color_key"
+            android:title="@string/sk_settings_header_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_reset"
+        android:layout="@layout/sk_preference_category">
         <Preference
             android:key="@string/pref_sk_reset_key"
             android:title="@string/sk_reset_all"
