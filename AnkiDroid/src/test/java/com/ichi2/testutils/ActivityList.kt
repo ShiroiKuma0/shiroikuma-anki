@@ -30,6 +30,7 @@ import com.ichi2.anki.StoragePermissionSet
 import com.ichi2.anki.StudyOptionsActivity
 import com.ichi2.anki.account.AccountActivity
 import com.ichi2.anki.browser.IdsFile
+import com.ichi2.anki.cardviewer.VideoPlayerActivity
 import com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.multimedia.AudioRecordingFragment
@@ -121,6 +122,7 @@ object ActivityList {
                     }
                 },
             ),
+            get(VideoPlayerActivity::class.java),
             get(MultimediaActivity::class.java, normalIntent = { intentForAudioRecording() }),
             get(DeckPickerWidgetConfig::class.java, normalIntent = { intentForWidgetConfig() }),
             get(CardAnalysisWidgetConfig::class.java) { intentForWidgetConfig() },

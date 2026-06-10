@@ -7,33 +7,35 @@ import com.ichi2.anki.libanki.SoundOrVideoTag.Type.VIDEO
 import com.ichi2.anki.multimedia.getTagType
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 
 class SoundOrVideoTagTest {
-    @get:Rule
-    val mediaDirectory = TemporaryFolder()
-
     @Test
     fun mp3IsAudio() {
         val tag = SoundOrVideoTag("test.mp3")
-        assertThat(tag.getTagType(mediaDirectory.root), equalTo(Type.AUDIO))
+        assertThat(tag.getTagType(), equalTo(Type.AUDIO))
     }
 
     @Test
     fun audioIsDefault() {
         // if we don't know, assume it's audio
-        // When we want to play a tag, the audio player (Android) can handle a failure
-        // better than the video player (HTML)
+        // the audio player (Android) can handle a failure better than the video player
         val tag = SoundOrVideoTag("test.txt")
-        assertThat(tag.getTagType(mediaDirectory.root), equalTo(Type.AUDIO))
+        assertThat(tag.getTagType(), equalTo(Type.AUDIO))
     }
 
     @Test
     fun mp4IsVideo() {
-        // Note: This will go out to the filesystem. As it doesn't exist, assume it's a video
+        // 20668: classification is by extension only; the file content is never
+        // probed, so a short clip without a video thumbnail is still a video
         val tag = SoundOrVideoTag("test.mp4")
-        assertThat(tag.getTagType(mediaDirectory.root), equalTo(VIDEO))
+        assertThat(tag.getTagType(), equalTo(VIDEO))
+    }
+
+    @Test
+    fun videoExtensionsAreVideo() {
+        for (filename in listOf("a.mov", "a.mkv", "a.webm", "a.mpg", "a.mpeg")) {
+            assertThat(filename, SoundOrVideoTag(filename).getTagType(), equalTo(VIDEO))
+        }
     }
 }

@@ -45,7 +45,6 @@ abstract class CardViewerViewModel(
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     val cardMediaPlayer =
         CardMediaPlayer(
-            javascriptEvaluator = { launchCatchingIO { eval.emit(it) } },
             mediaErrorListener = mediaErrorHandler,
         ).also {
             addCloseable(it)
