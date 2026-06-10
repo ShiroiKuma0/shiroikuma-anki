@@ -18,7 +18,6 @@ package com.ichi2.anki.cardviewer
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
-import com.ichi2.anki.libanki.SoundOrVideoTag
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CompletionHandler
 import kotlinx.coroutines.CoroutineDispatcher
@@ -28,6 +27,7 @@ import kotlinx.coroutines.InternalForInheritanceCoroutinesApi
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -37,10 +37,10 @@ import kotlin.test.assertNull
 class VideoPlayerTest : RobolectricTest() {
     @Test
     fun `stops audio playback when paused`() {
-        val v = VideoPlayer { JavascriptEvaluator { } }
+        val v = VideoPlayer()
 
         val m = MockContinuation()
-        v.playVideo(m, SoundOrVideoTag("a.mp4"))
+        v.playVideo(m, File("a.mp4"))
 
         assertNull(m.result)
         v.onVideoPaused()
@@ -63,7 +63,7 @@ class VideoPlayerTest : RobolectricTest() {
         override val isCancelled: Boolean
             get() = TODO("Not yet implemented")
         override val isCompleted: Boolean
-            get() = TODO("Not yet implemented")
+            get() = result != null
 
         override fun cancel(cause: Throwable?): Boolean {
             TODO("Not yet implemented")

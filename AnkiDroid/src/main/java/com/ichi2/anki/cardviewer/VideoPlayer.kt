@@ -16,67 +16,50 @@
 
 package com.ichi2.anki.cardviewer
 
-import com.ichi2.anki.common.utils.htmlEncode
-import com.ichi2.anki.libanki.AvRef
-import com.ichi2.anki.libanki.SoundOrVideoTag
+import android.content.Intent
+import com.ichi2.anki.common.android.appContext
 import kotlinx.coroutines.CancellableContinuation
 import timber.log.Timber
+import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * Interacts with `<video>` tags, triggering the start and detecting completion of videos
+ * Plays a card's video files natively in a fullscreen [VideoPlayerActivity].
  *
- * The tag should have the following attributes:
- * `data-file`: The HTMLEncoded filename of the video file
- * `data-play`: An [AvRef] in the form: `q:0`
+ * Fork change (upstream issue #20668): videos used to be played by locating a
+ * `<video>` element in the card WebView via JavaScript, but the WebView blocks
+ * the element's `file://` source from the `http://127.0.0.1` base URL, so
+ * playback never started. This restores the native player used up to 2.16.5.
  *
- * `data-file` was selected to select the file to play, as we do not have the [AvRef] to play here
- *
- * @see com.ichi2.anki.libanki.Sound.expandSounds
+ * [onVideoFinished] resumes the media queue once the activity is destroyed.
  */
-class VideoPlayer(
-    private val jsEval: JavascriptEvaluator,
-) {
+class VideoPlayer {
     private var continuation: CancellableContinuation<Unit>? = null
 
     fun playVideo(
         continuation: CancellableContinuation<Unit>,
-        tag: SoundOrVideoTag,
+        videoFile: File,
     ) {
         this.continuation = continuation
-
-        val fileNameToFind = tag.filename
-        // find & play the video with a matching 'data-file' attribute
-
-        // BUG: We don't have the index of the tag in the list
-        // so the wrong video would be played if contained twice in the card content
-        jsEval.evaluateAfterDOMContentLoaded(
-            """
-                    var videos = document.getElementsByTagName("video")
-            
-                    for (i = 0; i < videos.length; i++) {
-                       var video = videos[i];
-                       if (video.attributes['data-file'].value == "${fileNameToFind.htmlEncode()}") {
-                           console.log("playing video: " + video.attributes['data-play'].value);
-                           video.currentTime = 0;
-                           video.play();
-                           break;
-                       }
-                    }
-                """,
-        )
+        Timber.i("launching VideoPlayerActivity")
+        VideoPlayerActivity.onPlaybackCompleted = ::onVideoFinished
+        val intent =
+            Intent(appContext, VideoPlayerActivity::class.java)
+                .putExtra(VideoPlayerActivity.EXTRA_PATH, videoFile.absolutePath)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        appContext.startActivity(intent)
     }
 
     fun onVideoFinished() {
         Timber.v("video ended")
-        continuation?.resume(Unit)
+        continuation?.takeUnless { it.isCompleted }?.resume(Unit)
         continuation = null
     }
 
     fun onVideoPaused() {
         Timber.i("video paused")
-        continuation?.resumeWithException(MediaException(MediaErrorBehavior.STOP_MEDIA))
+        continuation?.takeUnless { it.isCompleted }?.resumeWithException(MediaException(MediaErrorBehavior.STOP_MEDIA))
         continuation = null
     }
 }

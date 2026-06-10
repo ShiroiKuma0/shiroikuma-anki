@@ -698,7 +698,12 @@
             </intent-filter>
         </activity>
 
-
+        <!-- Fork: native fullscreen player for [sound:video.mp4] tags, see issue 20668 -->
+        <activity
+            android:name="com.ichi2.anki.cardviewer.VideoPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
 
         <provider
             android:name=".provider.CardContentProvider"

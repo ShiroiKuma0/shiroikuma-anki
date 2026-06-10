@@ -2788,7 +2788,6 @@ abstract class AbstractFlashcardViewer :
             val soundErrorListener = viewer.createMediaErrorListener()
 
             return CardMediaPlayer(
-                javascriptEvaluator = { viewer.webViewClient?.eval(it) },
                 mediaErrorListener = soundErrorListener,
             ).apply {
                 setOnMediaGroupCompletedListener(viewer::onMediaGroupCompleted)

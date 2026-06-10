@@ -94,12 +94,12 @@ class CardMediaPlayer : Closeable {
         this.mediaErrorListener = mediaErrorListener
     }
 
-    constructor(javascriptEvaluator: JavascriptEvaluator, mediaErrorListener: MediaErrorListener) {
+    constructor(mediaErrorListener: MediaErrorListener) {
         this.mediaErrorListener = mediaErrorListener
         this.soundTagPlayer =
             SoundTagPlayer(
                 soundUriBase = getMediaBaseUrl(getMediaDirectory(appContext)),
-                videoPlayer = VideoPlayer(javascriptEvaluator),
+                videoPlayer = VideoPlayer(),
             )
         this.ttsPlayer = scope.async { AndroidTtsPlayer.createInstance(scope) }
     }
