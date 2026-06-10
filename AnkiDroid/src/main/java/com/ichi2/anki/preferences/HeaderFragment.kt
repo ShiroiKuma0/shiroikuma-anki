@@ -250,6 +250,7 @@ class HeaderFragment : SettingsFragment() {
                 is DeveloperOptionsFragment -> R.string.pref_developer_options_screen_key
                 is AboutFragment -> R.string.about_screen_key
                 is SwitchProfilesFragment -> R.string.pref_switch_profile_screen_key
+                is ShiroikumaUiSettingsFragment -> R.string.pref_shiroikuma_ui_screen_key
                 else -> null
             }
     }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork-only strings for the 白い熊 暗記 UI page. Not managed by Crowdin:
+     this file is fork-local and must never be uploaded for translation. -->
+<resources>
+    <!-- Preference keys -->
+    <string name="pref_shiroikuma_ui_screen_key">shiroikumaUiScreen</string>
+    <string name="pref_sk_menu_background_key">sk_menu_background</string>
+    <string name="pref_sk_menu_text_color_key">sk_menu_text_color</string>
+    <string name="pref_sk_menu_icon_color_key">sk_menu_icon_color</string>
+    <string name="pref_sk_menu_selected_color_key">sk_menu_selected_color</string>
+    <string name="pref_sk_menu_selected_background_key">sk_menu_selected_background</string>
+    <string name="pref_sk_menu_font_key">sk_menu_font</string>
+    <string name="pref_sk_menu_font_reset_key">sk_menu_font_reset</string>
+    <string name="pref_sk_menu_font_size_key">sk_menu_font_size</string>
+    <string name="pref_sk_menu_show_header_key">sk_menu_show_header</string>
+    <string name="pref_sk_reset_key">sk_reset</string>
+
+    <!-- Page -->
+    <string name="shiroikuma_ui_title">白い熊 暗記 UI</string>
+    <string name="sk_cat_menu_colours">Menu — colours</string>
+    <string name="sk_cat_menu_font">Menu — font</string>
+    <string name="sk_cat_menu_header">Menu — header</string>
+    <string name="sk_cat_reset">Reset</string>
+
+    <string name="sk_menu_background">Background</string>
+    <string name="sk_menu_text_color">Text</string>
+    <string name="sk_menu_icon_color">Icons</string>
+    <string name="sk_menu_selected_color">Selected item</string>
+    <string name="sk_menu_selected_background">Selected item background</string>
+
+    <string name="sk_menu_font">Font</string>
+    <string name="sk_menu_font_summary_default">System default — tap to pick a font file (ttf/otf)</string>
+    <string name="sk_menu_font_reset">Reset font</string>
+    <string name="sk_menu_font_reset_summary">Return to the system font</string>
+    <string name="sk_menu_font_size">Text size</string>
+    <string name="sk_format_sp">%s sp</string>
+
+    <string name="sk_menu_show_header">Show header image</string>
+    <string name="sk_menu_show_header_summary">Show the picture above the menu items</string>
+
+    <string name="sk_reset_all">Reset all to defaults</string>
+    <string name="sk_reset_all_summary">Yellow on black, system font</string>
+    <string name="sk_reset_all_confirm">Reset all 白い熊 暗記 UI settings to their defaults?</string>
+
+    <string name="sk_color_dialog_hint">RRGGBB or AARRGGBB</string>
+    <string name="sk_color_invalid">Not a valid colour</string>
+    <string name="sk_font_import_failed">Could not load that font file</string>
+    <string name="sk_default">Default</string>
+</resources>
