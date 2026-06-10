@@ -38,6 +38,7 @@ import com.ichi2.anki.multimedia.getTagType
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
+import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -78,12 +79,12 @@ class SoundTagPlayer(
         tag: SoundOrVideoTag,
         mediaErrorListener: MediaErrorListener?,
     ) {
-        val tagType = tag.getType()
+        val mediaDir = withCol { media.dir }
         suspendCancellableCoroutine { continuation ->
             Timber.d("Playing SoundOrVideoTag")
-            when (tagType) {
+            when (tag.getTagType()) {
                 SoundOrVideoTag.Type.AUDIO -> playSound(continuation, tag, mediaErrorListener)
-                SoundOrVideoTag.Type.VIDEO -> playVideo(continuation, tag)
+                SoundOrVideoTag.Type.VIDEO -> playVideo(continuation, File(mediaDir, tag.filename))
             }
         }
     }
@@ -91,10 +92,10 @@ class SoundTagPlayer(
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun playVideo(
         continuation: CancellableContinuation<Unit>,
-        tag: SoundOrVideoTag,
+        videoFile: File,
     ) {
         Timber.d("Playing video")
-        videoPlayer.playVideo(continuation, tag)
+        videoPlayer.playVideo(continuation, videoFile)
     }
 
     private fun playSound(
@@ -216,5 +217,3 @@ class SoundTagPlayer(
         return AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusRequest)
     }
 }
-
-suspend fun SoundOrVideoTag.getType(): SoundOrVideoTag.Type = getTagType(withCol { media.dir })

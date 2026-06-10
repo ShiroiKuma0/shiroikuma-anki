@@ -19,8 +19,6 @@
 package com.ichi2.anki.multimedia
 
 import com.ichi2.anki.CollectionManager
-import com.ichi2.anki.common.utils.htmlEncode
-import com.ichi2.anki.compat.CompatHelper
 import com.ichi2.anki.libanki.AvRef
 import com.ichi2.anki.libanki.AvTag
 import com.ichi2.anki.libanki.Card
@@ -29,32 +27,28 @@ import com.ichi2.anki.libanki.Sound.AV_PLAYLINK_RE
 import com.ichi2.anki.libanki.Sound.replaceAvRefsWith
 import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.libanki.SoundOrVideoTag.Type
-import com.ichi2.anki.libanki.TTSTag
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
-import com.ichi2.anki.libanki.getFileUri
 import com.ichi2.anki.utils.CollectionPreferences
 import org.intellij.lang.annotations.Language
-import org.jetbrains.annotations.VisibleForTesting
-import java.io.File
-import java.nio.file.Paths
 
 /**
  * Takes content with [AvRef]s and expands them to reference the media file
  *
- * * Videos are replaced with `<video>`
- * * Audio is replaced with <a href="playsound:">
+ * Audio and video are both replaced with <a href="playsound:">: tapping the
+ * play button (or autoplay) routes through the media queue, which plays audio
+ * in-process and opens video in the native fullscreen player. A `<video>`
+ * element cannot be used: the WebView blocks its `file://` source from the
+ * `http://127.0.0.1` base URL (issue #20668).
  *
  * @param content card content to be rendered that may contain embedded audio
  *
  * @return content with [AvRef]s replaced with HTML to play the file
  */
-@Suppress("HtmlUnknownAttribute", "HtmlDeprecatedAttribute")
 fun expandSounds(
     content: String,
     renderOutput: TemplateRenderOutput,
     showAudioPlayButtons: Boolean,
-    mediaDir: File,
-) = replaceAvRefsWith(content, renderOutput) { tag, playTag ->
+) = replaceAvRefsWith(content, renderOutput) { _, playTag ->
 
     fun AvRef.asHtmlAudio(): String {
         if (!showAudioPlayButtons) return ""
@@ -70,39 +64,7 @@ fun expandSounds(
         return result
     }
 
-    fun SoundOrVideoTag.asHtmlVideo(): String {
-        val filename = this.filename
-        val path = Paths.get(mediaDir.absolutePath, filename).toString()
-        val uri = getFileUri(path)
-
-        val playsound = "${playTag.side}:${playTag.index}"
-
-        val onEnded = """window.location.href = "videoended:$playsound";"""
-        val onPause = """if (this.currentTime != this.duration) { window.location.href = "videopause:$playsound"; }"""
-
-        // TODO: Make the loading screen nicer if the video doesn't autoplay
-        @Language("HTML")
-        val result =
-            """<video
-                    | src="$uri"
-                    | controls
-                    | data-file="${filename.htmlEncode()}"
-                    | onended='$onEnded'
-                    | onpause='$onPause'
-                    | data-play="$playsound" controlsList="nodownload"></video>
-            """.trimMargin()
-        return result
-    }
-
-    when (tag) {
-        is TTSTag -> playTag.asHtmlAudio()
-        is SoundOrVideoTag -> {
-            when (tag.getTagType(mediaDir)) {
-                Type.AUDIO -> playTag.asHtmlAudio()
-                Type.VIDEO -> tag.asHtmlVideo()
-            }
-        }
-    }
+    playTag.asHtmlAudio()
 }
 
 /** Extract av tag from playsound:q:x link */
@@ -141,45 +103,22 @@ suspend fun replaceAvRefsWithPlayButtons(
     text: String,
     renderOutput: TemplateRenderOutput,
 ): String {
-    val mediaDir = CollectionManager.withCol { media.dir }
     val hidePlayButtons = CollectionPreferences.getHidePlayAudioButtons()
-    return expandSounds(text, renderOutput, showAudioPlayButtons = !hidePlayButtons, mediaDir)
-}
-
-fun SoundOrVideoTag.getTagType(mediaDir: File): Type {
-    val extension = filename.substringAfterLast(".", "")
-    return when (extension) {
-        in Sound.VIDEO_ONLY_EXTENSIONS -> Type.VIDEO
-        in Sound.AUDIO_OR_VIDEO_EXTENSIONS -> {
-            val file = File(mediaDir, filename)
-            if (isAudioFileInVideoContainer(file) == true) {
-                Type.AUDIO
-            } else {
-                Type.VIDEO
-            }
-        }
-        // assume audio if we don't know. Our audio code is more resilient than HTML video
-        else -> Type.AUDIO
-    }
+    return expandSounds(text, renderOutput, showAudioPlayButtons = !hidePlayButtons)
 }
 
 /**
- * Whether a video file only contains an audio stream
- *
- * @return `null` - file is not a video, or not found
+ * Classifies the tag by filename extension alone. Audio-or-video containers
+ * (mp4 etc.) are always treated as video: probing the content with
+ * `hasVideoThumbnail` returned false negatives on short clips, which were then
+ * played as audio-only (issue #20668). The native video player handles an
+ * audio-only container correctly, so video is the safe default.
  */
-@VisibleForTesting
-fun isAudioFileInVideoContainer(file: File): Boolean? {
-    if (file.extension !in Sound.VIDEO_ONLY_EXTENSIONS && file.extension !in Sound.AUDIO_OR_VIDEO_EXTENSIONS) {
-        return null
+fun SoundOrVideoTag.getTagType(): Type {
+    val extension = filename.substringAfterLast(".", "")
+    return when (extension) {
+        in Sound.VIDEO_ONLY_EXTENSIONS, in Sound.AUDIO_OR_VIDEO_EXTENSIONS -> Type.VIDEO
+        // assume audio if we don't know
+        else -> Type.AUDIO
     }
-
-    if (file.extension in Sound.VIDEO_ONLY_EXTENSIONS) return false
-
-    // file.extension is in AUDIO_OR_VIDEO_EXTENSIONS
-    if (!file.exists()) return null
-
-    // Also check that there is a video thumbnail, as some formats like mp4 can be audio only
-    val isVideo = CompatHelper.compat.hasVideoThumbnail(file.absolutePath) ?: return null
-    return !isVideo
 }
