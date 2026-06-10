@@ -75,6 +75,8 @@ abstract class SettingsFragment :
         binding.toolbar.apply {
             setTitle(title)
             setNavigationOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+            // Fork: configurable screen-header colour (yellow by default)
+            setTitleTextColor(ShiroikumaUi.settingsHeaderColor(context))
         }
         // Fork: 白い熊 暗記 UI — configurable settings text colours (yellow titles by default)
         ShiroikumaUi.styleSettingsList(listView, requireContext())

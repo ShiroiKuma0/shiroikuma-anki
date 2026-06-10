@@ -147,10 +147,13 @@ class StudyOptionsFragment :
     }
 
     private fun initAllContentViews(studyOptionsView: View) {
-        studyOptionsView.findViewById<View>(R.id.studyoptions_gradient).visibility =
-            if (fragmented) View.VISIBLE else View.GONE
+        // Fork: no gradient strip at the pane edge — the configurable pane
+        // divider (白い熊 暗記 UI) is the only separator
+        studyOptionsView.findViewById<View>(R.id.studyoptions_gradient).visibility = View.GONE
         deckInfoLayout = studyOptionsView.findViewById(R.id.group_counts)
         textDeckName = studyOptionsView.findViewById(R.id.studyoptions_deck_name)
+        // Fork: deck name colour from the 白い熊 暗記 UI page
+        textDeckName.setTextColor(ShiroikumaUi.deckDetailNameColor(studyOptionsView.context))
         textDeckDescription = studyOptionsView.findViewById(R.id.studyoptions_deck_description)
         // make links clickable
         textDeckDescription.movementMethod = LinkMovementMethod.getInstance()
