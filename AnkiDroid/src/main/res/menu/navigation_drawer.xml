@@ -17,6 +17,11 @@
             android:icon="@drawable/ic_bar_chart_black"/>
     </group>
     <group  android:id="@+id/group2">
+        <!-- Fork: 白い熊 暗記 UI -->
+        <item
+            android:id="@+id/nav_shiroikuma_ui"
+            android:icon="@drawable/ic_color_lens_white_24dp"
+            android:title="@string/shiroikuma_ui_title"/>
         <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/ic_settings_black"
