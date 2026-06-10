@@ -81,7 +81,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ichi2.anki"
+        // Fork: renamed from "com.ichi2.anki" so the fork installs alongside official AnkiDroid.
+        // The namespace (and all code packages) intentionally stay com.ichi2.anki.
+        applicationId = "shiroikuma.anki"
         buildConfigField "Boolean", "CI", (System.getenv("CI") == "true").toString()
         buildConfigField "String", "ACRA_URL", '"https://ankidroid.org/acra/report"'
         buildConfigField "String", "BACKEND_VERSION", "\"${libs.versions.ankiBackend.get()}\""
@@ -90,7 +92,7 @@ android {
         buildConfigField "long", "BUILD_TIME", buildTimeMillis.get()
         // whether UI elements linking to external donation pages are shown ('play' hides them)
         buildConfigField "Boolean", "SHOW_DONATE_LINKS", "true"
-        resValue "string", "app_name", "AnkiDroid"
+        resValue "string", "app_name", "白い熊 暗記"
 
         // The version number is of the form:
         // <major>.<minor>.<maintenance>[dev|alpha<build>|beta<build>|]
@@ -113,9 +115,13 @@ android {
         //
         // This ensures the correct ordering between the various types of releases (dev < alpha < beta < release) which is
         // needed for upgrades to be offered correctly.
-        versionCode=22500104
+        // Fork versioning: the fork build counter continues in the DD digits above the
+        // upstream base build: build N on upstream base with code C is C+N, versionName
+        // <upstream>+N. On public releases (DD=00) that is AbbCC3NN; on alpha/beta bases
+        // it continues from the upstream alpha/beta number. Reset to +1 after each rebase.
+        versionCode=22500103
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
-        versionName="2.25.0alpha4"
+        versionName="2.25.0alpha2+1"
         minSdk = libs.versions.minSdk.get().toInteger()
 
         // After #13695: change .tests_emulator.yml
