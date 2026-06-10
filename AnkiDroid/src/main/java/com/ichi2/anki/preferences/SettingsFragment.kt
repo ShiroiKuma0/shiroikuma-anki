@@ -21,6 +21,7 @@ import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.common.analytics.Analytics
 import com.ichi2.anki.common.analytics.AnalyticsEvent
 import com.ichi2.anki.databinding.FragmentSettingsBinding
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.utils.bottomCornerClearance
 import com.ichi2.preferences.DialogFragmentProvider
 import dev.androidbroadcast.vbpd.viewBinding
@@ -90,6 +91,8 @@ abstract class SettingsFragment :
             listView.updatePadding(bottom = maxOf(bars.bottom, insets.bottomCornerClearance(listView)))
             insets
         }
+        // Fork: 白い熊 暗記 UI — configurable settings text colours (yellow titles by default)
+        ShiroikumaUi.styleSettingsList(listView, requireContext())
     }
 
     override fun onCreatePreferences(
