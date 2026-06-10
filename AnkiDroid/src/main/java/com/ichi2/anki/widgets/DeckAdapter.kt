@@ -57,6 +57,8 @@ class DeckAdapter(
     private val rowCurrentDrawable: Int = CommonR.drawable.item_background_selected
     private val deckNameDefaultColor: Int
     private val deckNameDynColor: Int
+    private val skDeckTypeface: android.graphics.Typeface?
+    private val skDeckFontSizeSp: Int
     private val expandImage: Drawable
     private val collapseImage: Drawable
 
@@ -168,6 +170,11 @@ class DeckAdapter(
         // Set deck name and colour. Filtered decks have their own colour
         binding.deckName.text = node.lastDeckNameComponent
         binding.deckName.setTextColor(if (node.filtered) deckNameDynColor else deckNameDefaultColor)
+        // Fork: deck picker font family/weight/size from the 白い熊 暗記 UI page
+        skDeckTypeface?.let { binding.deckName.typeface = it }
+        if (skDeckFontSizeSp > 0) {
+            binding.deckName.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, skDeckFontSizeSp.toFloat())
+        }
 
         // Set the card counts and their colors
         binding.deckNew.text = node.newCount.toString()
@@ -249,6 +256,8 @@ class DeckAdapter(
         reviewCountColor = ta.getColor(3, context.getColor(CommonR.color.black))
         // Fork: deck names use the 白い熊 暗記 UI colour (yellow by default)
         deckNameDefaultColor = ShiroikumaUi.deckNameColor(context)
+        skDeckTypeface = ShiroikumaUi.styledTypeface(context, ShiroikumaUi.ROLE_DECK)
+        skDeckFontSizeSp = ShiroikumaUi.fontSizeSp(context, ShiroikumaUi.ROLE_DECK)
         deckNameDynColor = ta.getColor(5, context.getColor(CommonR.color.material_blue_A700))
         expandImage = context.requireAutoMirroredDrawable(CommonR.drawable.ic_chevron_right)
         collapseImage = context.requireAutoMirroredDrawable(CommonR.drawable.ic_expand_more)
