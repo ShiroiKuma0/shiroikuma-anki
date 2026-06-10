@@ -9,7 +9,6 @@ import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardOrdinal
 import com.ichi2.anki.libanki.Collection
-import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.template.MathJax
 import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.reviewer.ReviewerCustomFonts
@@ -44,7 +43,7 @@ class AndroidCardRenderContext(
         // wraps content in <div id="qa">
         content = enrichWithQADiv(content)
         // expands [anki:q:1] to a play button
-        content = expandSounds(content, card.renderOutput(col), col)
+        content = expandSounds(content, card.renderOutput(col), showAudioPlayButtons)
         // fixes an Android bug where font-weight:600 does not display
         content = CardAppearance.fixBoldStyle(content)
 
@@ -95,21 +94,6 @@ class AndroidCardRenderContext(
             SingleCardSide.FRONT -> typeAnswer.filterQuestion(content)
             SingleCardSide.BACK -> typeAnswer.filterAnswer(content)
         }
-
-    private fun expandSounds(
-        content: String,
-        renderOutput: TemplateRenderOutput,
-        col: Collection,
-    ): String {
-        val mediaDir = col.media.dir
-
-        return expandSounds(
-            content,
-            renderOutput,
-            showAudioPlayButtons,
-            mediaDir,
-        )
-    }
 
     companion object {
         fun createInstance(
