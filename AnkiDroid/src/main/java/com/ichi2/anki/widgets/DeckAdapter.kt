@@ -24,6 +24,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import androidx.core.content.res.getDrawableOrThrow
 import androidx.core.content.withStyledAttributes
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -66,6 +67,8 @@ class DeckAdapter(
     private val deckNameDynColor: Int
     private val skDeckTypeface: android.graphics.Typeface?
     private val skDeckFontSizeSp: Int
+    private val skExpanderVerticalPaddingPx: Int
+    private val skRowVerticalPaddingPx: Int
     private val expandImage: Drawable
     private val collapseImage: Drawable
 
@@ -174,6 +177,10 @@ class DeckAdapter(
         if (skDeckFontSizeSp > 0) {
             binding.deckName.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, skDeckFontSizeSp.toFloat())
         }
+        // Fork: configurable row padding (0 = rows touch)
+        binding.deckName.minHeight = 0
+        binding.deckExpander.updatePadding(top = skExpanderVerticalPaddingPx, bottom = skExpanderVerticalPaddingPx)
+        binding.deckLayout.updatePadding(top = skRowVerticalPaddingPx, bottom = skRowVerticalPaddingPx)
 
         // Set the card counts and their colors
         binding.deckNew.text = node.newCount.toString()
@@ -255,6 +262,13 @@ class DeckAdapter(
         deckNameDefaultColor = ShiroikumaUi.deckNameColor(context)
         skDeckTypeface = ShiroikumaUi.styledTypeface(context, ShiroikumaUi.ROLE_DECK)
         skDeckFontSizeSp = ShiroikumaUi.fontSizeSp(context, ShiroikumaUi.ROLE_DECK)
+        // Fork: row padding — the first 12dp shrink the expander's touch
+        // padding (which dictates the upstream 48dp row height), the rest pads
+        // the row itself. 0 makes the rows touch.
+        val density = context.resources.displayMetrics.density
+        val rowPaddingPx = (ShiroikumaUi.deckRowPaddingDp(context) * density).toInt()
+        skExpanderVerticalPaddingPx = minOf((12 * density).toInt(), rowPaddingPx)
+        skRowVerticalPaddingPx = rowPaddingPx - skExpanderVerticalPaddingPx
         deckNameDynColor = ta.getColor(6, context.getColor(CommonR.color.material_blue_A700))
         expandImage = ta.getDrawableOrThrow(7)
         expandImage.isAutoMirrored = true
