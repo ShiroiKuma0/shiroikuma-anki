@@ -74,6 +74,9 @@ object ShiroikumaUi {
     const val DEFAULT_PANE_DIVIDER = 0xFFFFFF00.toInt()
     const val DEFAULT_PANE_DIVIDER_WIDTH_DP = 1
 
+    /** 12dp reproduces the upstream 48dp row height; 0 makes the rows touch */
+    const val DEFAULT_DECK_ROW_PADDING_DP = 12
+
     private const val FONT_DIR = "shiroikuma_fonts"
 
     /** Keyed by role (base family) and by "role:weight" (weight-styled) */
@@ -176,6 +179,9 @@ object ShiroikumaUi {
     }
 
     fun deckNameColor(context: Context): Int = color(context, R.string.pref_sk_deck_name_color_key, DEFAULT_DECK_NAME)
+
+    fun deckRowPaddingDp(context: Context): Int =
+        context.sharedPrefs().getInt(context.getString(R.string.pref_sk_deck_row_padding_key), DEFAULT_DECK_ROW_PADDING_DP)
 
     fun studiedTodayColor(context: Context): Int = color(context, R.string.pref_sk_studied_today_color_key, DEFAULT_STUDIED_TODAY)
 
@@ -501,6 +507,7 @@ object ShiroikumaUi {
                 R.string.pref_sk_deck_detail_name_color_key,
                 R.string.pref_sk_pane_divider_color_key,
                 R.string.pref_sk_pane_divider_width_key,
+                R.string.pref_sk_deck_row_padding_key,
             )) {
                 remove(context.getString(keyRes))
             }
