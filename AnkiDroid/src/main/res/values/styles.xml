@@ -3,6 +3,16 @@
 
     <style name="Theme_Dark.Launcher">
         <item name="android:windowBackground">@drawable/launch_screen</item>
+        <!-- Fork: black Android 12+ system splash with the traced launcher icon -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher</item>
+    </style>
+
+    <!-- Fork: IntentHandler is the LAUNCHER activity; its theme drives the
+         Android 12+ cold-start splash, which must be black with our icon -->
+    <style name="Theme_IntentHandler" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher</item>
     </style>
 
     <style name="Animation.Translucent" parent="@android:style/Animation.Translucent">
