@@ -116,8 +116,13 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     private fun refreshFontPreview() = refreshFontPreview(ShiroikumaUi.menuFontSizeSp(requireContext()))
 
     private fun refreshFontPreview(sizeSp: Int) {
-        requirePreference<Preference>(R.string.pref_sk_menu_font_preview_key).title =
-            ShiroikumaUi.buildMenuFontPreview(requireContext(), sizeSp)
+        val preview = requirePreference<Preference>(R.string.pref_sk_menu_font_preview_key)
+        // Preference.setTitle ignores a title whose characters are unchanged
+        // (TextUtils.equals compares text only, not spans), so when just the
+        // size/typeface/colour spans change the row would never re-render.
+        // Clearing the title first forces the rebind.
+        preview.title = null
+        preview.title = ShiroikumaUi.buildMenuFontPreview(requireContext(), sizeSp)
     }
 
     private fun setupColorPreference(
