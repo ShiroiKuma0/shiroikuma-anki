@@ -14,6 +14,17 @@
     <string name="pref_sk_menu_font_size_key">sk_menu_font_size</string>
     <string name="pref_sk_menu_show_header_key">sk_menu_show_header</string>
     <string name="pref_sk_menu_font_preview_key">sk_menu_font_preview</string>
+    <string name="pref_sk_menu_font_weight_key">sk_menu_font_weight</string>
+    <string name="pref_sk_deck_font_key">sk_deck_font</string>
+    <string name="pref_sk_deck_font_reset_key">sk_deck_font_reset</string>
+    <string name="pref_sk_deck_font_size_key">sk_deck_font_size</string>
+    <string name="pref_sk_deck_font_weight_key">sk_deck_font_weight</string>
+    <string name="pref_sk_deck_font_preview_key">sk_deck_font_preview</string>
+    <string name="pref_sk_settings_font_key">sk_settings_font</string>
+    <string name="pref_sk_settings_font_reset_key">sk_settings_font_reset</string>
+    <string name="pref_sk_settings_font_size_key">sk_settings_font_size</string>
+    <string name="pref_sk_settings_font_weight_key">sk_settings_font_weight</string>
+    <string name="pref_sk_settings_font_preview_key">sk_settings_font_preview</string>
     <string name="pref_sk_deck_name_color_key">sk_deck_name_color</string>
     <string name="pref_sk_toolbar_icon_color_key">sk_toolbar_icon_color</string>
     <string name="pref_sk_studied_today_color_key">sk_studied_today_color</string>
@@ -51,7 +62,10 @@
     <string name="sk_menu_font_reset">Reset font</string>
     <string name="sk_menu_font_reset_summary">Return to the system font</string>
     <string name="sk_menu_font_size">Text size</string>
+    <string name="sk_font_weight">Weight</string>
+    <string name="sk_zero_default">0 = default</string>
     <string name="sk_format_sp">%s sp</string>
+    <string name="sk_format_plain">%s</string>
 
     <string name="sk_menu_show_header">Show header image</string>
     <string name="sk_menu_show_header_summary">Show the picture above the menu items</string>

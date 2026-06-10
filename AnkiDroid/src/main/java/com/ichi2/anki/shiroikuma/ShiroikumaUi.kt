@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
+import android.os.Build
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextPaint
@@ -74,9 +75,9 @@ object ShiroikumaUi {
     const val DEFAULT_PANE_DIVIDER_WIDTH_DP = 1
 
     private const val FONT_DIR = "shiroikuma_fonts"
-    private const val MENU_FONT_FILE = "menu_font"
 
-    private var cachedMenuTypeface: Typeface? = null
+    /** Keyed by role (base family) and by "role:weight" (weight-styled) */
+    private val typefaceCache = mutableMapOf<String, Typeface>()
 
     fun color(
         context: Context,
@@ -89,12 +90,6 @@ object ShiroikumaUi {
         @StringRes keyRes: Int,
         color: Int,
     ) = context.sharedPrefs().edit { putInt(context.getString(keyRes), color) }
-
-    fun menuFontSizeSp(context: Context): Int =
-        context.sharedPrefs().getInt(
-            context.getString(R.string.pref_sk_menu_font_size_key),
-            DEFAULT_MENU_FONT_SIZE_SP,
-        )
 
     private fun showHeaderImage(context: Context): Boolean =
         context.sharedPrefs().getBoolean(context.getString(R.string.pref_sk_menu_show_header_key), true)
@@ -129,8 +124,8 @@ object ShiroikumaUi {
             navigationView.getHeaderView(0).isVisible = showHeaderImage(context)
         }
 
-        val typeface = menuTypeface(context)
-        val sizeSp = menuFontSizeSp(context)
+        val typeface = styledTypeface(context, ROLE_MENU)
+        val sizeSp = fontSizeSp(context, ROLE_MENU)
         val menu = navigationView.menu
         for (i in 0 until menu.size()) {
             applyItemStyle(menu.getItem(i), typeface, sizeSp)
@@ -234,13 +229,26 @@ object ShiroikumaUi {
         val iconColor = color(context, R.string.pref_sk_settings_icon_color_key, DEFAULT_SETTINGS_ICON)
         val toggleColor = color(context, R.string.pref_sk_settings_toggle_color_key, DEFAULT_SETTINGS_TOGGLE)
         val sliderColor = color(context, R.string.pref_sk_settings_slider_color_key, DEFAULT_SETTINGS_SLIDER)
+        val typeface = styledTypeface(context, ROLE_SETTINGS)
+        val titleSizeSp = fontSizeSp(context, ROLE_SETTINGS)
+        val titleSizePx =
+            if (titleSizeSp > 0) {
+                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, titleSizeSp.toFloat(), context.resources.displayMetrics)
+            } else {
+                0f
+            }
 
         fun styleChild(view: View) {
             view.findViewById<TextView>(android.R.id.title)?.let {
                 if (it.currentTextColor != titleColor) it.setTextColor(titleColor)
+                if (typeface != null && it.typeface !== typeface) it.typeface = typeface
+                if (titleSizePx > 0f && kotlin.math.abs(it.textSize - titleSizePx) > 0.5f) {
+                    it.setTextSize(TypedValue.COMPLEX_UNIT_PX, titleSizePx)
+                }
             }
             view.findViewById<TextView>(android.R.id.summary)?.let {
                 if (it.currentTextColor != summaryColor) it.setTextColor(summaryColor)
+                if (typeface != null && it.typeface !== typeface) it.typeface = typeface
             }
             // colour preference icons, except our own colour swatches
             view.findViewById<ImageView>(android.R.id.icon)?.let { icon ->
@@ -296,53 +304,122 @@ object ShiroikumaUi {
 
     fun settingsHeaderColor(context: Context): Int = color(context, R.string.pref_sk_settings_header_color_key, DEFAULT_SETTINGS_HEADER)
 
-    /** Sample line rendering the configured menu font, size and text colour */
-    fun buildMenuFontPreview(
-        context: Context,
-        sizeSp: Int = menuFontSizeSp(context),
-    ): CharSequence {
-        val text = SpannableString(context.getString(R.string.sk_menu_font_preview_text))
-        text.setSpan(AbsoluteSizeSpan(sizeSp, true), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
-        text.setSpan(
-            ForegroundColorSpan(color(context, R.string.pref_sk_menu_text_color_key, DEFAULT_MENU_TEXT)),
-            0,
-            text.length,
-            Spanned.SPAN_INCLUSIVE_INCLUSIVE,
-        )
-        menuTypeface(context)?.let {
-            text.setSpan(TypefaceSpanCompat(it), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+    // Font management — three roles, each with an external font file (SAF
+    // import), a text size and a weight: the drawer menu, the deck picker
+    // list, and the settings screens.
+
+    const val ROLE_MENU = "menu"
+    const val ROLE_DECK = "deck"
+    const val ROLE_SETTINGS = "settings"
+
+    val FONT_ROLES = listOf(ROLE_MENU, ROLE_DECK, ROLE_SETTINGS)
+
+    @StringRes
+    private fun fontNameKey(role: String): Int =
+        when (role) {
+            ROLE_DECK -> R.string.pref_sk_deck_font_key
+            ROLE_SETTINGS -> R.string.pref_sk_settings_font_key
+            else -> R.string.pref_sk_menu_font_key
         }
-        return text
-    }
 
-    // Font management
+    @StringRes
+    private fun fontSizeKey(role: String): Int =
+        when (role) {
+            ROLE_DECK -> R.string.pref_sk_deck_font_size_key
+            ROLE_SETTINGS -> R.string.pref_sk_settings_font_size_key
+            else -> R.string.pref_sk_menu_font_size_key
+        }
 
-    fun menuFontFile(context: Context): File = File(File(context.filesDir, FONT_DIR), MENU_FONT_FILE)
+    @StringRes
+    private fun fontWeightKey(role: String): Int =
+        when (role) {
+            ROLE_DECK -> R.string.pref_sk_deck_font_weight_key
+            ROLE_SETTINGS -> R.string.pref_sk_settings_font_weight_key
+            else -> R.string.pref_sk_menu_font_weight_key
+        }
 
-    fun menuFontName(context: Context): String? = context.sharedPrefs().getString(context.getString(R.string.pref_sk_menu_font_key), null)
+    /** 0 means "keep the default size", except for the menu, whose spans always need a concrete size */
+    fun fontSizeSp(
+        context: Context,
+        role: String,
+    ): Int =
+        context.sharedPrefs().getInt(
+            context.getString(fontSizeKey(role)),
+            if (role == ROLE_MENU) DEFAULT_MENU_FONT_SIZE_SP else 0,
+        )
 
-    fun menuTypeface(context: Context): Typeface? {
-        cachedMenuTypeface?.let { return it }
-        val file = menuFontFile(context)
+    /** 0 means "natural weight" */
+    fun fontWeight(
+        context: Context,
+        role: String,
+    ): Int = context.sharedPrefs().getInt(context.getString(fontWeightKey(role)), 0)
+
+    fun fontName(
+        context: Context,
+        role: String,
+    ): String? = context.sharedPrefs().getString(context.getString(fontNameKey(role)), null)
+
+    fun fontFile(
+        context: Context,
+        role: String,
+    ): File = File(File(context.filesDir, FONT_DIR), "${role}_font")
+
+    private fun baseTypeface(
+        context: Context,
+        role: String,
+    ): Typeface? {
+        typefaceCache[role]?.let { return it }
+        val file = fontFile(context, role)
         if (!file.exists()) return null
         return try {
-            Typeface.createFromFile(file).also { cachedMenuTypeface = it }
+            Typeface.createFromFile(file).also { typefaceCache[role] = it }
         } catch (e: Exception) {
-            Timber.w(e, "failed to load the menu font")
+            Timber.w(e, "failed to load the %s font", role)
             null
         }
+    }
+
+    /**
+     * The role's font family combined with its weight; `null` means "leave
+     * the system default". Cached so callers can identity-compare.
+     */
+    fun styledTypeface(
+        context: Context,
+        role: String,
+        weight: Int = fontWeight(context, role),
+    ): Typeface? {
+        val base = baseTypeface(context, role)
+        if (weight == 0) return base
+        val cacheKey = "$role:$weight"
+        typefaceCache[cacheKey]?.let { return it }
+        val baseOrDefault = base ?: Typeface.DEFAULT
+        val styled =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                Typeface.create(baseOrDefault, weight, false)
+            } else if (weight >= 600) {
+                Typeface.create(baseOrDefault, Typeface.BOLD)
+            } else {
+                baseOrDefault
+            }
+        typefaceCache[cacheKey] = styled
+        return styled
+    }
+
+    private fun invalidateFontCache(role: String) {
+        typefaceCache.keys.removeAll { it == role || it.startsWith("$role:") }
     }
 
     /**
      * Copies the picked font into internal storage and validates it loads.
      * @return whether the import succeeded
      */
-    fun importMenuFont(
+    fun importFont(
         context: Context,
         uri: Uri,
         displayName: String,
+        role: String,
     ): Boolean {
-        val target = menuFontFile(context)
+        val target = fontFile(context, role)
         try {
             target.parentFile?.mkdirs()
             context.contentResolver.openInputStream(uri)?.use { input ->
@@ -352,22 +429,47 @@ object ShiroikumaUi {
         } catch (e: Exception) {
             Timber.w(e, "failed to import font")
             target.delete()
-            cachedMenuTypeface = null
+            invalidateFontCache(role)
             return false
         }
-        cachedMenuTypeface = null
-        context.sharedPrefs().edit { putString(context.getString(R.string.pref_sk_menu_font_key), displayName) }
+        invalidateFontCache(role)
+        context.sharedPrefs().edit { putString(context.getString(fontNameKey(role)), displayName) }
         return true
     }
 
-    fun resetMenuFont(context: Context) {
-        menuFontFile(context).delete()
-        cachedMenuTypeface = null
-        context.sharedPrefs().edit { remove(context.getString(R.string.pref_sk_menu_font_key)) }
+    fun resetFont(
+        context: Context,
+        role: String,
+    ) {
+        fontFile(context, role).delete()
+        invalidateFontCache(role)
+        context.sharedPrefs().edit { remove(context.getString(fontNameKey(role))) }
+    }
+
+    /** Sample line rendering a role's font, size, weight and text colour */
+    fun buildFontPreview(
+        context: Context,
+        role: String,
+        sizeSp: Int = fontSizeSp(context, role),
+        weight: Int = fontWeight(context, role),
+    ): CharSequence {
+        val text = SpannableString(context.getString(R.string.sk_menu_font_preview_text))
+        text.setSpan(AbsoluteSizeSpan(if (sizeSp > 0) sizeSp else 16, true), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        val previewColor =
+            when (role) {
+                ROLE_DECK -> deckNameColor(context)
+                ROLE_SETTINGS -> color(context, R.string.pref_sk_settings_title_color_key, DEFAULT_SETTINGS_TITLE)
+                else -> color(context, R.string.pref_sk_menu_text_color_key, DEFAULT_MENU_TEXT)
+            }
+        text.setSpan(ForegroundColorSpan(previewColor), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        styledTypeface(context, role, weight)?.let {
+            text.setSpan(TypefaceSpanCompat(it), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        }
+        return text
     }
 
     fun resetAll(context: Context) {
-        resetMenuFont(context)
+        for (role in FONT_ROLES) resetFont(context, role)
         context.sharedPrefs().edit {
             for (keyRes in listOf(
                 R.string.pref_sk_menu_background_key,
@@ -376,6 +478,11 @@ object ShiroikumaUi {
                 R.string.pref_sk_menu_selected_color_key,
                 R.string.pref_sk_menu_selected_background_key,
                 R.string.pref_sk_menu_font_size_key,
+                R.string.pref_sk_menu_font_weight_key,
+                R.string.pref_sk_deck_font_size_key,
+                R.string.pref_sk_deck_font_weight_key,
+                R.string.pref_sk_settings_font_size_key,
+                R.string.pref_sk_settings_font_weight_key,
                 R.string.pref_sk_menu_show_header_key,
                 R.string.pref_sk_deck_name_color_key,
                 R.string.pref_sk_toolbar_icon_color_key,
