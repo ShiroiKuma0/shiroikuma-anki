@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager.OnPreferenceTreeClickListener
 import com.ichi2.anki.analytics.AnalyticsConstants
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.databinding.FragmentSettingsBinding
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.preferences.DialogFragmentProvider
 import dev.androidbroadcast.vbpd.viewBinding
 import timber.log.Timber
@@ -95,6 +96,8 @@ abstract class SettingsFragment :
             setTitle(title)
             setNavigationOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
         }
+        // Fork: 白い熊 暗記 UI — configurable settings text colours (yellow titles by default)
+        ShiroikumaUi.styleSettingsList(listView, requireContext())
     }
 
     override fun onCreatePreferences(
