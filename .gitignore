@@ -72,3 +72,7 @@ hs_err_pid*
 
 # Claude Code related
 /.claude/worktrees/
+
+# Fork: .agents/skills/build is a Claude Code skill, not build output
+!.agents/skills/build/
+!.agents/skills/build/**
