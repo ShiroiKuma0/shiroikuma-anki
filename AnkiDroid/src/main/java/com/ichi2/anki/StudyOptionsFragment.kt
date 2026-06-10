@@ -44,6 +44,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.ui.internationalization.sentenceCase
 import com.ichi2.anki.utils.doOnApplyWindowInsets
 import com.ichi2.anki.utils.ext.launchCollectionInLifecycleScope
@@ -196,6 +197,9 @@ class StudyOptionsFragment :
         buttonStart =
             studyOptionsView.findViewById<Button>(R.id.studyoptions_start).apply {
                 setOnClickListener(buttonClickListener)
+                // Fork: study button uses the 白い熊 暗記 UI colours
+                // (yellow border and text on black by default)
+                ShiroikumaUi.applyStudyButton(this as? com.google.android.material.button.MaterialButton)
             }
         totalNewCardsCount = studyOptionsView.findViewById(R.id.studyoptions_total_new_count)
         totalCardsCount = studyOptionsView.findViewById(R.id.studyoptions_total_count)
