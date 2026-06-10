@@ -198,6 +198,11 @@
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <Preference
+            android:key="@string/pref_sk_settings_slider_color_key"
+            android:title="@string/sk_settings_slider_color"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
             android:key="@string/pref_sk_settings_header_color_key"
             android:title="@string/sk_settings_header_color"
             android:layout="@layout/sk_preference_indented"

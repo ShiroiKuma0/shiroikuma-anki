@@ -32,6 +32,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.slider.Slider
 import com.ichi2.anki.R
 import com.ichi2.anki.common.preferences.sharedPrefs
 import timber.log.Timber
@@ -63,6 +64,7 @@ object ShiroikumaUi {
     const val DEFAULT_SETTINGS_SUMMARY = 0xFF9E9E9E.toInt()
     const val DEFAULT_SETTINGS_ICON = 0xFFFFFF00.toInt()
     const val DEFAULT_SETTINGS_TOGGLE = 0xFFFFFF00.toInt()
+    const val DEFAULT_SETTINGS_SLIDER = 0xFFFFFF00.toInt()
     const val DEFAULT_SETTINGS_HEADER = 0xFFFFFF00.toInt()
 
     const val DEFAULT_TOOLBAR_TITLE = 0xFFFFFF00.toInt()
@@ -217,9 +219,11 @@ object ShiroikumaUi {
     }
 
     /**
-     * Colours every preference row of a settings list as it binds: titles
-     * (including category headers), summaries, icons and toggles, each
-     * configurable.
+     * Colours every preference row of a settings list: titles (including
+     * category headers), summaries, icons, toggles and sliders, each
+     * configurable. Re-applied (change-guarded) on every draw, because
+     * preference rebinds — e.g. the header highlight in the split settings
+     * view — restore the theme colours after the row was already styled.
      */
     fun styleSettingsList(
         list: RecyclerView,
@@ -229,39 +233,63 @@ object ShiroikumaUi {
         val summaryColor = color(context, R.string.pref_sk_settings_summary_color_key, DEFAULT_SETTINGS_SUMMARY)
         val iconColor = color(context, R.string.pref_sk_settings_icon_color_key, DEFAULT_SETTINGS_ICON)
         val toggleColor = color(context, R.string.pref_sk_settings_toggle_color_key, DEFAULT_SETTINGS_TOGGLE)
+        val sliderColor = color(context, R.string.pref_sk_settings_slider_color_key, DEFAULT_SETTINGS_SLIDER)
+
+        fun styleChild(view: View) {
+            view.findViewById<TextView>(android.R.id.title)?.let {
+                if (it.currentTextColor != titleColor) it.setTextColor(titleColor)
+            }
+            view.findViewById<TextView>(android.R.id.summary)?.let {
+                if (it.currentTextColor != summaryColor) it.setTextColor(summaryColor)
+            }
+            // colour preference icons, except our own colour swatches
+            view.findViewById<ImageView>(android.R.id.icon)?.let { icon ->
+                if (icon.drawable !is GradientDrawable && icon.colorFilter == null) icon.setColorFilter(iconColor)
+            }
+            (view as? ViewGroup)?.let { tintWidgets(it, toggleColor, sliderColor) }
+        }
+
         list.addOnChildAttachStateChangeListener(
             object : RecyclerView.OnChildAttachStateChangeListener {
-                override fun onChildViewAttachedToWindow(view: View) {
-                    view.findViewById<TextView>(android.R.id.title)?.setTextColor(titleColor)
-                    view.findViewById<TextView>(android.R.id.summary)?.setTextColor(summaryColor)
-                    // colour preference icons, except our own colour swatches
-                    view.findViewById<ImageView>(android.R.id.icon)?.let { icon ->
-                        if (icon.drawable !is GradientDrawable) icon.setColorFilter(iconColor)
-                    }
-                    (view.findViewById<View>(android.R.id.widget_frame) as? ViewGroup)?.let { tintToggles(it, toggleColor) }
-                }
+                override fun onChildViewAttachedToWindow(view: View) = styleChild(view)
 
                 override fun onChildViewDetachedFromWindow(view: View) {}
             },
         )
+        list.viewTreeObserver.addOnPreDrawListener {
+            for (child in list.children) styleChild(child)
+            true
+        }
     }
 
-    private fun tintToggles(
+    private fun tintWidgets(
         root: ViewGroup,
-        color: Int,
+        toggleColor: Int,
+        sliderColor: Int,
     ) {
         for (child in root.children) {
             when (child) {
                 is SwitchCompat -> {
+                    if (child.tag == toggleColor) continue
+                    child.tag = toggleColor
                     val checkedStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-                    child.thumbTintList = ColorStateList(checkedStates, intArrayOf(color, 0xFFBDBDBD.toInt()))
+                    child.thumbTintList = ColorStateList(checkedStates, intArrayOf(toggleColor, 0xFFBDBDBD.toInt()))
                     child.trackTintList =
                         ColorStateList(
                             checkedStates,
-                            intArrayOf((color and 0x00FFFFFF) or 0x66000000, 0xFF616161.toInt()),
+                            intArrayOf((toggleColor and 0x00FFFFFF) or 0x66000000, 0xFF616161.toInt()),
                         )
                 }
-                is ViewGroup -> tintToggles(child, color)
+                is Slider -> {
+                    if (child.tag == sliderColor) continue
+                    child.tag = sliderColor
+                    val csl = ColorStateList.valueOf(sliderColor)
+                    child.thumbTintList = csl
+                    child.trackActiveTintList = csl
+                    child.trackInactiveTintList = ColorStateList.valueOf((sliderColor and 0x00FFFFFF) or 0x4D000000)
+                    child.haloTintList = ColorStateList.valueOf((sliderColor and 0x00FFFFFF) or 0x33000000)
+                }
+                is ViewGroup -> tintWidgets(child, toggleColor, sliderColor)
             }
         }
     }
@@ -359,6 +387,7 @@ object ShiroikumaUi {
                 R.string.pref_sk_settings_summary_color_key,
                 R.string.pref_sk_settings_icon_color_key,
                 R.string.pref_sk_settings_toggle_color_key,
+                R.string.pref_sk_settings_slider_color_key,
                 R.string.pref_sk_settings_header_color_key,
                 R.string.pref_sk_toolbar_title_color_key,
                 R.string.pref_sk_toolbar_subtitle_color_key,
@@ -383,13 +412,6 @@ object ShiroikumaUi {
         }
 
     fun toHex(color: Int): String = String.format("#%08X", color)
-
-    /** @return the parsed ARGB colour, or `null` if [text] is not a valid RRGGBB/AARRGGBB value */
-    fun parseColor(text: String): Int? {
-        val hex = text.trim().removePrefix("#")
-        if (!hex.matches(Regex("[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))) return null
-        return Color.parseColor("#${if (hex.length == 6) "FF$hex" else hex}")
-    }
 
     /** [android.text.style.TypefaceSpan] with a custom [Typeface] needs API 28; this works on every API */
     private class TypefaceSpanCompat(
