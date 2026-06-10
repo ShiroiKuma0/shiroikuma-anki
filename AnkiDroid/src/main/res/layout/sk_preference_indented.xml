@@ -9,7 +9,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:minHeight="52dp"
-    android:paddingStart="44dp"
+    android:paddingStart="88dp"
     android:paddingEnd="16dp"
     android:background="?android:attr/selectableItemBackground">
     <ImageView
