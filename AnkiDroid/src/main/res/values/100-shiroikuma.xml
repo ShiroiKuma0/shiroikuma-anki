@@ -20,6 +20,7 @@
     <string name="pref_sk_deck_font_size_key">sk_deck_font_size</string>
     <string name="pref_sk_deck_font_weight_key">sk_deck_font_weight</string>
     <string name="pref_sk_deck_font_preview_key">sk_deck_font_preview</string>
+    <string name="pref_sk_deck_row_padding_key">sk_deck_row_padding</string>
     <string name="pref_sk_settings_font_key">sk_settings_font</string>
     <string name="pref_sk_settings_font_reset_key">sk_settings_font_reset</string>
     <string name="pref_sk_settings_font_size_key">sk_settings_font_size</string>
@@ -105,6 +106,9 @@
     <string name="sk_sub_toolbar">Toolbar</string>
     <string name="sk_sub_study_button">Study button</string>
     <string name="sk_sub_pane_divider">Pane divider</string>
+    <string name="sk_sub_rows">Rows</string>
+    <string name="sk_deck_row_padding">Line padding</string>
+    <string name="sk_deck_row_padding_summary">0 = lines touch</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
