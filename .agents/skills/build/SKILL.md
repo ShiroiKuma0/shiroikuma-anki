@@ -23,15 +23,16 @@ Upstream scheme is `AbbCCtDD` (`A`=major, `bb`=minor, `CC`=maintenance, `t`=type
 `DD`=build). Upstream public releases always end `300`; the fork claims the `DD`
 digits as its build counter:
 
-- versionName: `<upstream>+<N>` — e.g. `2.24.0+1`, `2.24.0+2`, …
-- versionCode: `AbbCC3NN` — e.g. `22400301`, `22400302`, …
+- versionName: `<upstream>+<N>` — e.g. `2.25.0alpha1+1`, `2.25.0alpha1+2`, …
+- versionCode: upstream code `+N` — e.g. `22500102`, `22500103`, …
+  (on a public-release base, which ends `…300`, that is `AbbCC3NN`)
 - Both live in `defaultConfig` in `AnkiDroid/build.gradle`. Bump `N` by one for
-  each new build deployed to the device; reset to `+1` / `…01` after a rebase
-  onto a new upstream tag (the `upstream-new-version` skill does that).
+  each new build deployed to the device; reset to `+1` after a rebase onto a
+  new upstream base (the `upstream-new-version` skill does that).
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
-  digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322400301`.
+  digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500102`.
 
-Current base tag: **v2.24.0**.
+Current base: **upstream/main at v2.25.0alpha1** (last rebase 2026-06-10).
 
 ## Environment (export every run; not set in non-interactive shells)
 
