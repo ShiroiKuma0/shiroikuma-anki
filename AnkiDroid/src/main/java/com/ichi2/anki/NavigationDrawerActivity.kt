@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
@@ -25,6 +26,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.children
 import androidx.core.view.get
 import androidx.core.view.size
 import androidx.drawerlayout.widget.ClosableDrawerLayout
@@ -44,6 +46,9 @@ import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.anki.common.utils.android.HandlerUtils
 import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.libanki.CardId
+import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.preferences.ShiroikumaUiSettingsFragment
+import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.workarounds.FullDraggableContainerFix
 import com.ichi2.utils.IntentUtil
@@ -176,6 +181,18 @@ abstract class NavigationDrawerActivity(
 
             // Decide which action to take when the navigation button is tapped.
             toolbar.setNavigationOnClickListener { onNavigationPressed() }
+            // Fork: long-pressing the hamburger opens the 白い熊 暗記 UI page directly.
+            // The navigation ImageButton only exists after the toolbar is laid out.
+            toolbar.post {
+                val navButton =
+                    toolbar.children.filterIsInstance<ImageButton>().firstOrNull { it.drawable === toolbar.navigationIcon }
+                        ?: toolbar.children.filterIsInstance<ImageButton>().firstOrNull()
+                navButton?.setOnLongClickListener {
+                    Timber.i("long-pressed the navigation button: opening 白い熊 暗記 UI settings")
+                    openShiroikumaUiSettings()
+                    true
+                }
+            }
         }
         setupBackPressedCallbacks()
         // ActionBarDrawerToggle ties together the the proper interactions
@@ -214,6 +231,9 @@ abstract class NavigationDrawerActivity(
         }
         drawerToggle.isDrawerSlideAnimationEnabled = animationEnabled()
         drawerLayout.addDrawerListener(drawerToggle)
+
+        // Fork: style the drawer menu (yellow on black by default, configurable)
+        ShiroikumaUi.applyToNavigationDrawer(navigationView!!)
 
         enablePostShortcut(this)
         val intent = Intent("com.ichi2.widget.UPDATE_WIDGET").setClassName("com.ichi2.widget", "WidgetPermissionReceiver")
@@ -362,6 +382,11 @@ abstract class NavigationDrawerActivity(
                         openStatistics()
                     }
 
+                    R.id.nav_shiroikuma_ui -> {
+                        Timber.i("Navigating to 白い熊 暗記 UI settings")
+                        openShiroikumaUiSettings()
+                    }
+
                     R.id.nav_settings -> {
                         Timber.i("Navigating to settings")
                         openSettings()
@@ -404,6 +429,12 @@ abstract class NavigationDrawerActivity(
      */
     protected fun openSettings() {
         preferencesLauncher.navigate(PreferencesDestination.Root)
+    }
+
+    /** Fork: opens the 白い熊 暗記 UI settings page directly */
+    protected fun openShiroikumaUiSettings() {
+        val intent = PreferencesActivity.getIntent(this, ShiroikumaUiSettingsFragment::class)
+        preferencesLauncher.launch(intent)
     }
 
     // Override this to specify a specific card id
