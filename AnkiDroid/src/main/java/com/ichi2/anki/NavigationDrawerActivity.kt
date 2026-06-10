@@ -234,8 +234,10 @@ abstract class NavigationDrawerActivity(
         drawerToggle.isDrawerSlideAnimationEnabled = animationEnabled()
         drawerLayout.addDrawerListener(drawerToggle)
 
-        // Fork: style the drawer menu (yellow on black by default, configurable)
+        // Fork: style the drawer menu (yellow on black by default, configurable),
+        // and the hamburger icon with the toolbar icon colour
         ShiroikumaUi.applyToNavigationDrawer(navigationView!!)
+        drawerToggle.drawerArrowDrawable.color = ShiroikumaUi.toolbarIconColor(this)
 
         enablePostShortcut(this)
         val intent = Intent("com.ichi2.widget.UPDATE_WIDGET").setClassName("com.ichi2.widget", "WidgetPermissionReceiver")
