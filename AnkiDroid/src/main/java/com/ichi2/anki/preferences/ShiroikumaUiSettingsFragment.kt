@@ -30,9 +30,53 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     override val analyticsScreenNameConstant: String
         get() = "prefs.shiroikumaUi"
 
+    private data class FontGroup(
+        val role: String,
+        @StringRes val fontKey: Int,
+        @StringRes val resetKey: Int,
+        @StringRes val sizeKey: Int,
+        @StringRes val weightKey: Int,
+        @StringRes val previewKey: Int,
+    )
+
+    private val fontGroups =
+        listOf(
+            FontGroup(
+                ShiroikumaUi.ROLE_MENU,
+                R.string.pref_sk_menu_font_key,
+                R.string.pref_sk_menu_font_reset_key,
+                R.string.pref_sk_menu_font_size_key,
+                R.string.pref_sk_menu_font_weight_key,
+                R.string.pref_sk_menu_font_preview_key,
+            ),
+            FontGroup(
+                ShiroikumaUi.ROLE_DECK,
+                R.string.pref_sk_deck_font_key,
+                R.string.pref_sk_deck_font_reset_key,
+                R.string.pref_sk_deck_font_size_key,
+                R.string.pref_sk_deck_font_weight_key,
+                R.string.pref_sk_deck_font_preview_key,
+            ),
+            FontGroup(
+                ShiroikumaUi.ROLE_SETTINGS,
+                R.string.pref_sk_settings_font_key,
+                R.string.pref_sk_settings_font_reset_key,
+                R.string.pref_sk_settings_font_size_key,
+                R.string.pref_sk_settings_font_weight_key,
+                R.string.pref_sk_settings_font_preview_key,
+            ),
+        )
+
+    private fun group(role: String) = fontGroups.first { it.role == role }
+
+    /** Which role the open SAF picker is choosing a font file for */
+    private var pendingFontRole: String? = null
+
     private val fontPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) return@registerForActivityResult
+            val role = pendingFontRole
+            pendingFontRole = null
+            if (uri == null || role == null) return@registerForActivityResult
             val name =
                 try {
                     ContentResolverUtil.getFileName(requireContext().contentResolver, uri)
@@ -40,8 +84,9 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                     Timber.w(e, "could not obtain font file name")
                     "font"
                 }
-            if (ShiroikumaUi.importMenuFont(requireContext(), uri, name)) {
-                refreshFontSummary()
+            if (ShiroikumaUi.importFont(requireContext(), uri, name, role)) {
+                refreshFontSummary(role)
+                refreshFontPreview(role)
             } else {
                 showSnackbar(R.string.sk_font_import_failed)
             }
@@ -49,12 +94,16 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
     override fun initSubscreen() {
         setupColorPreference(R.string.pref_sk_menu_background_key, ShiroikumaUi.DEFAULT_MENU_BACKGROUND)
-        setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT, ::refreshFontPreview)
+        setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT) {
+            refreshFontPreview(ShiroikumaUi.ROLE_MENU)
+        }
         setupColorPreference(R.string.pref_sk_menu_icon_color_key, ShiroikumaUi.DEFAULT_MENU_ICON)
         setupColorPreference(R.string.pref_sk_menu_selected_color_key, ShiroikumaUi.DEFAULT_MENU_SELECTED)
         setupColorPreference(R.string.pref_sk_menu_selected_background_key, ShiroikumaUi.DEFAULT_MENU_SELECTED_BACKGROUND)
 
-        setupColorPreference(R.string.pref_sk_deck_name_color_key, ShiroikumaUi.DEFAULT_DECK_NAME)
+        setupColorPreference(R.string.pref_sk_deck_name_color_key, ShiroikumaUi.DEFAULT_DECK_NAME) {
+            refreshFontPreview(ShiroikumaUi.ROLE_DECK)
+        }
         setupColorPreference(R.string.pref_sk_studied_today_color_key, ShiroikumaUi.DEFAULT_STUDIED_TODAY)
         setupColorPreference(R.string.pref_sk_deck_detail_name_color_key, ShiroikumaUi.DEFAULT_DECK_DETAIL_NAME)
         setupColorPreference(R.string.pref_sk_toolbar_title_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_TITLE)
@@ -65,29 +114,16 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         setupColorPreference(R.string.pref_sk_study_background_key, ShiroikumaUi.DEFAULT_STUDY_BACKGROUND)
         setupColorPreference(R.string.pref_sk_pane_divider_color_key, ShiroikumaUi.DEFAULT_PANE_DIVIDER)
 
-        setupColorPreference(R.string.pref_sk_settings_title_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TITLE)
+        setupColorPreference(R.string.pref_sk_settings_title_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TITLE) {
+            refreshFontPreview(ShiroikumaUi.ROLE_SETTINGS)
+        }
         setupColorPreference(R.string.pref_sk_settings_summary_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SUMMARY)
         setupColorPreference(R.string.pref_sk_settings_icon_color_key, ShiroikumaUi.DEFAULT_SETTINGS_ICON)
         setupColorPreference(R.string.pref_sk_settings_toggle_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TOGGLE)
         setupColorPreference(R.string.pref_sk_settings_slider_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SLIDER)
         setupColorPreference(R.string.pref_sk_settings_header_color_key, ShiroikumaUi.DEFAULT_SETTINGS_HEADER)
 
-        refreshFontSummary()
-        refreshFontPreview()
-        requirePreference<Preference>(R.string.pref_sk_menu_font_key).setOnPreferenceClickListener {
-            fontPicker.launch(arrayOf("*/*"))
-            true
-        }
-        requirePreference<Preference>(R.string.pref_sk_menu_font_reset_key).setOnPreferenceClickListener {
-            ShiroikumaUi.resetMenuFont(requireContext())
-            refreshFontSummary()
-            refreshFontPreview()
-            true
-        }
-        requirePreference<Preference>(R.string.pref_sk_menu_font_size_key).setOnPreferenceChangeListener { _, newValue ->
-            refreshFontPreview(newValue as Int)
-            true
-        }
+        for (fontGroup in fontGroups) setupFontGroup(fontGroup)
 
         requirePreference<Preference>(R.string.pref_sk_reset_key).setOnPreferenceClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -107,22 +143,49 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         initSubscreen()
     }
 
-    private fun refreshFontSummary() {
-        requirePreference<Preference>(R.string.pref_sk_menu_font_key).summary =
-            ShiroikumaUi.menuFontName(requireContext())
+    private fun setupFontGroup(fontGroup: FontGroup) {
+        val role = fontGroup.role
+        refreshFontSummary(role)
+        refreshFontPreview(role)
+        requirePreference<Preference>(fontGroup.fontKey).setOnPreferenceClickListener {
+            pendingFontRole = role
+            fontPicker.launch(arrayOf("*/*"))
+            true
+        }
+        requirePreference<Preference>(fontGroup.resetKey).setOnPreferenceClickListener {
+            ShiroikumaUi.resetFont(requireContext(), role)
+            refreshFontSummary(role)
+            refreshFontPreview(role)
+            true
+        }
+        requirePreference<Preference>(fontGroup.sizeKey).setOnPreferenceChangeListener { _, newValue ->
+            refreshFontPreview(role, sizeSp = newValue as Int)
+            true
+        }
+        requirePreference<Preference>(fontGroup.weightKey).setOnPreferenceChangeListener { _, newValue ->
+            refreshFontPreview(role, weight = newValue as Int)
+            true
+        }
+    }
+
+    private fun refreshFontSummary(role: String) {
+        requirePreference<Preference>(group(role).fontKey).summary =
+            ShiroikumaUi.fontName(requireContext(), role)
                 ?: getString(R.string.sk_menu_font_summary_default)
     }
 
-    private fun refreshFontPreview() = refreshFontPreview(ShiroikumaUi.menuFontSizeSp(requireContext()))
-
-    private fun refreshFontPreview(sizeSp: Int) {
-        val preview = requirePreference<Preference>(R.string.pref_sk_menu_font_preview_key)
+    private fun refreshFontPreview(
+        role: String,
+        sizeSp: Int = ShiroikumaUi.fontSizeSp(requireContext(), role),
+        weight: Int = ShiroikumaUi.fontWeight(requireContext(), role),
+    ) {
+        val preview = requirePreference<Preference>(group(role).previewKey)
         // Preference.setTitle ignores a title whose characters are unchanged
         // (TextUtils.equals compares text only, not spans), so when just the
         // size/typeface/colour spans change the row would never re-render.
         // Clearing the title first forces the rebind.
         preview.title = null
-        preview.title = ShiroikumaUi.buildMenuFontPreview(requireContext(), sizeSp)
+        preview.title = ShiroikumaUi.buildFontPreview(requireContext(), role, sizeSp, weight)
     }
 
     private fun setupColorPreference(
