@@ -27,6 +27,13 @@
         android:key="@string/search_preference_key"
         app:textNoResults="@string/pref_search_no_results"/>
 
+    <!-- Fork: 白い熊 暗記 UI -->
+    <com.ichi2.preferences.HeaderPreference
+        android:fragment="com.ichi2.anki.preferences.ShiroikumaUiSettingsFragment"
+        android:key="@string/pref_shiroikuma_ui_screen_key"
+        android:title="@string/shiroikuma_ui_title"
+        android:icon="@drawable/ic_color_lens_white_24dp"/>
+
     <!--  General Preferences -->
     <com.ichi2.preferences.HeaderPreference
         android:fragment="com.ichi2.anki.preferences.GeneralSettingsFragment"

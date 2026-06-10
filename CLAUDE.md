@@ -25,6 +25,7 @@ Workflow: develop fork additions as a clean commit stack on `custom`; when upstr
 - Fork identity: applicationId, app label, fork versioning (`AnkiDroid/build.gradle`).
 - Fork docs and skills (`CLAUDE.md`, `.agents/skills/build`, `.agents/skills/upstream-new-version` — reached through upstream's `.claude/skills` symlink).
 - Video playback fix for `[sound:]` tags — upstream issue [#20668](https://github.com/ankidroid/Anki-Android/issues/20668), reported by 白い熊, unfixed upstream. Native fullscreen `VideoPlayerActivity` (restores pre-2.17 behavior), extension-only tag classification, play-button rendering for video. Check on every rebase whether upstream has fixed it; drop the commit if so.
+- 白い熊 暗記 UI page — colour/font management (`com.ichi2.anki.shiroikuma.ShiroikumaUi`, `ShiroikumaUiSettingsFragment`, `res/xml/preferences_shiroikuma_ui.xml`, strings in `res/values/100-shiroikuma.xml`). The navigation drawer is yellow on black by default and fully configurable: colours (background/text/icons/selected), external menu font (ttf/otf via SAF, stored under `filesDir/shiroikuma_fonts/`), text size, header visibility. Reached from Settings, a drawer entry above Settings, and long-pressing the toolbar hamburger.
 
 ## Commands
 
