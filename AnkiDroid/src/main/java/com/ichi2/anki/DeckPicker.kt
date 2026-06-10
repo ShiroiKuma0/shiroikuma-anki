@@ -745,10 +745,14 @@ open class DeckPicker :
 
         fun onStudiedTodayChanged(studiedToday: String) {
             deckPickerBinding.reviewSummaryTextView.text = studiedToday
-            // Fork: studied-today line uses the 白い熊 暗記 UI colour (yellow by default)
+            // Fork: studied-today line uses the 白い熊 暗記 UI colour (yellow by
+            // default) and the deck picker font family/weight
             deckPickerBinding.reviewSummaryTextView.setTextColor(
                 ShiroikumaUi.studiedTodayColor(deckPickerBinding.reviewSummaryTextView.context),
             )
+            ShiroikumaUi
+                .styledTypeface(deckPickerBinding.reviewSummaryTextView.context, ShiroikumaUi.ROLE_DECK)
+                ?.let { deckPickerBinding.reviewSummaryTextView.typeface = it }
             // Adjust bottom margin of fabLinearLayout based on reviewSummaryTextView height
             deckPickerBinding.reviewSummaryTextView.doOnLayout { view ->
                 val layoutParams = floatingActionButtonBinding.fabLinearLayout.layoutParams as MarginLayoutParams

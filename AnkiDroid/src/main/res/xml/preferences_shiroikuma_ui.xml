@@ -65,6 +65,15 @@
             android:valueTo="30"
             android:stepSize="1"
             app:displayFormat="@string/sk_format_sp"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_menu_font_weight_key"
+            android:title="@string/sk_font_weight"
+            android:summary="@string/sk_zero_default"
+            android:defaultValue="0"
+            android:valueFrom="0"
+            android:valueTo="900"
+            android:stepSize="100"
+            app:displayFormat="@string/sk_format_plain"/>
         <Preference
             android:key="@string/pref_sk_menu_font_preview_key"
             android:layout="@layout/sk_preference_indented"
@@ -106,6 +115,46 @@
             android:title="@string/sk_deck_detail_name_color"
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
+
+        <Preference
+            android:title="@string/sk_sub_font"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_deck_font_key"
+            android:title="@string/sk_menu_font"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_deck_font_reset_key"
+            android:title="@string/sk_menu_font_reset"
+            android:summary="@string/sk_menu_font_reset_summary"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_deck_font_size_key"
+            android:title="@string/sk_menu_font_size"
+            android:summary="@string/sk_zero_default"
+            android:defaultValue="0"
+            android:valueFrom="0"
+            android:valueTo="30"
+            android:stepSize="1"
+            app:displayFormat="@string/sk_format_sp"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_deck_font_weight_key"
+            android:title="@string/sk_font_weight"
+            android:summary="@string/sk_zero_default"
+            android:defaultValue="0"
+            android:valueFrom="0"
+            android:valueTo="900"
+            android:stepSize="100"
+            app:displayFormat="@string/sk_format_plain"/>
+        <Preference
+            android:key="@string/pref_sk_deck_font_preview_key"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"
+            android:selectable="false"/>
 
         <Preference
             android:title="@string/sk_sub_toolbar"
@@ -207,6 +256,46 @@
             android:title="@string/sk_settings_header_color"
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
+
+        <Preference
+            android:title="@string/sk_sub_font"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_font_key"
+            android:title="@string/sk_menu_font"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_settings_font_reset_key"
+            android:title="@string/sk_menu_font_reset"
+            android:summary="@string/sk_menu_font_reset_summary"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_settings_font_size_key"
+            android:title="@string/sk_menu_font_size"
+            android:summary="@string/sk_zero_default"
+            android:defaultValue="0"
+            android:valueFrom="0"
+            android:valueTo="30"
+            android:stepSize="1"
+            app:displayFormat="@string/sk_format_sp"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_settings_font_weight_key"
+            android:title="@string/sk_font_weight"
+            android:summary="@string/sk_zero_default"
+            android:defaultValue="0"
+            android:valueFrom="0"
+            android:valueTo="900"
+            android:stepSize="100"
+            app:displayFormat="@string/sk_format_plain"/>
+        <Preference
+            android:key="@string/pref_sk_settings_font_preview_key"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"
+            android:selectable="false"/>
     </PreferenceCategory>
 
     <PreferenceCategory
