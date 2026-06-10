@@ -3,11 +3,22 @@
 
     <style name="Theme.AnkiDroid.Launcher">
         <item name="android:windowBackground">@drawable/launch_screen</item>
-        <item name="android:colorBackground">@color/material_theme_grey</item>
-        <item name="android:statusBarColor">#3d3d3d</item>
-        <item name="android:navigationBarColor">@color/material_theme_grey</item>
+        <!-- Fork: black around the black launch screen (upstream: grey) -->
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <!-- Fork: black Android 12+ system splash with the traced launcher icon -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher</item>
+    </style>
+
+    <!-- Fork: IntentHandler is the LAUNCHER activity; its theme drives the
+         Android 12+ cold-start splash, which must be black with our icon -->
+    <style name="Theme_IntentHandler" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@mipmap/ic_launcher</item>
     </style>
 
     <style name="Animation.Translucent" parent="@android:style/Animation.Translucent">

@@ -22,6 +22,14 @@
     <string name="pref_sk_study_background_key">sk_study_background</string>
     <string name="pref_sk_settings_title_color_key">sk_settings_title_color</string>
     <string name="pref_sk_settings_summary_color_key">sk_settings_summary_color</string>
+    <string name="pref_sk_toolbar_title_color_key">sk_toolbar_title_color</string>
+    <string name="pref_sk_toolbar_subtitle_color_key">sk_toolbar_subtitle_color</string>
+    <string name="pref_sk_deck_detail_name_color_key">sk_deck_detail_name_color</string>
+    <string name="pref_sk_pane_divider_color_key">sk_pane_divider_color</string>
+    <string name="pref_sk_pane_divider_width_key">sk_pane_divider_width</string>
+    <string name="pref_sk_settings_icon_color_key">sk_settings_icon_color</string>
+    <string name="pref_sk_settings_toggle_color_key">sk_settings_toggle_color</string>
+    <string name="pref_sk_settings_header_color_key">sk_settings_header_color</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
     <!-- Page -->
@@ -60,6 +68,27 @@
     <string name="sk_cat_settings">Settings — colours</string>
     <string name="sk_settings_title_color">Titles</string>
     <string name="sk_settings_summary_color">Secondary text</string>
+    <string name="sk_settings_icon_color">Icons</string>
+    <string name="sk_settings_toggle_color">Toggles</string>
+    <string name="sk_settings_header_color">Screen headers</string>
+
+    <string name="sk_toolbar_title_color">Toolbar title</string>
+    <string name="sk_toolbar_subtitle_color">Cards-due line</string>
+    <string name="sk_deck_detail_name_color">Deck name (right pane)</string>
+    <string name="sk_pane_divider_color">Pane divider</string>
+    <string name="sk_pane_divider_width">Pane divider width</string>
+    <string name="sk_format_dp">%s dp</string>
+
+    <!-- Section / subheading titles for the reorganized page -->
+    <string name="sk_section_menu">Menu</string>
+    <string name="sk_section_deck_picker">Deck picker</string>
+    <string name="sk_section_settings">Settings</string>
+    <string name="sk_sub_colours">Colours</string>
+    <string name="sk_sub_font">Font</string>
+    <string name="sk_sub_header">Header</string>
+    <string name="sk_sub_toolbar">Toolbar</string>
+    <string name="sk_sub_study_button">Study button</string>
+    <string name="sk_sub_pane_divider">Pane divider</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>

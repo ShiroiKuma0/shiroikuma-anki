@@ -21,9 +21,13 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.StringRes
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.edit
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -57,6 +61,15 @@ object ShiroikumaUi {
     const val DEFAULT_STUDY_BACKGROUND = 0xFF000000.toInt()
     const val DEFAULT_SETTINGS_TITLE = 0xFFFFFF00.toInt()
     const val DEFAULT_SETTINGS_SUMMARY = 0xFF9E9E9E.toInt()
+    const val DEFAULT_SETTINGS_ICON = 0xFFFFFF00.toInt()
+    const val DEFAULT_SETTINGS_TOGGLE = 0xFFFFFF00.toInt()
+    const val DEFAULT_SETTINGS_HEADER = 0xFFFFFF00.toInt()
+
+    const val DEFAULT_TOOLBAR_TITLE = 0xFFFFFF00.toInt()
+    const val DEFAULT_TOOLBAR_SUBTITLE = 0xFF81D4FA.toInt() // light blue
+    const val DEFAULT_DECK_DETAIL_NAME = 0xFF000000.toInt()
+    const val DEFAULT_PANE_DIVIDER = 0xFFFFFF00.toInt()
+    const val DEFAULT_PANE_DIVIDER_WIDTH_DP = 1
 
     private const val FONT_DIR = "shiroikuma_fonts"
     private const val MENU_FONT_FILE = "menu_font"
@@ -169,9 +182,44 @@ object ShiroikumaUi {
 
     fun studiedTodayColor(context: Context): Int = color(context, R.string.pref_sk_studied_today_color_key, DEFAULT_STUDIED_TODAY)
 
+    fun deckDetailNameColor(context: Context): Int = color(context, R.string.pref_sk_deck_detail_name_color_key, DEFAULT_DECK_DETAIL_NAME)
+
+    /** Toolbar title (app name) and subtitle (cards due) colours */
+    fun applyToolbarTitleColors(toolbar: androidx.appcompat.widget.Toolbar?) {
+        if (toolbar == null) return
+        val context = toolbar.context
+        toolbar.setTitleTextColor(color(context, R.string.pref_sk_toolbar_title_color_key, DEFAULT_TOOLBAR_TITLE))
+        toolbar.setSubtitleTextColor(color(context, R.string.pref_sk_toolbar_subtitle_color_key, DEFAULT_TOOLBAR_SUBTITLE))
+    }
+
+    fun paneDividerWidthDp(context: Context): Int =
+        context.sharedPrefs().getInt(context.getString(R.string.pref_sk_pane_divider_width_key), DEFAULT_PANE_DIVIDER_WIDTH_DP)
+
+    /**
+     * Styles the deck picker pane divider: configurable colour and width in
+     * dp, 0 hiding it entirely (it then no longer works as a drag handle).
+     */
+    fun applyPaneDivider(divider: View?) {
+        if (divider == null) return
+        val context = divider.context
+        val widthDp = paneDividerWidthDp(context)
+        if (widthDp == 0) {
+            divider.isVisible = false
+            return
+        }
+        divider.layoutParams =
+            divider.layoutParams.apply {
+                width = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthDp.toFloat(), context.resources.displayMetrics).toInt()
+            }
+        val color = color(context, R.string.pref_sk_pane_divider_color_key, DEFAULT_PANE_DIVIDER)
+        divider.setBackgroundColor(color)
+        divider.findViewById<View>(R.id.divider_handle)?.backgroundTintList = ColorStateList.valueOf(color)
+    }
+
     /**
      * Colours every preference row of a settings list as it binds: titles
-     * (including category headers) and summaries, each configurable.
+     * (including category headers), summaries, icons and toggles, each
+     * configurable.
      */
     fun styleSettingsList(
         list: RecyclerView,
@@ -179,17 +227,46 @@ object ShiroikumaUi {
     ) {
         val titleColor = color(context, R.string.pref_sk_settings_title_color_key, DEFAULT_SETTINGS_TITLE)
         val summaryColor = color(context, R.string.pref_sk_settings_summary_color_key, DEFAULT_SETTINGS_SUMMARY)
+        val iconColor = color(context, R.string.pref_sk_settings_icon_color_key, DEFAULT_SETTINGS_ICON)
+        val toggleColor = color(context, R.string.pref_sk_settings_toggle_color_key, DEFAULT_SETTINGS_TOGGLE)
         list.addOnChildAttachStateChangeListener(
             object : RecyclerView.OnChildAttachStateChangeListener {
                 override fun onChildViewAttachedToWindow(view: View) {
                     view.findViewById<TextView>(android.R.id.title)?.setTextColor(titleColor)
                     view.findViewById<TextView>(android.R.id.summary)?.setTextColor(summaryColor)
+                    // colour preference icons, except our own colour swatches
+                    view.findViewById<ImageView>(android.R.id.icon)?.let { icon ->
+                        if (icon.drawable !is GradientDrawable) icon.setColorFilter(iconColor)
+                    }
+                    (view.findViewById<View>(android.R.id.widget_frame) as? ViewGroup)?.let { tintToggles(it, toggleColor) }
                 }
 
                 override fun onChildViewDetachedFromWindow(view: View) {}
             },
         )
     }
+
+    private fun tintToggles(
+        root: ViewGroup,
+        color: Int,
+    ) {
+        for (child in root.children) {
+            when (child) {
+                is SwitchCompat -> {
+                    val checkedStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+                    child.thumbTintList = ColorStateList(checkedStates, intArrayOf(color, 0xFFBDBDBD.toInt()))
+                    child.trackTintList =
+                        ColorStateList(
+                            checkedStates,
+                            intArrayOf((color and 0x00FFFFFF) or 0x66000000, 0xFF616161.toInt()),
+                        )
+                }
+                is ViewGroup -> tintToggles(child, color)
+            }
+        }
+    }
+
+    fun settingsHeaderColor(context: Context): Int = color(context, R.string.pref_sk_settings_header_color_key, DEFAULT_SETTINGS_HEADER)
 
     /** Sample line rendering the configured menu font, size and text colour */
     fun buildMenuFontPreview(
@@ -280,6 +357,14 @@ object ShiroikumaUi {
                 R.string.pref_sk_study_background_key,
                 R.string.pref_sk_settings_title_color_key,
                 R.string.pref_sk_settings_summary_color_key,
+                R.string.pref_sk_settings_icon_color_key,
+                R.string.pref_sk_settings_toggle_color_key,
+                R.string.pref_sk_settings_header_color_key,
+                R.string.pref_sk_toolbar_title_color_key,
+                R.string.pref_sk_toolbar_subtitle_color_key,
+                R.string.pref_sk_deck_detail_name_color_key,
+                R.string.pref_sk_pane_divider_color_key,
+                R.string.pref_sk_pane_divider_width_key,
             )) {
                 remove(context.getString(keyRes))
             }
