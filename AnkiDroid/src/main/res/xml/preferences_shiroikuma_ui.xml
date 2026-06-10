@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork: the 白い熊 暗記 UI page — colour and font management for the app UI. -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/shiroikuma_ui_title"
+    android:key="@string/pref_shiroikuma_ui_screen_key">
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_menu_colours">
+        <Preference
+            android:key="@string/pref_sk_menu_background_key"
+            android:title="@string/sk_menu_background"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_menu_text_color_key"
+            android:title="@string/sk_menu_text_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_menu_icon_color_key"
+            android:title="@string/sk_menu_icon_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_menu_selected_color_key"
+            android:title="@string/sk_menu_selected_color"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_menu_selected_background_key"
+            android:title="@string/sk_menu_selected_background"
+            android:persistent="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_menu_font">
+        <Preference
+            android:key="@string/pref_sk_menu_font_key"
+            android:title="@string/sk_menu_font"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_menu_font_reset_key"
+            android:title="@string/sk_menu_font_reset"
+            android:summary="@string/sk_menu_font_reset_summary"
+            android:persistent="false"/>
+        <com.ichi2.preferences.SliderPreference
+            android:key="@string/pref_sk_menu_font_size_key"
+            android:title="@string/sk_menu_font_size"
+            android:defaultValue="14"
+            android:valueFrom="10"
+            android:valueTo="30"
+            android:stepSize="1"
+            app:displayFormat="@string/sk_format_sp"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_menu_header">
+        <SwitchPreferenceCompat
+            android:key="@string/pref_sk_menu_show_header_key"
+            android:defaultValue="true"
+            android:title="@string/sk_menu_show_header"
+            android:summary="@string/sk_menu_show_header_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sk_cat_reset">
+        <Preference
+            android:key="@string/pref_sk_reset_key"
+            android:title="@string/sk_reset_all"
+            android:summary="@string/sk_reset_all_summary"
+            android:persistent="false"/>
+    </PreferenceCategory>
+</PreferenceScreen>
