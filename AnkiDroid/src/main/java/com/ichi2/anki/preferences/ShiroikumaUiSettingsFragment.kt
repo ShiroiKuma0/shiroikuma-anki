@@ -51,14 +51,21 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         setupColorPreference(R.string.pref_sk_menu_selected_background_key, ShiroikumaUi.DEFAULT_MENU_SELECTED_BACKGROUND)
 
         setupColorPreference(R.string.pref_sk_deck_name_color_key, ShiroikumaUi.DEFAULT_DECK_NAME)
-        setupColorPreference(R.string.pref_sk_toolbar_icon_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_ICON)
         setupColorPreference(R.string.pref_sk_studied_today_color_key, ShiroikumaUi.DEFAULT_STUDIED_TODAY)
+        setupColorPreference(R.string.pref_sk_deck_detail_name_color_key, ShiroikumaUi.DEFAULT_DECK_DETAIL_NAME)
+        setupColorPreference(R.string.pref_sk_toolbar_title_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_TITLE)
+        setupColorPreference(R.string.pref_sk_toolbar_subtitle_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_SUBTITLE)
+        setupColorPreference(R.string.pref_sk_toolbar_icon_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_ICON)
         setupColorPreference(R.string.pref_sk_study_text_color_key, ShiroikumaUi.DEFAULT_STUDY_TEXT)
         setupColorPreference(R.string.pref_sk_study_border_color_key, ShiroikumaUi.DEFAULT_STUDY_BORDER)
         setupColorPreference(R.string.pref_sk_study_background_key, ShiroikumaUi.DEFAULT_STUDY_BACKGROUND)
+        setupColorPreference(R.string.pref_sk_pane_divider_color_key, ShiroikumaUi.DEFAULT_PANE_DIVIDER)
 
         setupColorPreference(R.string.pref_sk_settings_title_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TITLE)
         setupColorPreference(R.string.pref_sk_settings_summary_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SUMMARY)
+        setupColorPreference(R.string.pref_sk_settings_icon_color_key, ShiroikumaUi.DEFAULT_SETTINGS_ICON)
+        setupColorPreference(R.string.pref_sk_settings_toggle_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TOGGLE)
+        setupColorPreference(R.string.pref_sk_settings_header_color_key, ShiroikumaUi.DEFAULT_SETTINGS_HEADER)
 
         refreshFontSummary()
         refreshFontPreview()
