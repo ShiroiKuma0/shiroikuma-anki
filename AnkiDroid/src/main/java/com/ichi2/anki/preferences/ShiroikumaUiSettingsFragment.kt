@@ -3,9 +3,13 @@
 package com.ichi2.anki.preferences
 
 import android.annotation.SuppressLint
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
-import android.widget.EditText
-import android.widget.FrameLayout
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.preference.Preference
@@ -65,6 +69,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         setupColorPreference(R.string.pref_sk_settings_summary_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SUMMARY)
         setupColorPreference(R.string.pref_sk_settings_icon_color_key, ShiroikumaUi.DEFAULT_SETTINGS_ICON)
         setupColorPreference(R.string.pref_sk_settings_toggle_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TOGGLE)
+        setupColorPreference(R.string.pref_sk_settings_slider_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SLIDER)
         setupColorPreference(R.string.pref_sk_settings_header_color_key, ShiroikumaUi.DEFAULT_SETTINGS_HEADER)
 
         refreshFontSummary()
@@ -136,39 +141,101 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         }
     }
 
-    @SuppressLint("CheckResult")
+    /** Colour picker: four RGBA sliders with a live preview swatch */
+    @SuppressLint("CheckResult", "SetTextI18n")
     private fun showColorDialog(
         @StringRes keyRes: Int,
         default: Int,
         onChanged: () -> Unit,
     ) {
         val context = requireContext()
-        val input =
-            EditText(context).apply {
-                setText(ShiroikumaUi.toHex(ShiroikumaUi.color(context, keyRes, default)).removePrefix("#"))
-                hint = getString(R.string.sk_color_dialog_hint)
+        val initial = ShiroikumaUi.color(context, keyRes, default)
+        val channels = intArrayOf(Color.red(initial), Color.green(initial), Color.blue(initial), Color.alpha(initial))
+
+        fun dp(value: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), resources.displayMetrics).toInt()
+
+        fun current() = Color.argb(channels[3], channels[0], channels[1], channels[2])
+
+        val preview =
+            TextView(context).apply {
+                gravity = Gravity.CENTER
+                textSize = 14f
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(12) }
             }
-        // give the EditText the dialog's standard horizontal padding
+
+        fun refreshPreview() {
+            val color = current()
+            preview.background =
+                GradientDrawable().apply {
+                    cornerRadius = dp(6).toFloat()
+                    setColor(color)
+                    setStroke(2, 0xFF888888.toInt())
+                }
+            preview.text = ShiroikumaUi.toHex(color)
+            // readable hex on any colour: black text on light, white on dark
+            val luminance = Color.red(color) * 0.299 + Color.green(color) * 0.587 + Color.blue(color) * 0.114
+            preview.setTextColor(if (luminance > 128) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+        }
+        refreshPreview()
+
         val container =
-            FrameLayout(context).apply {
-                val padding =
-                    TypedValue
-                        .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics)
-                        .toInt()
-                setPadding(padding, 0, padding, 0)
-                addView(input)
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(24), dp(8), dp(24), 0)
+                addView(preview)
+                for ((index, label) in listOf("R", "G", "B", "A").withIndex()) {
+                    val valueText =
+                        TextView(context).apply {
+                            text = channels[index].toString()
+                            minWidth = dp(36)
+                            gravity = Gravity.END
+                        }
+                    val seekBar =
+                        SeekBar(context).apply {
+                            max = 255
+                            progress = channels[index]
+                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                            setOnSeekBarChangeListener(
+                                object : SeekBar.OnSeekBarChangeListener {
+                                    override fun onProgressChanged(
+                                        seekBar: SeekBar?,
+                                        progress: Int,
+                                        fromUser: Boolean,
+                                    ) {
+                                        channels[index] = progress
+                                        valueText.text = progress.toString()
+                                        refreshPreview()
+                                    }
+
+                                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+                                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                                },
+                            )
+                        }
+                    addView(
+                        LinearLayout(context).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            addView(
+                                TextView(context).apply {
+                                    text = label
+                                    minWidth = dp(24)
+                                },
+                            )
+                            addView(seekBar)
+                            addView(valueText)
+                        },
+                    )
+                }
             }
+
         MaterialAlertDialogBuilder(context)
             .setTitle(requirePreference<Preference>(keyRes).title)
             .setView(container)
             .setPositiveButton(R.string.dialog_ok) { _, _ ->
-                val color = ShiroikumaUi.parseColor(input.text.toString())
-                if (color == null) {
-                    showSnackbar(R.string.sk_color_invalid)
-                } else {
-                    ShiroikumaUi.setColor(context, keyRes, color)
-                    onChanged()
-                }
+                ShiroikumaUi.setColor(context, keyRes, current())
+                onChanged()
             }.setNeutralButton(R.string.sk_default) { _, _ ->
                 ShiroikumaUi.setColor(context, keyRes, default)
                 onChanged()
