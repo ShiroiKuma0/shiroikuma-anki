@@ -526,6 +526,10 @@ open class DeckPicker :
         setupEdgeToEdge()
         title = resources.getString(R.string.app_name)
 
+        // Fork: 白い熊 暗記 UI — toolbar title/subtitle colours and the pane divider
+        ShiroikumaUi.applyToolbarTitleColors(findViewById(R.id.toolbar))
+        ShiroikumaUi.applyPaneDivider(binding.resizingDivider)
+
         deckPickerBinding.deckPickerContent.visibility = View.GONE
         deckPickerBinding.noDecksPlaceholder.visibility = View.GONE
 
@@ -784,7 +788,8 @@ open class DeckPicker :
         }
 
         fun onResizingDividerVisibilityChanged(isVisible: Boolean) {
-            binding.resizingDivider?.isVisible = isVisible
+            // Fork: width 0 in the 白い熊 暗記 UI page means no divider at all
+            binding.resizingDivider?.isVisible = isVisible && ShiroikumaUi.paneDividerWidthDp(this@DeckPicker) > 0
         }
 
         fun onCardsDueChanged(dueCount: Int?) {
@@ -1303,6 +1308,9 @@ open class DeckPicker :
                     .replaceBadge(provider)
             }
         }
+        // Fork: the sync icon lives in a custom action view, so the menu-item
+        // tinting in onCreateOptionsMenu does not reach it
+        provider.icon?.setTint(ShiroikumaUi.toolbarIconColor(this))
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
