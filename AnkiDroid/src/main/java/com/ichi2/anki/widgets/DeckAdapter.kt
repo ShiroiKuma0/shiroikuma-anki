@@ -203,6 +203,7 @@ class DeckAdapter(
         binding.deckName.minHeight = 0
         binding.deckExpander.minimumHeight = 0
         binding.indentView.minimumHeight = 0
+        binding.countsLayout.minimumHeight = 0
         binding.deckExpander.updatePadding(top = 0, bottom = 0)
         binding.deckLayout.updatePadding(top = skRowVerticalPaddingPx, bottom = skRowVerticalPaddingPx)
 
