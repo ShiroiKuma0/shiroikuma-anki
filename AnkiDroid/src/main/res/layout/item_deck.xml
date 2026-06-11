@@ -38,7 +38,8 @@
             android:minWidth="48dp"
             android:padding="12dp"
             android:background="?attr/selectableItemBackgroundBorderless" />
-        <com.ichi2.ui.FixedTextView
+        <!-- Fork: height capped near the glyph box so line padding 0 lets rows touch -->
+        <com.ichi2.anki.shiroikuma.TightLineTextView
             android:id="@+id/deck_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
