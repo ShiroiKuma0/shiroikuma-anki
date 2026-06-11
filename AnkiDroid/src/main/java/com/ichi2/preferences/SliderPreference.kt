@@ -55,7 +55,7 @@ import com.ichi2.anki.utils.getFormattedStringOrPlurals
  *       `displayValue` is always true if a `displayFormat` is provided.
  */
 @NeedsTest("onTouchListener is only called once")
-class SliderPreference(
+open class SliderPreference( // Fork: open for SliderPreferenceTest
     context: Context,
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs) {
@@ -123,7 +123,11 @@ class SliderPreference(
     ): Any = a.getInt(index, valueFrom)
 
     override fun onSetInitialValue(defaultValue: Any?) {
-        value = getPersistedInt(defaultValue as Int? ?: valueFrom)
+        // Fork: clamp instead of letting the strict setter throw. A bug in
+        // setOnSliderTouchListenerOnce (fixed below) could persist another
+        // slider's value under this key; an out-of-range value then crashed
+        // every open of the screen.
+        value = getPersistedInt(defaultValue as Int? ?: valueFrom).coerceIn(valueFrom, valueTo)
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
@@ -169,17 +173,25 @@ class SliderPreference(
 
     companion object {
         /**
-         * [Slider] has no easy means of de-duplicating listeners
-         * If a listener has already been added using this method. This does nothing
-         * @see [Slider.addOnSliderTouchListener]
+         * [Slider] has no easy means of de-duplicating listeners, so the
+         * currently attached listener is remembered in a tag.
+         *
+         * Fork fix: the RecyclerView recycles slider rows between different
+         * [SliderPreference]s, so "add only once per view" kept the FIRST
+         * preference's listener forever — dragging a recycled slider then
+         * persisted the value under the wrong preference's key (and an
+         * out-of-range value crashed the screen on the next open). Replace a
+         * stale listener instead of skipping.
          *
          * @param listener A [Slider.OnSliderTouchListener].
-         * Must not use method-level state, as this method does not replace the listener
+         * Must not use method-level state: it is identity-compared for de-duplication
          */
         private fun Slider.setOnSliderTouchListenerOnce(listener: Slider.OnSliderTouchListener) {
-            if (this.getTag(R.id.tag_slider_listener_set) != null) return
+            val previous = this.getTag(R.id.tag_slider_listener_set) as? Slider.OnSliderTouchListener
+            if (previous === listener) return
+            previous?.let { this.removeOnSliderTouchListener(it) }
             this.addOnSliderTouchListener(listener)
-            this.setTag(R.id.tag_slider_listener_set, "set")
+            this.setTag(R.id.tag_slider_listener_set, listener)
         }
     }
 }
