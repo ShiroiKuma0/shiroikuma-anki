@@ -67,7 +67,6 @@ class DeckAdapter(
     private val deckNameDynColor: Int
     private val skDeckTypeface: android.graphics.Typeface?
     private val skDeckFontSizeSp: Int
-    private val skExpanderVerticalPaddingPx: Int
     private val skRowVerticalPaddingPx: Int
     private val expandImage: Drawable
     private val collapseImage: Drawable
@@ -177,9 +176,14 @@ class DeckAdapter(
         if (skDeckFontSizeSp > 0) {
             binding.deckName.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, skDeckFontSizeSp.toFloat())
         }
-        // Fork: configurable row padding (0 = rows touch)
+        // Fork: configurable row padding (0 = rows touch). Every implicit
+        // 48dp minimum must go: the deck name's minHeight, the ImageButton
+        // style minHeight on expander/indent, and the expander's vertical
+        // touch padding.
         binding.deckName.minHeight = 0
-        binding.deckExpander.updatePadding(top = skExpanderVerticalPaddingPx, bottom = skExpanderVerticalPaddingPx)
+        binding.deckExpander.minimumHeight = 0
+        binding.indentView.minimumHeight = 0
+        binding.deckExpander.updatePadding(top = 0, bottom = 0)
         binding.deckLayout.updatePadding(top = skRowVerticalPaddingPx, bottom = skRowVerticalPaddingPx)
 
         // Set the card counts and their colors
@@ -262,13 +266,12 @@ class DeckAdapter(
         deckNameDefaultColor = ShiroikumaUi.deckNameColor(context)
         skDeckTypeface = ShiroikumaUi.styledTypeface(context, ShiroikumaUi.ROLE_DECK)
         skDeckFontSizeSp = ShiroikumaUi.fontSizeSp(context, ShiroikumaUi.ROLE_DECK)
-        // Fork: row padding — the first 12dp shrink the expander's touch
-        // padding (which dictates the upstream 48dp row height), the rest pads
-        // the row itself. 0 makes the rows touch.
+        // Fork: row padding — all default 48dp minimums (deck name minHeight,
+        // ImageButton style minHeight on the expander and indent views, the
+        // expander's 12dp touch padding) are removed at bind, so the row
+        // height is text height + 2x this padding. 0 makes the rows touch.
         val density = context.resources.displayMetrics.density
-        val rowPaddingPx = (ShiroikumaUi.deckRowPaddingDp(context) * density).toInt()
-        skExpanderVerticalPaddingPx = minOf((12 * density).toInt(), rowPaddingPx)
-        skRowVerticalPaddingPx = rowPaddingPx - skExpanderVerticalPaddingPx
+        skRowVerticalPaddingPx = (ShiroikumaUi.deckRowPaddingDp(context) * density).toInt()
         deckNameDynColor = ta.getColor(6, context.getColor(CommonR.color.material_blue_A700))
         expandImage = ta.getDrawableOrThrow(7)
         expandImage.isAutoMirrored = true
