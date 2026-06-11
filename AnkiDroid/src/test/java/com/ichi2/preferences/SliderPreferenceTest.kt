@@ -30,12 +30,14 @@ class SliderPreferenceTest : RobolectricTest() {
         context: Context,
         from: Int,
         to: Int,
+        stepSize: Int = 1,
     ): TestSliderPreference {
         val attrs =
             Robolectric
                 .buildAttributeSet()
                 .addAttribute(android.R.attr.valueFrom, from.toString())
                 .addAttribute(android.R.attr.valueTo, to.toString())
+                .addAttribute(android.R.attr.stepSize, stepSize.toString())
                 .build()
         return TestSliderPreference(context, attrs)
     }
@@ -71,5 +73,18 @@ class SliderPreferenceTest : RobolectricTest() {
         val pref = newSliderPreference(targetContext, 10, 30)
         pref.setInitialValueForTest(2)
         assertThat(pref.value, equalTo(10))
+    }
+
+    @Test
+    fun `step-misaligned persisted values are snapped instead of crashing`() {
+        // 2 on a 0-900 step-100 slider is in range, but the Material Slider
+        // throws on layout for values not on the step grid
+        val pref = newSliderPreference(targetContext, 0, 900, stepSize = 100)
+        pref.setInitialValueForTest(2)
+        assertThat(pref.value, equalTo(0))
+
+        val pref2 = newSliderPreference(targetContext, 0, 900, stepSize = 100)
+        pref2.setInitialValueForTest(360)
+        assertThat(pref2.value, equalTo(400))
     }
 }

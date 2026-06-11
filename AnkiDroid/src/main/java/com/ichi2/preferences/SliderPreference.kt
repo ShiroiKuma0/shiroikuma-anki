@@ -123,11 +123,19 @@ open class SliderPreference( // Fork: open for SliderPreferenceTest
     ): Any = a.getInt(index, valueFrom)
 
     override fun onSetInitialValue(defaultValue: Any?) {
-        // Fork: clamp instead of letting the strict setter throw. A bug in
-        // setOnSliderTouchListenerOnce (fixed below) could persist another
-        // slider's value under this key; an out-of-range value then crashed
-        // every open of the screen.
-        value = getPersistedInt(defaultValue as Int? ?: valueFrom).coerceIn(valueFrom, valueTo)
+        // Fork: sanitize the persisted value instead of crashing on it. A bug
+        // in setOnSliderTouchListenerOnce (fixed below) could persist another
+        // slider's value under this key; an out-of-range value made the strict
+        // setter throw, and a step-misaligned one (e.g. 2 on a 0-900/step-100
+        // slider) made the Material Slider itself throw on layout. Clamp AND
+        // snap to the step grid, and persist the healed value back.
+        val raw = getPersistedInt(defaultValue as Int? ?: valueFrom)
+        val step = stepSize.toInt().coerceAtLeast(1)
+        val sanitized = (valueFrom + Math.round((raw - valueFrom).toFloat() / step) * step).coerceIn(valueFrom, valueTo)
+        value = sanitized
+        if (raw != sanitized) {
+            persistInt(sanitized)
+        }
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
