@@ -114,8 +114,9 @@ grep -nE 'versionCode=|versionName=' AnkiDroid/build.gradle
 Follow the **build** skill exactly (clean build mandatory after a rebase):
 build `:AnkiDroid:assembleFullRelease`, run every verification step (badging
 must show `shiroikuma.anki` / `白い熊 暗記` / the new `+1` version), stage in
-`~/tmp`, push to `/sdcard/tmp/` — never delete old device APKs, never
-`adb install`.
+`~/tmp`, then auto-deliver via the global **/after-build** skill (adb-push to
+`/sdcard/tmp/` if a phone is connected, else scp to skhw — no prompt) — never
+delete old device APKs, never `adb install`.
 
 ## Step 7 — Device verification, then the Push gate
 
