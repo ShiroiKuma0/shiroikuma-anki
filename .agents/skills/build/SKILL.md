@@ -1,13 +1,13 @@
 ---
 name: build
-description: Build the signed shiroikuma-anki fork APK (full flavor, arm64-v8a), verify it, stage it in ~/tmp and push it to the device. Invoked as /build. Covers the fork version bump (versionName <upstream>+<N>, versionCode DD digits), signing via the anki-custom keystore, APK naming, and post-build integrity checks. Use when the user asks to build the app, build the APK, rebuild, or deploy a new build to the device.
+description: Build the signed shiroikuma-anki fork APK (full flavor, arm64-v8a), verify it, stage it in ~/tmp and auto-deliver it via the global /after-build skill (adb-push if a phone is connected, else scp to skhw — no prompt). Invoked as /build. Covers the fork version bump (versionName <upstream>+<N>, versionCode DD digits), signing via the anki-custom keystore, APK naming, and post-build integrity checks. Use when the user asks to build the app, build the APK, rebuild, or deploy a new build to the device.
 ---
 
 # build
 
 Build pipeline for the **shiroikuma-anki** fork. Produces a signed `full`-flavor
 release APK for arm64-v8a, names it by fork convention, stages it in `~/tmp`,
-and pushes it to the device. See `CLAUDE.md` for the fork identity table.
+and auto-delivers it via the global `/after-build` skill. See `CLAUDE.md` for the fork identity table.
 
 ## Identity (must hold in every build)
 
@@ -95,16 +95,18 @@ negatives (UTF-16); the `aapt2` application-label line is authoritative.
 apk_name="shiroikuma-anki_${version}_arm64-v8a.apk"
 mkdir -p ~/tmp; rm -f ~/tmp/shiroikuma-anki_*.apk
 cp "$build_apk" ~/tmp/"$apk_name"
-adb devices                                     # need a connected device
-adb shell mkdir -p /sdcard/tmp
-adb push ~/tmp/"$apk_name" /sdcard/tmp/"$apk_name"
 ```
+
+Then auto-deliver via the global **/after-build** skill — no asking, no "is the phone
+connected?" prompt. It runs `/adb-check` (UNSANDBOXED — a sandboxed check falsely reports
+no device), then `/adb-push` to `/sdcard/tmp/` if a phone is connected (`adb shell mkdir -p
+/sdcard/tmp` then `adb push ~/tmp/"$apk_name" /sdcard/tmp/"$apk_name"`), otherwise `/scp` of
+the newest `~/tmp/*.apk` to host `skhw`, and announces the filename that landed.
 
 - **Never delete old APKs on the device** — leave prior
   `/sdcard/tmp/shiroikuma-anki_*.apk` in place (per 白い熊).
 - Never `adb install`; 白い熊 installs by hand and verifies.
-- If no device is connected: leave the `~/tmp` copy, say so, push later.
-- The global `/scp` skill copies the newest `~/tmp/*.apk` to host `skhw`.
+- The `~/tmp` copy is always kept; `/after-build` delivers from it (device or skhw).
 
 ## Report, then the Push gate
 
