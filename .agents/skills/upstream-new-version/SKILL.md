@@ -98,16 +98,25 @@ After resolving, confirm no markers remain:
 git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- '*.gradle' '*.kt' '*.xml' || echo "clean"
 ```
 
-## Step 5 — Reset the fork build number
+## Step 5 — Reset (or continue) the fork build number
 
-First build on a new tag is `+1`. In `AnkiDroid/build.gradle` `defaultConfig`:
-versionName `<new without v>+1`, versionCode = upstream's new code `+1`
-(upstream releases end `…300`, so ours ends `…301`).
+First build on a **new upstream version** is `+1`. In `AnkiDroid/build.gradle`
+`defaultConfig`: versionName `<new without v>+1`, versionCode = upstream's new
+code `+1` (upstream releases end `…300`, so ours ends `…301`).
 
 ```bash
 grep -nE 'versionCode=|versionName=' AnkiDroid/build.gradle
 # expect: versionCode=AbbCC301   versionName="X.Y.Z+1"
 ```
+
+**Exception — rebasing onto `upstream/main` with NO version bump.** When the
+target is `upstream/main` and upstream has *not* changed `versionName`/
+`versionCode` (still mid-development on the same alpha, e.g. 2.25.0alpha1), do
+**NOT** reset to `+1`: that yields a versionCode *lower* than the deployed
+build, so the new APK will not upgrade the installed one. Instead **continue**
+the counter from the current value (e.g. `+16` → `+17`, `…117` → `…118`).
+Reset only when the upstream version string itself moves. (2026-06-29: rebased
+onto `v2.25.0alpha1-114`; upstream still `2.25.0alpha1`, so continued to `+17`.)
 
 ## Step 6 — Build + verify + deploy
 
