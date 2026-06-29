@@ -3,6 +3,7 @@
 package com.ichi2.anki.preferences
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
@@ -14,11 +15,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.preference.Preference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.utils.ContentResolverUtil
 import timber.log.Timber
+import java.io.IOException
 
 /**
  * Fork: the "白い熊 暗記 UI" page — colour and font management for the app UI.
@@ -92,6 +95,41 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             }
         }
 
+    private val settingsExportLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                val json = ShiroikumaUi.exportSettingsJson(requireContext())
+                requireContext().contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                    ?: throw IOException("could not open the chosen file for writing")
+                showSnackbar(R.string.sk_export_done)
+            } catch (e: Exception) {
+                Timber.w(e, "settings export failed")
+                showSnackbar(R.string.sk_export_failed)
+            }
+        }
+
+    private val settingsImportLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val applied =
+                try {
+                    val json =
+                        requireContext()
+                            .contentResolver
+                            .openInputStream(uri)
+                            ?.bufferedReader()
+                            ?.use { it.readText() }
+                            ?: throw IOException("could not open the chosen file for reading")
+                    ShiroikumaUi.importSettingsJson(requireContext(), json)
+                } catch (e: Exception) {
+                    Timber.w(e, "settings import failed")
+                    showSnackbar(R.string.sk_import_failed)
+                    return@registerForActivityResult
+                }
+            promptRestart(applied)
+        }
+
     override fun initSubscreen() {
         setupColorPreference(R.string.pref_sk_menu_background_key, ShiroikumaUi.DEFAULT_MENU_BACKGROUND)
         setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT) {
@@ -125,6 +163,17 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
         for (fontGroup in fontGroups) setupFontGroup(fontGroup)
 
+        requirePreference<Preference>(R.string.pref_sk_export_key).setOnPreferenceClickListener {
+            settingsExportLauncher.launch(ShiroikumaUi.exportFileName())
+            true
+        }
+        requirePreference<Preference>(R.string.pref_sk_import_key).setOnPreferenceClickListener {
+            // permissive filter: providers often expose .json as octet-stream/text;
+            // the file is validated by format on import
+            settingsImportLauncher.launch(arrayOf("*/*"))
+            true
+        }
+
         requirePreference<Preference>(R.string.pref_sk_reset_key).setOnPreferenceClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setMessage(R.string.sk_reset_all_confirm)
@@ -141,6 +190,26 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         preferenceScreen.removeAll()
         addPreferencesFromResource(preferenceResource)
         initSubscreen()
+    }
+
+    private fun promptRestart(appliedCount: Int) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(getString(R.string.sk_import_done, appliedCount))
+            .setPositiveButton(R.string.sk_restart_now) { _, _ -> restartApp() }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    /** Relaunch into a fresh DeckPicker so colours, controls and theme all reload. */
+    private fun restartApp() {
+        val intent =
+            Intent(requireContext(), DeckPicker::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        startActivity(intent)
+        requireActivity().finish()
     }
 
     private fun setupFontGroup(fontGroup: FontGroup) {
