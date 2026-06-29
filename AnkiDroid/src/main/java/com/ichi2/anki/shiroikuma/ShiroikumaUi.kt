@@ -36,8 +36,14 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.slider.Slider
 import com.ichi2.anki.R
 import com.ichi2.anki.common.preferences.sharedPrefs
+import com.ichi2.anki.common.time.Time
+import com.ichi2.anki.common.time.TimeManager
+import org.json.JSONArray
+import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * Fork: colour and font management for the app UI — the "白い熊 暗記 UI" page.
@@ -512,6 +518,107 @@ object ShiroikumaUi {
                 remove(context.getString(keyRes))
             }
         }
+    }
+
+    // Settings backup (export / import)
+    //
+    // Round-trips the whole default SharedPreferences — our sk_* colours/fonts
+    // AND all Anki settings, including the controls (each binding is a plain
+    // String pref keyed binding_<COMMAND> / previewer_<ACTION>). Values are
+    // type-tagged because JSON cannot tell Int from Long, nor a Set from a
+    // List, and the app does store Set<String> prefs (e.g. note_editor_custom_buttons).
+
+    private const val BACKUP_FORMAT = "shiroikuma-anki-settings"
+    private const val BACKUP_VERSION = 1
+
+    /**
+     * Keys never exported/imported: the device-specific collection path and
+     * sync credentials (mirrors AcraCrashReporter's never-share list). Importing
+     * a foreign deckPath could point the app at a missing collection.
+     */
+    private val BACKUP_BLOCKLIST = setOf("deckPath", "hkey", "username", "currentSyncUri", "browser_search_history")
+
+    /** Datetime-stamped export filename, e.g. `shiroikuma-anki_settings.2026-06-29_21-46-33.json`. */
+    fun exportFileName(time: Time = TimeManager.time): String =
+        "shiroikuma-anki_settings." + SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(time.currentDate) + ".json"
+
+    /** Serializes the default SharedPreferences (minus credentials) to a type-tagged JSON string. */
+    fun exportSettingsJson(context: Context): String {
+        val entries = JSONObject()
+        for ((key, value) in context.sharedPrefs().all) {
+            if (key in BACKUP_BLOCKLIST || value == null) continue
+            val entry = JSONObject()
+            when (value) {
+                is Boolean -> entry.put("t", "boolean").put("v", value)
+                is Int -> entry.put("t", "int").put("v", value)
+                is Long -> entry.put("t", "long").put("v", value)
+                is Float -> entry.put("t", "float").put("v", value.toDouble())
+                is String -> entry.put("t", "string").put("v", value)
+                is Set<*> -> entry.put("t", "stringSet").put("v", JSONArray(value.map { it.toString() }))
+                else -> continue
+            }
+            entries.put(key, entry)
+        }
+        return JSONObject()
+            .put("_format", BACKUP_FORMAT)
+            .put("_version", BACKUP_VERSION)
+            .put("entries", entries)
+            .toString(2)
+    }
+
+    /**
+     * Applies a previously exported settings JSON onto the default
+     * SharedPreferences (merge: only the keys present in the file are written).
+     *
+     * @return the number of keys applied
+     * @throws org.json.JSONException malformed JSON
+     * @throws IllegalArgumentException the file is not a 白い熊 暗記 settings export
+     */
+    fun importSettingsJson(
+        context: Context,
+        json: String,
+    ): Int {
+        val root = JSONObject(json)
+        require(root.optString("_format") == BACKUP_FORMAT) { "not a 白い熊 暗記 settings file" }
+        val entries = root.getJSONObject("entries")
+        var applied = 0
+        context.sharedPrefs().edit {
+            for (key in entries.keys()) {
+                if (key in BACKUP_BLOCKLIST) continue
+                val entry = entries.getJSONObject(key)
+                val matched =
+                    when (entry.getString("t")) {
+                        "boolean" -> {
+                            putBoolean(key, entry.getBoolean("v"))
+                            true
+                        }
+                        "int" -> {
+                            putInt(key, entry.getInt("v"))
+                            true
+                        }
+                        "long" -> {
+                            putLong(key, entry.getLong("v"))
+                            true
+                        }
+                        "float" -> {
+                            putFloat(key, entry.getDouble("v").toFloat())
+                            true
+                        }
+                        "string" -> {
+                            putString(key, entry.getString("v"))
+                            true
+                        }
+                        "stringSet" -> {
+                            val arr = entry.getJSONArray("v")
+                            putStringSet(key, (0 until arr.length()).map { arr.getString(it) }.toSet())
+                            true
+                        }
+                        else -> false
+                    }
+                if (matched) applied++
+            }
+        }
+        return applied
     }
 
     // Helpers for the settings page
