@@ -43,6 +43,8 @@
     <string name="pref_sk_settings_toggle_color_key">sk_settings_toggle_color</string>
     <string name="pref_sk_settings_slider_color_key">sk_settings_slider_color</string>
     <string name="pref_sk_settings_header_color_key">sk_settings_header_color</string>
+    <string name="pref_sk_export_key">sk_export</string>
+    <string name="pref_sk_import_key">sk_import</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
     <!-- Page -->
@@ -109,6 +111,17 @@
     <string name="sk_sub_rows">Rows</string>
     <string name="sk_deck_row_padding">Line padding</string>
     <string name="sk_deck_row_padding_summary">0 = lines touch</string>
+
+    <string name="sk_cat_backup">Backup</string>
+    <string name="sk_export">Export settings</string>
+    <string name="sk_export_summary">Save these colours and fonts, plus all Anki settings including the controls, to a file</string>
+    <string name="sk_import">Import settings</string>
+    <string name="sk_import_summary">Load settings from an exported file</string>
+    <string name="sk_export_done">Settings exported</string>
+    <string name="sk_export_failed">Could not export the settings</string>
+    <string name="sk_import_failed">Not a valid 白い熊 暗記 settings file</string>
+    <string name="sk_import_done">Imported %1$d settings. Restart now to apply them?</string>
+    <string name="sk_restart_now">Restart now</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
