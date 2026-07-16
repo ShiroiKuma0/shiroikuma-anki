@@ -1,120 +1,65 @@
-<p align="center">
-<img alt="" src="docs/graphics/logos/banner_readme.png"/>
-</p>
+<div align="center">
 
-<a href="https://github.com/ankidroid/Anki-Android/releases"><img src="https://img.shields.io/github/v/release/ankidroid/Anki-Android" alt="release"/></a>
-<a href="https://github.com/ankidroid/Anki-Android/actions"><img src="https://img.shields.io/github/checks-status/ankidroid/Anki-Android/main?label=build" alt="build"/></a>
-<a href="https://opencollective.com/ankidroid"><img src="https://img.shields.io/opencollective/all/ankidroid" alt="Open Collective backers and sponsors"/></a>
-<a href="https://github.com/ankidroid/Anki-Android/issues"><img src="https://img.shields.io/github/commit-activity/m/ankidroid/Anki-Android" alt="commit-activity"/></a>
-<a href="https://github.com/ankidroid/Anki-Android/network/members"><img src="https://img.shields.io/github/forks/ankidroid/Anki-Android" alt="forks"/></a>
-<a href="https://github.com/ankidroid/Anki-Android/stargazers"><img src="https://img.shields.io/github/stars/ankidroid/Anki-Android" alt="stars"/></a>
-<a href="https://crowdin.com/project/ankidroid"><img src="https://badges.crowdin.net/ankidroid/localized.svg"></img></a>
-<a href="https://github.com/ankidroid/Anki-Android/graphs/contributors"><img src="https://img.shields.io/github/contributors/ankidroid/Anki-Android" alt="contributors"/></a>
-<a href="https://discord.gg/qjzcRTx"><img src="https://img.shields.io/discord/368267295601983490"></img></a>
-<a href="https://github.com/ankidroid/Anki-Android/blob/main/COPYING"><img src="https://img.shields.io/github/license/ankidroid/Anki-Android" alt="license"/></a>
+<img src="AnkiDroid/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="120" alt="白い熊 暗記 icon" />
 
-# AnkiDroid
-A semi-official port of the open source [Anki](https://apps.ankiweb.net/index.html) spaced repetition flashcard system to Android. Memorize anything with AnkiDroid!
+# 白い熊 暗記 (shiroikuma-anki)
 
-<img src="docs/graphics/logos/ankidroid_logo.png" align="right" width="40%" height="100%"></img>
+**AnkiDroid in yellow on black — with working video, configurable everything, and a font engine.**
 
-### Features
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, and settings backup.
 
-<div style="display:flex;">
- 
-- Night mode
-- Whiteboard 
-- Progress widget
-- Detailed statistics
-- Syncing with AnkiWeb
-- Write answers (optional)
-- Text-to-speech integration
-- More than 10,000 premade decks
-- Spaced repetition (AI-optimized [FSRS algorithm](https://github.com/open-spaced-repetition))
-- Supported contents: text, images, sounds, MathJax
-- Add cards by intent from other applications like dictionaries
+Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
+
+**📥 Latest release: [`2.25.0alpha2+17`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
-Install
----------
-<div style="display:flex;">
+---
 
-<a href="https://play.google.com/store/apps/details?id=com.ichi2.anki&utm_source=global_co&utm_medium=prtnr&utm_content=Mar2515&utm_campaign=PartBadge&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1">
-    <img alt="Get it on Google Play" height="80"
-        src="docs/graphics/logos/google-badge.png" /></a>
+## 🎬 Video that actually plays
 
-<a href="https://f-droid.org/repository/browse/?fdid=com.ichi2.anki">
-    <img alt="Get it on F-Droid" height="80"
-        src="docs/graphics/logos/f-droid-badge.png"></a>
+Upstream AnkiDroid broke video in `[sound:]` tags ([issue #20668](https://github.com/ankidroid/Anki-Android/issues/20668)): the WebView blocks `file://` sources from its `http://127.0.0.1` base URL, and short clips get misclassified as audio. This fork restores the pre-2.17 behavior with a **native fullscreen video player** — video tags are classified by file extension alone, render a play button on the card, and open in a dedicated `VideoPlayerActivity`.
 
-<a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/ankidroid/Anki-Android">
-    <img alt="Get it on Obtainium" height="80"
-        src="https://github.com/user-attachments/assets/713d71c5-3dec-4ec4-a3f2-8d28d025a9c6"/></a>
+## 🎨 The 白い熊 暗記 UI page
 
-</div>
+A dedicated settings page controlling the look of the whole app — reached from Settings, from a drawer entry, or by long-pressing the toolbar hamburger. Every colour is picked with four RGBA sliders and a live preview:
 
-Signing certificate fingerprint to [verify](https://developer.android.com/studio/command-line/apksigner#usage-verify) the APK:
+- **Navigation drawer** — background, text, icons and selected-item colours, header visibility, live font preview rows. Yellow on black by default.
+- **Deck picker** — deck-name colour, toolbar icons and hamburger, the studied-today line, the right-pane deck name, the sync icon, and the pane divider (colour and width, 0 hides it).
+- **Study screen** — the study button in yellow border/text on black.
+- **Settings screens** — titles, secondary text, icons, toggles, sliders and screen headers, all restyled live.
+
+## 🔤 Role-based fonts
+
+Three independent font roles — menu, deck list, settings — each loading an **external ttf/otf** of your choosing (picked via the system file dialog), with per-role text size and weight. CJK-aware: deck rows use a tight line-height cap so ideographic font metrics don't push rows apart.
+
+## 📏 Density down to zero
+
+Deck-list line padding is a slider that goes all the way to 0 — every 48dp minimum in the row layout is removed so rows can genuinely touch. Fit twice the decks on one screen.
+
+## 💾 Settings backup
+
+Export the entire app configuration — fork styling plus all AnkiDroid settings including control bindings — as a type-tagged JSON file, and import it back with a merge and a clean restart. Account credentials and machine-local paths are deliberately excluded.
+
+## 🖤💛 Fork identity
+
+Black-and-yellow traced launcher icon, black splash screen (including the Android 12+ splash API), and crash reporting to upstream **off by default**. The app id `shiroikuma.anki` keeps permissions and provider authorities separate, so it coexists with the official build on the same device.
+
+---
+
+## Built on AnkiDroid
+
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) (app id `shiroikuma.anki`, so it coexists with the official build), the semi-official Android port of the open-source [Anki](https://apps.ankiweb.net/) spaced-repetition flashcard system. All credit for the app itself goes to the AnkiDroid maintainers and contributors. The code remains under the [GPL-3.0 license](COPYING) (with the [AGPL-3.0](https://github.com/ankitects/anki/blob/main/LICENSE) Anki backend and the [LGPL-3.0](api/COPYING.LESSER) AnkiDroid API).
+
+The fork lives as a clean commit stack on the `custom` branch, rebased onto upstream as it moves; `main` mirrors `upstream/main`.
+
+## Building
+
+```bash
+git clone git@github.com:ShiroiKuma0/shiroikuma-anki.git
+cd shiroikuma-anki
+git checkout custom
+./gradlew :AnkiDroid:assembleFullRelease -x lintVitalFullRelease
 ```
-SHA-256: 2071534f0f4b5e54ae952dd275d70da6e3459ee69909d2ab1b4843c4c5b21a45 
-SHA-1: f24e06a3657b190a12671100402df32d7b9b3d36
-```
 
-Wiki
-----
-View [Wiki](https://github.com/ankidroid/Anki-Android/wiki)
-
-Help
-----
-Check the [user manual](https://docs.ankidroid.org/) and the wiki for usage instructions. See the [help page](https://docs.ankidroid.org/help.html) 
-for how to submit a bug report or contact a project member, etc.
-
-Contribute
-----------
-You can contribute to AnkiDroid by beta testing, translating, or submitting code. 
-See the [contribution wiki page](https://github.com/ankidroid/Anki-Android/wiki/Contributing) for more info.
-
-Join Us On
-----------
-
-<a href="https://discord.gg/qjzcRTx"><img src="docs/graphics/logos/discord_logo_color.svg" height="46px"/></a>
-<a href="https://www.reddit.com/r/Anki"><img src="docs/graphics/logos/reddit_logo_color.png" height="50px"/></a>
-<a href="https://www.facebook.com/AnkiDroid/"><img src="docs/graphics/logos/facebook_logo_color.png" height="50px"/></a>
-<a href="https://x.com/ankidroid"><img src="docs/graphics/logos/twitter_logo.png" height="50px"/></a>
-<a href="https://forums.ankiweb.net/"><img src="/docs/graphics/logos/anki_forums_logo.png" height="50px"/></a>
-
-## Credits
-<!--- Do not rename this section. AnkiDroid contains a deep link to the section
-header - see https://github.com/ankidroid/Anki-Android/pull/11803 --->
-
-### Code Contributors
-
-Thanks to these awesome code contributors who keep this project going
-
-<a href="https://github.com/ankidroid/Anki-Android/graphs/contributors"><img src="https://opencollective.com/ankidroid/contributors.svg?width=890&button=false" /></a>
-
-### [Sponsors](https://opencollective.com/ankidroid#sponsor)
-<a href="https://opencollective.com/ankidroid#sponsor" target="_blank">
-  <img alt="AnkiDroid Sponsors" src="https://opencollective.com/Ankidroid/sponsors.svg?width=890" />
-</a>
-
-### [Backers](https://opencollective.com/ankidroid#backer)
-
-A big thank you to each of our backers 🙏
-<a href="https://opencollective.com/Ankidroid#backers" target="_blank"><img width=110 src="https://opencollective.com/Ankidroid/backers/badge.svg?"></a>
-
-<p>Your generous donations mean the world to us, and we can't express our gratitude enough. Your support fuels our mission and helps us make a real difference</p>
-
-<a href="https://opencollective.com/Ankidroid/donate" target="_blank">
-  <img alt="Donate to AnkiDroid" src="https://opencollective.com/Ankidroid/donate/button@2x.png?color=blue" width=200 />
-</a>
-
-### [Translators](https://crowdin.com/project/ankidroid/activity-stream)
-
-Thanks to our 1400 translators, for allowing us to be available, partially or totally, in 99 languages as of July 2022.
-
-License
--------
-* [GPL-3.0 License](https://github.com/ankidroid/Anki-Android/blob/main/COPYING)
-* [AGPL-3.0 License](https://github.com/ankitects/anki/blob/main/LICENSE) for some part of the back-end
-* [LGPL-3.0 License](https://github.com/ankidroid/Anki-Android/blob/main/api/COPYING.LESSER) for the AnkiDroid API
+The release APK is split per ABI; the arm64-v8a artifact is the one published here. Signing uses the standard AnkiDroid env-var hooks (`KEYSTOREPATH`, `KEYSTOREPWD`, `KEYALIAS`, `KEYPWD`).
