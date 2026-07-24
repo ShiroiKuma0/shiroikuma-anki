@@ -36,14 +36,10 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.slider.Slider
 import com.ichi2.anki.R
 import com.ichi2.anki.common.preferences.sharedPrefs
-import com.ichi2.anki.common.time.Time
-import com.ichi2.anki.common.time.TimeManager
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 /**
  * Fork: colour and font management for the app UI — the "白い熊 暗記 UI" page.
@@ -170,6 +166,33 @@ object ShiroikumaUi {
     }
 
     fun toolbarIconColor(context: Context): Int = color(context, R.string.pref_sk_toolbar_icon_color_key, DEFAULT_TOOLBAR_ICON)
+
+    /**
+     * Attaches a long-press action to the toolbar's overflow button (the ⋮ at
+     * the top right) — the deck picker uses it to open the 白い熊 暗記 UI page.
+     * The overflow button is the ImageView child of the toolbar's
+     * ActionMenuView; it only exists after the menu is laid out, hence the
+     * post. Safe to call repeatedly (menu rebuilds recreate the button).
+     */
+    fun attachOverflowLongPress(
+        toolbar: androidx.appcompat.widget.Toolbar?,
+        onLongPress: () -> Unit,
+    ) {
+        if (toolbar == null) return
+        toolbar.post {
+            val overflowButton =
+                toolbar.children
+                    .filterIsInstance<androidx.appcompat.widget.ActionMenuView>()
+                    .firstOrNull()
+                    ?.children
+                    ?.filterIsInstance<ImageView>()
+                    ?.lastOrNull() ?: return@post
+            overflowButton.setOnLongClickListener {
+                onLongPress()
+                true
+            }
+        }
+    }
 
     /** Yellow border and text on black, configurable — the deck study button */
     fun applyStudyButton(button: MaterialButton?) {
@@ -374,7 +397,12 @@ object ShiroikumaUi {
     fun fontFile(
         context: Context,
         role: String,
-    ): File = File(File(context.filesDir, FONT_DIR), "${role}_font")
+    ): File = File(fontsDir(context), "${role}_font")
+
+    fun fontsDir(context: Context): File = File(context.filesDir, FONT_DIR)
+
+    /** Drops every cached typeface, e.g. after font files were replaced by a settings import. */
+    fun invalidateAllFontCaches() = typefaceCache.clear()
 
     private fun baseTypeface(
         context: Context,
@@ -538,15 +566,17 @@ object ShiroikumaUi {
      */
     private val BACKUP_BLOCKLIST = setOf("deckPath", "hkey", "username", "currentSyncUri", "browser_search_history")
 
-    /** Datetime-stamped export filename, e.g. `shiroikuma-anki_settings.2026-06-29_21-46-33.json`. */
-    fun exportFileName(time: Time = TimeManager.time): String =
-        "shiroikuma-anki_settings." + SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(time.currentDate) + ".json"
-
-    /** Serializes the default SharedPreferences (minus credentials) to a type-tagged JSON string. */
-    fun exportSettingsJson(context: Context): String {
+    /**
+     * Serializes the default SharedPreferences (minus credentials) to a type-tagged JSON string.
+     * [keyFilter] restricts the output to a subset of keys (a category of the zip export).
+     */
+    fun exportSettingsJson(
+        context: Context,
+        keyFilter: (String) -> Boolean = { true },
+    ): String {
         val entries = JSONObject()
         for ((key, value) in context.sharedPrefs().all) {
-            if (key in BACKUP_BLOCKLIST || value == null) continue
+            if (key in BACKUP_BLOCKLIST || value == null || !keyFilter(key)) continue
             val entry = JSONObject()
             when (value) {
                 is Boolean -> entry.put("t", "boolean").put("v", value)

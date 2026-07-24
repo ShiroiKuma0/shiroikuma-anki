@@ -117,9 +117,9 @@ android {
         // upstream base build: build N on upstream base with code C is C+N, versionName
         // <upstream>+N. On public releases (DD=00) that is AbbCC3NN; on alpha/beta bases
         // it continues from the upstream alpha/beta number. Reset to +1 after each rebase.
-        versionCode=22500119
+        versionCode=22500120
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
-        versionName="2.25.0alpha2+17"
+        versionName="2.25.0alpha2+18"
         minSdk = libs.versions.minSdk.get().toInteger()
 
         // After #13695: change .tests_emulator.yml
@@ -485,6 +485,8 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation libs.androidx.browser
     implementation libs.androidx.core.ktx
+    // Fork: SAF directory handling for the 白い熊 暗記 settings export
+    implementation libs.androidx.documentfile
     implementation libs.androidx.draganddrop
     implementation libs.androidx.exifinterface
     implementation libs.androidx.fragment.ktx
