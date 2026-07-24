@@ -8,6 +8,17 @@
     android:key="@string/pref_shiroikuma_ui_screen_key">
 
     <PreferenceCategory
+        android:title="@string/sk_cat_eximport"
+        android:layout="@layout/sk_preference_category_first">
+        <Preference
+            android:key="@string/pref_sk_eximport_key"
+            android:title="@string/sk_cat_eximport"
+            android:summary="@string/sk_eim_row_summary"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/sk_section_menu"
         android:layout="@layout/sk_preference_category">
         <Preference
@@ -314,27 +325,13 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/sk_cat_backup"
-        android:layout="@layout/sk_preference_category">
-        <Preference
-            android:key="@string/pref_sk_export_key"
-            android:title="@string/sk_export"
-            android:summary="@string/sk_export_summary"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_import_key"
-            android:title="@string/sk_import"
-            android:summary="@string/sk_import_summary"
-            android:persistent="false"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory
         android:title="@string/sk_cat_reset"
         android:layout="@layout/sk_preference_category">
         <Preference
             android:key="@string/pref_sk_reset_key"
             android:title="@string/sk_reset_all"
             android:summary="@string/sk_reset_all_summary"
+            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
     </PreferenceCategory>
 </PreferenceScreen>

@@ -43,8 +43,7 @@
     <string name="pref_sk_settings_toggle_color_key">sk_settings_toggle_color</string>
     <string name="pref_sk_settings_slider_color_key">sk_settings_slider_color</string>
     <string name="pref_sk_settings_header_color_key">sk_settings_header_color</string>
-    <string name="pref_sk_export_key">sk_export</string>
-    <string name="pref_sk_import_key">sk_import</string>
+    <string name="pref_sk_eximport_key">sk_eximport</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
     <!-- Page -->
@@ -112,15 +111,34 @@
     <string name="sk_deck_row_padding">Line padding</string>
     <string name="sk_deck_row_padding_summary">0 = lines touch</string>
 
-    <string name="sk_cat_backup">Backup</string>
-    <string name="sk_export">Export settings</string>
-    <string name="sk_export_summary">Save these colours and fonts, plus all Anki settings including the controls, to a file</string>
-    <string name="sk_import">Import settings</string>
-    <string name="sk_import_summary">Load settings from an exported file</string>
-    <string name="sk_export_done">Settings exported</string>
-    <string name="sk_export_failed">Could not export the settings</string>
-    <string name="sk_import_failed">Not a valid 白い熊 暗記 settings file</string>
-    <string name="sk_import_done">Imported %1$d settings. Restart now to apply them?</string>
+    <!-- Export / Import (the panel at the top of the page, Kōjiki-style) -->
+    <string name="sk_cat_eximport">Export / Import</string>
+    <string name="sk_eim_row_summary">Back up or restore the collection and every setting, by category</string>
+    <string name="sk_eim_title">Export / Import — 白い熊 暗記</string>
+    <string name="sk_eim_desc">Save or load the collection and every setting — colours, fonts, controls — as selectable categories.</string>
+    <string name="sk_eim_dir">Export directory (tap to choose)</string>
+    <string name="sk_eim_dir_unset">Not set — tap to choose a directory</string>
+    <string name="sk_eim_warn_nodir">No directory set yet — pick one to enable one-tap export.</string>
+    <string name="sk_eim_warn_none">No export in this directory yet.</string>
+    <string name="sk_eim_last">Last export: %1$s</string>
+    <string name="sk_eim_select_all">Select all</string>
+    <string name="sk_eim_export_label">Export</string>
+    <string name="sk_eim_import_label">Import</string>
+    <string name="sk_eim_cat_collection">Collection (decks · cards · media)</string>
+    <string name="sk_eim_cat_ui">UI (colours · fonts)</string>
+    <string name="sk_eim_cat_controls">Controls (bindings)</string>
+    <string name="sk_eim_cat_app">Anki settings</string>
+    <string name="sk_eim_none_selected">No categories selected.</string>
+    <string name="sk_eim_exporting">Exporting…</string>
+    <string name="sk_eim_importing">Importing…</string>
+    <string name="sk_eim_export_done_title">✓ Export finished</string>
+    <string name="sk_eim_export_done_body">Exported %1$d categories to\n%2$s</string>
+    <string name="sk_eim_export_failed">Export failed: %1$s</string>
+    <string name="sk_eim_import_failed">Import failed: %1$s</string>
+    <string name="sk_eim_import_not_ours">No 白い熊 暗記 export found in that file.</string>
+    <string name="sk_eim_import_done_title">✓ Import finished</string>
+    <string name="sk_eim_import_done_body">Restored:\n\n%1$s\n\nRestart to apply everything.</string>
+    <string name="sk_eim_restart_later">Later</string>
     <string name="sk_restart_now">Restart now</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>

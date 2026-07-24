@@ -1173,8 +1173,10 @@ open class DeckPicker :
         // redraw menu synchronously to avoid flicker
         updateMenuFromState(menu)
         updateSearchVisibilityFromState(menu)
-        // Fork: toolbar icons use the 白い熊 暗記 UI colour (yellow by default)
+        // Fork: toolbar icons use the 白い熊 暗記 UI colour (yellow by default),
+        // and long-pressing the top-right overflow button opens the UI page
         ShiroikumaUi.tintToolbarIcons(this, menu, findViewById(R.id.toolbar))
+        ShiroikumaUi.attachOverflowLongPress(findViewById(R.id.toolbar)) { openShiroikumaUiSettings() }
         // ...then launch a task to possibly update the visible icons.
         // Store the job so that tests can easily await it. In the future
         // this may be better done by injecting a custom test scheduler
@@ -1185,8 +1187,9 @@ open class DeckPicker :
                 updateSearchVisibilityFromState(menu)
                 updateDeckRelatedMenuItems(menu)
                 updateMenuFromState(menu)
-                // Fork: re-tint after the async icon updates above
+                // Fork: re-tint and re-attach the long-press after the async icon updates above
                 ShiroikumaUi.tintToolbarIcons(this@DeckPicker, menu, findViewById(R.id.toolbar))
+                ShiroikumaUi.attachOverflowLongPress(findViewById(R.id.toolbar)) { openShiroikumaUiSettings() }
             }
         return super.onCreateOptionsMenu(menu)
     }
