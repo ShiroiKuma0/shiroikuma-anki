@@ -4,28 +4,50 @@ package com.ichi2.anki.preferences
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
+import android.net.Uri
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
+import androidx.preference.PreferenceGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
+import com.ichi2.anki.shiroikuma.ShiroikumaExport
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.preferences.SliderPreference
 import com.ichi2.utils.ContentResolverUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.IOException
+import java.io.OutputStream
 
 /**
- * Fork: the "白い熊 暗記 UI" page — colour and font management for the app UI.
+ * Fork: the "白い熊 暗記 UI" page — colour and font management for the app UI,
+ * plus the category-based Export / Import panel at the top (Kōjiki flow,
+ * kxkb styling, ArcaneChat pill buttons).
  * @see ShiroikumaUi
+ * @see ShiroikumaExport
  */
 class ShiroikumaUiSettingsFragment : SettingsFragment() {
     override val preferenceResource: Int
@@ -95,39 +117,55 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             }
         }
 
-    private val settingsExportLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    // Export / Import panel (Kōjiki flow: persisted export directory, category
+    // checkboxes, ArcaneChat pill buttons, yellow-bordered result dialogs)
+
+    private var eximDialog: AlertDialog? = null
+    private var eximDirValue: TextView? = null
+    private var eximStatus: TextView? = null
+    private var eximExportButton: Button? = null
+    private var eximImportButton: Button? = null
+    private val eximChecks = LinkedHashMap<ShiroikumaExport.Cat, CheckBox>()
+
+    /** Categories ticked when the save-as / import file picker was launched */
+    private var pendingExportCats: Set<ShiroikumaExport.Cat>? = null
+    private var pendingExportName: String? = null
+    private var pendingImportCats: Set<ShiroikumaExport.Cat>? = null
+
+    private val eximDirPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             if (uri == null) return@registerForActivityResult
-            try {
-                val json = ShiroikumaUi.exportSettingsJson(requireContext())
-                requireContext().contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+            runCatching {
+                requireContext().contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            ShiroikumaExport.setDirUri(requireContext(), uri)
+            refreshEximStatus()
+        }
+
+    /** Save-as fallback when no export directory is configured yet */
+    private val eximSaveAsPicker =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+            val cats = pendingExportCats
+            val name = pendingExportName
+            pendingExportCats = null
+            pendingExportName = null
+            if (uri == null || cats == null || name == null) return@registerForActivityResult
+            val context = requireContext()
+            launchEximExport(cats, name) {
+                context.contentResolver.openOutputStream(uri)
                     ?: throw IOException("could not open the chosen file for writing")
-                showSnackbar(R.string.sk_export_done)
-            } catch (e: Exception) {
-                Timber.w(e, "settings export failed")
-                showSnackbar(R.string.sk_export_failed)
             }
         }
 
-    private val settingsImportLauncher =
+    private val eximImportPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) return@registerForActivityResult
-            val applied =
-                try {
-                    val json =
-                        requireContext()
-                            .contentResolver
-                            .openInputStream(uri)
-                            ?.bufferedReader()
-                            ?.use { it.readText() }
-                            ?: throw IOException("could not open the chosen file for reading")
-                    ShiroikumaUi.importSettingsJson(requireContext(), json)
-                } catch (e: Exception) {
-                    Timber.w(e, "settings import failed")
-                    showSnackbar(R.string.sk_import_failed)
-                    return@registerForActivityResult
-                }
-            promptRestart(applied)
+            val cats = pendingImportCats
+            pendingImportCats = null
+            if (uri == null || cats == null) return@registerForActivityResult
+            runEximImport(uri, cats)
         }
 
     override fun initSubscreen() {
@@ -163,16 +201,13 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
         for (fontGroup in fontGroups) setupFontGroup(fontGroup)
 
-        requirePreference<Preference>(R.string.pref_sk_export_key).setOnPreferenceClickListener {
-            settingsExportLauncher.launch(ShiroikumaUi.exportFileName())
+        requirePreference<Preference>(R.string.pref_sk_eximport_key).setOnPreferenceClickListener {
+            showEximportDialog()
             true
         }
-        requirePreference<Preference>(R.string.pref_sk_import_key).setOnPreferenceClickListener {
-            // permissive filter: providers often expose .json as octet-stream/text;
-            // the file is validated by format on import
-            settingsImportLauncher.launch(arrayOf("*/*"))
-            true
-        }
+        // Fork spec: the export directory is queried when the page opens for
+        // the latest export; the row summary carries the answer.
+        refreshEximStatus()
 
         requirePreference<Preference>(R.string.pref_sk_reset_key).setOnPreferenceClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -182,6 +217,19 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                 .show()
             true
         }
+
+        // SliderPreference hardcodes its layoutResource in init, so the
+        // kxkb-style indented slider layout must be assigned here
+        applySliderLayouts(preferenceScreen)
+    }
+
+    private fun applySliderLayouts(preferenceGroup: PreferenceGroup) {
+        for (i in 0 until preferenceGroup.preferenceCount) {
+            when (val preference = preferenceGroup.getPreference(i)) {
+                is PreferenceGroup -> applySliderLayouts(preference)
+                is SliderPreference -> preference.layoutResource = R.layout.sk_preference_slider
+            }
+        }
     }
 
     private fun resetAll() {
@@ -190,14 +238,6 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         preferenceScreen.removeAll()
         addPreferencesFromResource(preferenceResource)
         initSubscreen()
-    }
-
-    private fun promptRestart(appliedCount: Int) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setMessage(getString(R.string.sk_import_done, appliedCount))
-            .setPositiveButton(R.string.sk_restart_now) { _, _ -> restartApp() }
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .show()
     }
 
     /** Relaunch into a fresh DeckPicker so colours, controls and theme all reload. */
@@ -211,6 +251,422 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         startActivity(intent)
         requireActivity().finish()
     }
+
+    // The Export / Import panel
+
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    private fun eximText(
+        text: CharSequence,
+        sizeSp: Float,
+        color: Int,
+        bold: Boolean = false,
+    ): TextView =
+        TextView(requireContext()).apply {
+            this.text = text
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
+            setTextColor(color)
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+        }
+
+    private fun eximCheckbox(
+        label: String,
+        bold: Boolean = false,
+    ): CheckBox =
+        CheckBox(requireContext()).apply {
+            text = label
+            setTextColor(EXIM_YELLOW)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+            buttonTintList = ColorStateList.valueOf(EXIM_YELLOW)
+            setPadding(dp(8), dp(7), 0, dp(7))
+            isChecked = true
+        }
+
+    private fun eximDivider(topGap: Int = 0): View =
+        View(requireContext()).apply {
+            layoutParams =
+                LinearLayout
+                    .LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+                    .apply { topMargin = dp(topGap) }
+            setBackgroundColor(EXIM_YELLOW)
+            alpha = 0.4f
+        }
+
+    private fun eximBorderBox(cornerDp: Int): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(EXIM_BLACK)
+            cornerRadius = dp(cornerDp).toFloat()
+            setStroke((1.99f * resources.displayMetrics.density).toInt(), EXIM_YELLOW)
+        }
+
+    /** An ArcaneChat-style round pill: black fill, yellow stroke, yellow text, yellow ripple */
+    private fun eximPillButton(
+        label: String,
+        onClick: () -> Unit,
+    ): Button {
+        val density = resources.displayMetrics.density
+        val pill =
+            GradientDrawable().apply {
+                setColor(EXIM_BLACK)
+                setStroke((1.5f * density).toInt(), EXIM_YELLOW)
+                cornerRadius = 50 * density
+            }
+        return Button(requireContext()).apply {
+            text = label
+            isAllCaps = false
+            setTextColor(EXIM_YELLOW)
+            background =
+                RippleDrawable(
+                    ColorStateList.valueOf((EXIM_YELLOW and 0x00FFFFFF) or 0x33000000),
+                    pill,
+                    null,
+                )
+            // zeroed minimums + explicit padding so the rounded stroke is never clipped
+            stateListAnimator = null
+            minWidth = 0
+            minimumWidth = 0
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+            setOnClickListener { onClick() }
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    private fun showEximportDialog() {
+        val context = requireContext()
+
+        val root =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(20), dp(16), dp(20), dp(20))
+                background = eximBorderBox(16)
+            }
+
+        root.addView(
+            eximText(getString(R.string.sk_eim_title), 18f, EXIM_YELLOW, bold = true).apply {
+                gravity = Gravity.CENTER
+                setPadding(0, dp(2), 0, dp(6))
+            },
+        )
+        root.addView(
+            eximText(getString(R.string.sk_eim_desc), 13f, EXIM_DIM).apply {
+                setPadding(0, 0, 0, dp(10))
+            },
+        )
+
+        // the persisted export directory — a bordered, clearly-tappable box
+        val dirBox =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                isClickable = true
+                isFocusable = true
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = eximBorderBox(10)
+                setOnClickListener { eximDirPicker.launch(ShiroikumaExport.dirUri(context)) }
+            }
+        dirBox.addView(eximText(getString(R.string.sk_eim_dir), 12f, EXIM_YELLOW))
+        eximDirValue = eximText("", 15f, EXIM_DIM, bold = true)
+        dirBox.addView(eximDirValue)
+        root.addView(
+            dirBox,
+            LinearLayout
+                .LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                .apply {
+                    topMargin = dp(6)
+                    bottomMargin = dp(6)
+                },
+        )
+
+        eximStatus = eximText("", 14f, EXIM_DIM).apply { setPadding(dp(2), 0, 0, dp(8)) }
+        root.addView(eximStatus)
+
+        root.addView(eximDivider())
+
+        val selectAll = eximCheckbox(getString(R.string.sk_eim_select_all), bold = true)
+        root.addView(selectAll)
+        eximChecks.clear()
+        for (cat in ShiroikumaExport.Cat.entries) {
+            val checkBox = eximCheckbox(getString(cat.labelRes))
+            eximChecks[cat] = checkBox
+            root.addView(checkBox)
+        }
+        selectAll.setOnCheckedChangeListener { _, isChecked ->
+            eximChecks.values.forEach { it.isChecked = isChecked }
+        }
+
+        root.addView(eximDivider(topGap = 8))
+
+        // ArcaneChat-style dialog button row: round pills, Cancel alone on the
+        // left, the Import / Export actions grouped on the right
+        val buttons =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(14), 0, 0)
+            }
+        buttons.addView(eximPillButton(getString(R.string.dialog_cancel)) { eximDialog?.dismiss() })
+        buttons.addView(View(context), LinearLayout.LayoutParams(0, 0, 1f))
+        eximImportButton =
+            eximPillButton(getString(R.string.sk_eim_import_label)) { onEximImportClicked() }.also {
+                buttons.addView(
+                    it,
+                    LinearLayout
+                        .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        .apply { marginEnd = dp(8) },
+                )
+            }
+        eximExportButton =
+            eximPillButton(getString(R.string.sk_eim_export_label)) { onEximExportClicked() }.also {
+                buttons.addView(it)
+            }
+        root.addView(buttons)
+
+        val scroll =
+            NestedScrollView(context).apply {
+                addView(
+                    root,
+                    ViewGroup
+                        .MarginLayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ).apply { setMargins(dp(4), dp(4), dp(4), dp(4)) },
+                )
+            }
+
+        eximDialog =
+            MaterialAlertDialogBuilder(context)
+                .setView(scroll)
+                .setOnDismissListener {
+                    eximDialog = null
+                    eximDirValue = null
+                    eximStatus = null
+                    eximExportButton = null
+                    eximImportButton = null
+                    eximChecks.clear()
+                }.show()
+                .apply { window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)) }
+
+        refreshEximStatus()
+    }
+
+    private fun selectedCats(): Set<ShiroikumaExport.Cat> = eximChecks.filterValues { it.isChecked }.keys
+
+    /**
+     * Refreshes the "latest export" answer everywhere it shows: the directory
+     * box and status line of the open panel, and the summary of the
+     * Export / Import row on the page itself.
+     */
+    private fun refreshEximStatus() {
+        val context = requireContext()
+        lifecycleScope.launch {
+            val (dirName, statusText, warn) =
+                withContext(Dispatchers.IO) {
+                    val dir = ShiroikumaExport.exportDir(context)
+                    val name = dir?.name ?: ShiroikumaExport.dirUri(context)?.lastPathSegment
+                    val (text, isWarn) =
+                        when {
+                            dir == null -> context.getString(R.string.sk_eim_warn_nodir) to true
+                            else -> {
+                                val newest = ShiroikumaExport.latestExport(context)
+                                if (newest == null) {
+                                    context.getString(R.string.sk_eim_warn_none) to true
+                                } else {
+                                    context.getString(
+                                        R.string.sk_eim_last,
+                                        ShiroikumaExport.formatTimestamp(newest.lastModified()),
+                                    ) to false
+                                }
+                            }
+                        }
+                    Triple(name, text, isWarn)
+                }
+            eximDirValue?.text = dirName ?: getString(R.string.sk_eim_dir_unset)
+            eximDirValue?.setTextColor(if (dirName == null) EXIM_WARN else EXIM_DIM)
+            showEximStatusText(statusText, warn)
+            // the page row carries the same answer, queried on page open
+            findPreference<Preference>(getString(R.string.pref_sk_eximport_key))?.summary = statusText
+        }
+    }
+
+    private fun showEximStatusText(
+        text: String,
+        warn: Boolean,
+    ) {
+        eximStatus?.text = text
+        eximStatus?.setTextColor(if (warn) EXIM_WARN else EXIM_DIM)
+    }
+
+    private fun setEximBusy(busy: Boolean) {
+        for (button in listOfNotNull(eximExportButton, eximImportButton)) {
+            button.isEnabled = !busy
+            button.alpha = if (busy) 0.4f else 1f
+        }
+    }
+
+    private fun onEximExportClicked() {
+        val cats = selectedCats()
+        if (cats.isEmpty()) {
+            showEximStatusText(getString(R.string.sk_eim_none_selected), warn = true)
+            return
+        }
+        val context = requireContext()
+        val name = ShiroikumaExport.exportFileName()
+        val dir = ShiroikumaExport.exportDir(context)
+        if (dir == null) {
+            // no directory configured — fall back to a save-as picker
+            pendingExportCats = cats
+            pendingExportName = name
+            eximSaveAsPicker.launch(name)
+            return
+        }
+        launchEximExport(cats, name) {
+            val file =
+                dir.createFile("application/zip", name)
+                    ?: throw IOException("could not create $name in the export directory")
+            context.contentResolver.openOutputStream(file.uri)
+                ?: throw IOException("could not open $name for writing")
+        }
+    }
+
+    private fun launchEximExport(
+        cats: Set<ShiroikumaExport.Cat>,
+        displayName: String,
+        openOutput: () -> OutputStream,
+    ) {
+        val context = requireContext()
+        setEximBusy(true)
+        showEximStatusText(getString(R.string.sk_eim_exporting), warn = false)
+        lifecycleScope.launch {
+            try {
+                ShiroikumaExport.export(context, cats, openOutput)
+                refreshEximStatus()
+                showEximInfoDialog(
+                    getString(R.string.sk_eim_export_done_title),
+                    getString(R.string.sk_eim_export_done_body, cats.size, displayName),
+                    getString(R.string.dialog_ok) to { dialog -> closeEximChain(dialog) },
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "settings export failed")
+                showEximStatusText(
+                    getString(R.string.sk_eim_export_failed, e.message ?: e.javaClass.simpleName),
+                    warn = true,
+                )
+            } finally {
+                setEximBusy(false)
+            }
+        }
+    }
+
+    private fun onEximImportClicked() {
+        val cats = selectedCats()
+        if (cats.isEmpty()) {
+            showEximStatusText(getString(R.string.sk_eim_none_selected), warn = true)
+            return
+        }
+        pendingImportCats = cats
+        eximImportPicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+    }
+
+    private fun runEximImport(
+        uri: Uri,
+        cats: Set<ShiroikumaExport.Cat>,
+    ) {
+        val context = requireContext()
+        setEximBusy(true)
+        showEximStatusText(getString(R.string.sk_eim_importing), warn = false)
+        lifecycleScope.launch {
+            try {
+                val summary =
+                    ShiroikumaExport.import(context, cats) {
+                        context.contentResolver.openInputStream(uri)
+                            ?: throw IOException("could not open the chosen file for reading")
+                    }
+                showEximInfoDialog(
+                    getString(R.string.sk_eim_import_done_title),
+                    getString(R.string.sk_eim_import_done_body, summary),
+                    getString(R.string.sk_eim_restart_later) to { dialog -> closeEximChain(dialog) },
+                    getString(R.string.sk_restart_now) to { dialog ->
+                        dialog.dismiss()
+                        eximDialog?.dismiss()
+                        restartApp()
+                    },
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "settings import failed")
+                showEximStatusText(
+                    getString(R.string.sk_eim_import_failed, e.message ?: e.javaClass.simpleName),
+                    warn = true,
+                )
+            } finally {
+                setEximBusy(false)
+            }
+        }
+    }
+
+    /**
+     * A black, yellow-bordered info dialog with pill action buttons — the
+     * window itself is transparent so the hand-drawn bordered box is the only
+     * visible surface.
+     */
+    private fun showEximInfoDialog(
+        title: String,
+        body: String,
+        vararg actions: Pair<String, (AlertDialog) -> Unit>,
+    ) {
+        val context = requireContext()
+        val box =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(22), dp(20), dp(22), dp(16))
+                background = eximBorderBox(16)
+            }
+        box.addView(eximText(title, 19f, EXIM_YELLOW, bold = true))
+        box.addView(eximText(body, 14f, EXIM_YELLOW).apply { setPadding(0, dp(10), 0, 0) })
+
+        val dialog =
+            MaterialAlertDialogBuilder(context)
+                .setView(NestedScrollView(context).apply { addView(box) })
+                .setCancelable(false)
+                .create()
+
+        val buttons =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.END
+                setPadding(0, dp(16), 0, 0)
+            }
+        for ((index, action) in actions.withIndex()) {
+            val (label, onClick) = action
+            buttons.addView(
+                eximPillButton(label) { onClick(dialog) }.apply {
+                    setPadding(dp(18), dp(8), dp(18), dp(8))
+                },
+                LinearLayout
+                    .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    .apply { if (index < actions.size - 1) marginEnd = dp(10) },
+            )
+        }
+        box.addView(buttons)
+
+        dialog.show()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+    }
+
+    /**
+     * Fork spec: acknowledging a successful export/import closes the whole
+     * chain — the info dialog, the Export / Import panel beneath it, and the
+     * UI settings page itself (back to Settings when the page was opened from
+     * there, back to the deck picker when opened directly).
+     */
+    private fun closeEximChain(infoDialog: AlertDialog) {
+        infoDialog.dismiss()
+        eximDialog?.dismiss()
+        requireActivity().onBackPressedDispatcher.onBackPressed()
+    }
+
+    // Fonts and colours
 
     private fun setupFontGroup(fontGroup: FontGroup) {
         val role = fontGroup.role
@@ -288,8 +744,6 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         val context = requireContext()
         val initial = ShiroikumaUi.color(context, keyRes, default)
         val channels = intArrayOf(Color.red(initial), Color.green(initial), Color.blue(initial), Color.alpha(initial))
-
-        fun dp(value: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), resources.displayMetrics).toInt()
 
         fun current() = Color.argb(channels[3], channels[0], channels[1], channels[2])
 
@@ -378,5 +832,12 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                 onChanged()
             }.setNegativeButton(R.string.dialog_cancel, null)
             .show()
+    }
+
+    companion object {
+        private const val EXIM_BLACK = 0xFF000000.toInt()
+        private const val EXIM_YELLOW = 0xFFFFFF00.toInt()
+        private const val EXIM_DIM = 0xFFCCCC66.toInt()
+        private const val EXIM_WARN = 0xFFFF5252.toInt()
     }
 }
