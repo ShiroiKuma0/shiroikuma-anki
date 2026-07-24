@@ -771,6 +771,8 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.androidx.concurrent.futures.ktx)
     implementation(libs.androidx.core)
+    // Fork: SAF directory handling for the 白い熊 暗記 settings export
+    implementation(libs.androidx.documentfile)
     implementation(libs.androidx.draganddrop)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.fragment.ktx)

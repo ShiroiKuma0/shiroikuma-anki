@@ -150,6 +150,8 @@ androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", vers
 androidx-core = { module = "androidx.core:core", version.ref = "androidxCore" }
 androidx-arch-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "androidxArchCore" }
 androidx-concurrent-futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "androidxConcurrent" }
+# Fork: SAF directory handling for the 白い熊 暗記 settings export
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version = "1.0.1" }
 androidx-draganddrop = { module = "androidx.draganddrop:draganddrop", version.ref = "androidxDragAndDrop" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidxBrowser" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat" }
