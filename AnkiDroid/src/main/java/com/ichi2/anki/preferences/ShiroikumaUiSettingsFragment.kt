@@ -14,6 +14,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.format.Formatter
 import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
 import android.view.Gravity
@@ -40,6 +41,7 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.preferences.SliderPreference
 import com.ichi2.utils.ContentResolverUtil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
@@ -139,6 +141,49 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
     /** Deletes the partial export file when the export fails or is cancelled */
     private var eximPartialDeleter: (() -> Unit)? = null
+
+    /**
+     * The media count+size tally: started once when the panel first opens,
+     * rendered live under the Collection line, and read again by the export
+     * meter — which thus picks up the running numbers instead of recounting.
+     */
+    private var eximMediaTally: ShiroikumaExport.MediaTally? = null
+    private var eximMediaLine: TextView? = null
+    private var eximIncludeMedia: CheckBox? = null
+
+    private fun ensureMediaTally() {
+        if (eximMediaTally != null) return
+        val tally = ShiroikumaExport.MediaTally()
+        eximMediaTally = tally
+        lifecycleScope.launch {
+            runCatching { ShiroikumaExport.tallyMedia(tally) }
+                .onFailure { Timber.w(it, "media tally failed") }
+        }
+    }
+
+    /** Repaints the media line every 250ms until the tally finishes (or the panel closes) */
+    private fun startMediaLineUpdater() {
+        lifecycleScope.launch {
+            while (eximMediaLine != null) {
+                renderMediaLine()
+                if (eximMediaTally?.done == true) break
+                delay(250)
+            }
+        }
+    }
+
+    private fun renderMediaLine() {
+        val tally = eximMediaTally ?: return
+        val line = eximMediaLine ?: return
+        val text =
+            getString(
+                R.string.sk_eim_media_line,
+                tally.files.get(),
+                Formatter.formatShortFileSize(line.context, tally.bytes.get()),
+            )
+        line.text = if (tally.done) text else "$text…"
+    }
+
     private val eximChecks = LinkedHashMap<ShiroikumaExport.Cat, CheckBox>()
 
     /** Categories ticked when the save-as / import file picker was launched */
@@ -408,6 +453,26 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             val checkBox = eximCheckbox(getString(cat.labelRes))
             eximChecks[cat] = checkBox
             root.addView(checkBox)
+            if (cat == ShiroikumaExport.Cat.COLLECTION) {
+                // media is decided separately: the include-media toggle and the
+                // live count/size tally sit indented under the Collection line
+                eximIncludeMedia =
+                    eximCheckbox(getString(R.string.sk_eim_include_media)).apply {
+                        setPadding(dp(8), dp(2), 0, dp(2))
+                    }
+                root.addView(
+                    eximIncludeMedia,
+                    LinearLayout
+                        .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        .apply { marginStart = dp(32) },
+                )
+                eximMediaLine = eximText("…", 13f, EXIM_DIM).apply { setPadding(dp(48), 0, 0, dp(4)) }
+                root.addView(eximMediaLine)
+                checkBox.setOnCheckedChangeListener { _, checked ->
+                    eximIncludeMedia?.isEnabled = checked
+                    eximIncludeMedia?.alpha = if (checked) 1f else 0.4f
+                }
+            }
         }
         selectAll.setOnCheckedChangeListener { _, isChecked ->
             eximChecks.values.forEach { it.isChecked = isChecked }
@@ -461,11 +526,17 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                     eximStatus = null
                     eximExportButton = null
                     eximImportButton = null
+                    eximMediaLine = null
+                    eximIncludeMedia = null
                     eximChecks.clear()
                 }.show()
                 .apply { window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)) }
 
         refreshEximStatus()
+        // the media tally starts (or resumes rendering) the moment the panel
+        // opens, so the count/size can inform the media decision up front
+        ensureMediaTally()
+        startMediaLineUpdater()
     }
 
     private fun selectedCats(): Set<ShiroikumaExport.Cat> = eximChecks.filterValues { it.isChecked }.keys
@@ -569,9 +640,18 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         // the meter dialog opens BEFORE any work: the collection/media export
         // takes minutes, and a dead blank screen reads as a freeze
         showEximProgressDialog()
+        val includeMedia = eximIncludeMedia?.isChecked ?: true
         lifecycleScope.launch {
             try {
-                ShiroikumaExport.export(context, cats, ::onEximProgress, { eximCancelRequested }, openOutput)
+                ShiroikumaExport.export(
+                    context,
+                    cats,
+                    ::onEximProgress,
+                    { eximCancelRequested },
+                    includeMedia = includeMedia,
+                    mediaTally = eximMediaTally,
+                    openOutput = openOutput,
+                )
                 eximPartialDeleter = null
                 refreshEximStatus()
                 dismissEximProgress()
