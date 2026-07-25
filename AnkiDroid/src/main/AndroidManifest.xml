@@ -639,6 +639,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Fork: the sister-app state-export automation contract. No
+             android:permission — the caller cannot hold one, so the shared
+             token (AutomationAuth) is the gate. -->
+        <receiver
+            android:name=".shiroikuma.StateExportReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="${applicationId}.action.EXPORT_STATE" />
+                <action android:name="${applicationId}.action.LIST_CATEGORIES" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".services.NotificationService"
             android:enabled="true"
             android:exported="false"
