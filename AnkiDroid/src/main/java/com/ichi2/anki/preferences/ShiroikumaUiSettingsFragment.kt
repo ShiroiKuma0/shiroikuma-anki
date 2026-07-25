@@ -128,6 +128,8 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     private var eximStatus: TextView? = null
     private var eximExportButton: Button? = null
     private var eximImportButton: Button? = null
+    private var eximProgressDialog: AlertDialog? = null
+    private var eximProgressText: TextView? = null
     private val eximChecks = LinkedHashMap<ShiroikumaExport.Cat, CheckBox>()
 
     /** Categories ticked when the save-as / import file picker was launched */
@@ -549,10 +551,14 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         val context = requireContext()
         setEximBusy(true)
         showEximStatusText(getString(R.string.sk_eim_exporting), warn = false)
+        // the meter dialog opens BEFORE any work: the collection/media export
+        // takes minutes, and a dead blank screen reads as a freeze
+        showEximProgressDialog()
         lifecycleScope.launch {
             try {
-                ShiroikumaExport.export(context, cats, openOutput)
+                ShiroikumaExport.export(context, cats, ::onEximProgress, openOutput)
                 refreshEximStatus()
+                dismissEximProgress()
                 showEximInfoDialog(
                     getString(R.string.sk_eim_export_done_title),
                     getString(R.string.sk_eim_export_done_body, cats.size, displayName),
@@ -560,14 +566,54 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                 )
             } catch (e: Exception) {
                 Timber.w(e, "settings export failed")
+                dismissEximProgress()
                 showEximStatusText(
                     getString(R.string.sk_eim_export_failed, e.message ?: e.javaClass.simpleName),
                     warn = true,
                 )
             } finally {
+                dismissEximProgress()
                 setEximBusy(false)
             }
         }
+    }
+
+    /**
+     * The live export meter — a black, yellow-bordered box with a single
+     * progress line fed by the backend's media counts and the zip byte meter.
+     */
+    private fun showEximProgressDialog() {
+        val context = requireContext()
+        val box =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(22), dp(20), dp(22), dp(20))
+                background = eximBorderBox(16)
+            }
+        box.addView(eximText(getString(R.string.sk_eim_exporting), 19f, EXIM_YELLOW, bold = true))
+        eximProgressText =
+            eximText("…", 15f, EXIM_YELLOW).apply { setPadding(0, dp(12), 0, 0) }
+        box.addView(eximProgressText)
+        eximProgressDialog =
+            MaterialAlertDialogBuilder(context)
+                .setView(NestedScrollView(context).apply { addView(box) })
+                .setCancelable(false)
+                .create()
+                .apply {
+                    show()
+                    window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                }
+    }
+
+    private fun dismissEximProgress() {
+        eximProgressDialog?.dismiss()
+        eximProgressDialog = null
+        eximProgressText = null
+    }
+
+    /** May be called from any thread (backend poller is main, zip meter is IO) */
+    private fun onEximProgress(message: String) {
+        eximProgressText?.post { eximProgressText?.text = message }
     }
 
     private fun onEximImportClicked() {
