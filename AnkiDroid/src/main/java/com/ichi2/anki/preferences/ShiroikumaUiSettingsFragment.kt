@@ -32,14 +32,18 @@ import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
+import com.ichi2.anki.shiroikuma.AutomationAuth
+import com.ichi2.anki.shiroikuma.SecondaryActionPreference
 import com.ichi2.anki.shiroikuma.ShiroikumaExport
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.preferences.SliderPreference
 import com.ichi2.utils.ContentResolverUtil
+import com.ichi2.utils.copyToClipboard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -270,6 +274,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         // Fork spec: the export directory is queried when the page opens for
         // the latest export; the row summary carries the answer.
         refreshEximStatus()
+        setupAutomationRows()
 
         requirePreference<Preference>(R.string.pref_sk_reset_key).setOnPreferenceClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -312,6 +317,47 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             }
         startActivity(intent)
         requireActivity().finish()
+    }
+
+    /**
+     * The automation surface's two rows — the master switch and the token —
+     * appended below the Export / Import row because this is a backup feature
+     * and every sister app puts them in the same place.
+     *
+     * Both values live in [AutomationAuth]'s own device-local prefs file, so
+     * they are neither exported nor touched by "Reset all to defaults":
+     * repainting the UI must not silently break 白い熊's 保存復元 batch.
+     */
+    private fun setupAutomationRows() {
+        val context = requireContext()
+        val switch = requirePreference<SwitchPreferenceCompat>(R.string.pref_sk_automation_enabled_key)
+        switch.isChecked = AutomationAuth.enabled(context)
+        switch.setOnPreferenceChangeListener { _, newValue ->
+            AutomationAuth.setEnabled(context, newValue as Boolean)
+            true
+        }
+
+        val tokenRow = requirePreference<SecondaryActionPreference>(R.string.pref_sk_automation_token_key)
+
+        fun showToken() {
+            // a colour span, because styleSettingsList repaints plain summary
+            // text with the configured summary colour on every draw
+            tokenRow.summary =
+                SpannableString(AutomationAuth.abbreviate(AutomationAuth.token(context))).apply {
+                    setSpan(ForegroundColorSpan(EXIM_YELLOW), 0, length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+                }
+        }
+        showToken()
+
+        tokenRow.setOnPreferenceClickListener {
+            context.copyToClipboard(AutomationAuth.token(context), R.string.sk_automation_token_copied)
+            true
+        }
+        tokenRow.onActionClick = {
+            AutomationAuth.regenerateToken(context)
+            showToken()
+            showSnackbar(R.string.sk_automation_token_regenerated)
+        }
     }
 
     // The Export / Import panel
@@ -742,10 +788,10 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     }
 
     /** May be called from any thread (backend poller is main, zip meter is IO) */
-    private fun onEximProgress(message: String) {
+    private fun onEximProgress(progress: ShiroikumaExport.Progress) {
         // once cancelled, "Cancelling…" must not be overwritten by late meter lines
         if (eximCancelRequested) return
-        eximProgressText?.post { eximProgressText?.text = message }
+        eximProgressText?.post { eximProgressText?.text = progress.text }
     }
 
     private fun onEximImportClicked() {

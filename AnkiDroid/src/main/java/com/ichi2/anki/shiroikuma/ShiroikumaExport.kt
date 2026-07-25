@@ -55,8 +55,17 @@ object ShiroikumaExport {
     const val FORMAT = "shiroikuma-anki-export"
     const val VERSION = 1
 
-    /** Export files are recognized in the directory by this prefix + `.zip` */
-    const val FILE_PREFIX = "shiroikuma-anki-"
+    /**
+     * Export files are recognized in the directory by this prefix + `.zip`.
+     * The family convention (白い熊, 2026-07-25): every sister app writes
+     * `<english-app-name>_<yyyy-MM-dd_HH-mm-ss>.zip` — no version, no infix,
+     * no suffix — because all apps' backups share one directory and must sort
+     * and read uniformly.
+     */
+    const val FILE_PREFIX = "shiroikuma-anki_"
+
+    /** Backups written before the family convention (`shiroikuma-anki-export_…`) */
+    const val LEGACY_FILE_PREFIX = "shiroikuma-anki-export_"
 
     private const val EXIMPORT_PREFS = "sk_eximport" // device-local; never exported
     private const val KEY_DIR_URI = "dir_uri"
@@ -106,7 +115,65 @@ object ShiroikumaExport {
         UI("ui", R.string.sk_eim_cat_ui),
         CONTROLS("controls", R.string.sk_eim_cat_controls),
         APP_SETTINGS("app_settings", R.string.sk_eim_cat_app),
+        ;
+
+        companion object {
+            fun byId(id: String): Cat? = entries.firstOrNull { it.id == id }
+        }
     }
+
+    /**
+     * The one sub-option: the media files inside [Cat.COLLECTION]. In the
+     * automation contract's `items` list a parent id on its own means "that
+     * category's own data only", so `collection` exports the collection
+     * without media and `collection,collection.media` exports it with them.
+     */
+    const val MEDIA_ITEM_ID = "collection.media"
+
+    /** What an automation `items` list selects: categories, and whether media rides along. */
+    data class Selection(
+        val cats: Set<Cat>,
+        val includeMedia: Boolean,
+    )
+
+    /**
+     * Parses the automation `items` extra — a comma-separated list of the ids
+     * from `LIST_CATEGORIES`. Absent/empty selects everything.
+     *
+     * @throws IllegalArgumentException an id is not one of ours
+     */
+    fun parseItems(items: String): Selection {
+        val ids = items.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        if (ids.isEmpty()) return Selection(Cat.entries.toSet(), includeMedia = true)
+        val cats = LinkedHashSet<Cat>()
+        var media = false
+        for (id in ids) {
+            if (id == MEDIA_ITEM_ID) {
+                // a child implies its parent
+                media = true
+                cats += Cat.COLLECTION
+                continue
+            }
+            cats += Cat.byId(id) ?: throw IllegalArgumentException("unknown category in items: $items")
+        }
+        return Selection(cats, media)
+    }
+
+    /**
+     * One live meter line: the display text, plus the same numbers structured
+     * so a caller can drive a bar or a notification with them. Real counts
+     * only — never a percentage (白い熊's automation contract).
+     */
+    data class Progress(
+        val text: String,
+        val current: Long,
+        val total: Long,
+        val unit: String,
+    )
+
+    const val UNIT_CATEGORIES = "区分"
+    const val UNIT_MEDIA = "メディア"
+    const val UNIT_BYTES = "bytes"
 
     private fun isUiKey(key: String) = key.startsWith("sk_")
 
@@ -142,26 +209,28 @@ object ShiroikumaExport {
             ?.let { runCatching { DocumentFile.fromTreeUri(context, it) }.getOrNull() }
             ?.takeIf { it.isDirectory }
 
+    /** One of ours: the family name, or a backup written under the old one */
+    fun isExportFileName(name: String?): Boolean =
+        name != null &&
+            name.endsWith(".zip") &&
+            (name.startsWith(FILE_PREFIX) || name.startsWith(LEGACY_FILE_PREFIX))
+
     /** The newest export file in the directory, by modification time */
     fun latestExport(context: Context): DocumentFile? =
         exportDir(context)?.let { dir ->
             runCatching {
                 dir
                     .listFiles()
-                    .filter {
-                        it.isFile &&
-                            it.name?.startsWith(FILE_PREFIX) == true &&
-                            it.name?.endsWith(".zip") == true
-                    }.maxByOrNull { it.lastModified() }
+                    .filter { it.isFile && isExportFileName(it.name) }
+                    .maxByOrNull { it.lastModified() }
             }.getOrNull()
         }
 
     fun formatTimestamp(epochMs: Long): String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(epochMs))
 
-    /** Datetime-stamped export filename, e.g. `shiroikuma-anki-export_2026-07-24_10-00-00.zip` */
+    /** Datetime-stamped export filename, e.g. `shiroikuma-anki_2026-07-24_10-00-00.zip` */
     fun exportFileName(time: Time = TimeManager.time): String =
-        FILE_PREFIX + "export_" +
-            SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(time.currentDate) + ".zip"
+        FILE_PREFIX + SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(time.currentDate) + ".zip"
 
     /**
      * Writes a zip of the selected categories to [openOutput]'s stream.
@@ -178,14 +247,30 @@ object ShiroikumaExport {
     suspend fun export(
         context: Context,
         cats: Set<Cat>,
-        onProgress: (String) -> Unit = {},
+        onProgress: (Progress) -> Unit = {},
         isCancelled: () -> Boolean = { false },
         includeMedia: Boolean = true,
         mediaTally: MediaTally? = null,
         openOutput: () -> OutputStream,
     ) {
+        // the category counter: "区分 2/4 — UI (colours · fonts)"
+        val ordered = Cat.entries.filter { it in cats }
+
+        fun catProgress(cat: Cat) {
+            val done = ordered.indexOf(cat) + 1
+            onProgress(
+                Progress(
+                    context.getString(R.string.sk_eim_category_meter, done, ordered.size, context.getString(cat.labelRes)),
+                    done.toLong(),
+                    ordered.size.toLong(),
+                    UNIT_CATEGORIES,
+                ),
+            )
+        }
+
         val colpkg =
             if (Cat.COLLECTION in cats) {
+                catProgress(Cat.COLLECTION)
                 exportCollectionToCache(context, onProgress, isCancelled, includeMedia, mediaTally)
             } else {
                 null
@@ -204,6 +289,7 @@ object ShiroikumaExport {
                     for (cat in Cat.entries) {
                         if (cat !in cats) continue
                         if (isCancelled()) throw ExportCancelledException()
+                        if (cat != Cat.COLLECTION) catProgress(cat)
                         if (cat == Cat.COLLECTION) {
                             zip.putNextEntry(ZipEntry(COLPKG_ENTRY))
                             copyWithByteMeter(context, colpkg!!, zip, onProgress, isCancelled)
@@ -324,7 +410,7 @@ object ShiroikumaExport {
      */
     private suspend fun exportCollectionToCache(
         context: Context,
-        onProgress: (String) -> Unit,
+        onProgress: (Progress) -> Unit,
         isCancelled: () -> Boolean,
         includeMedia: Boolean,
         mediaTally: MediaTally?,
@@ -342,11 +428,12 @@ object ShiroikumaExport {
             updateUi = {
                 if (isCancelled()) progressBackend.setWantsAbort()
                 text?.let {
+                    val counted = mediaTally?.files?.get() ?: 0
                     val suffix =
                         mediaTally?.let { tally ->
-                            if (tally.done) " / ${tally.files.get()}" else " / ${tally.files.get()}…"
+                            if (tally.done) " / $counted" else " / $counted…"
                         } ?: ""
-                    onProgress(it + suffix)
+                    onProgress(Progress(it + suffix, firstNumberIn(it), counted.toLong(), UNIT_MEDIA))
                 }
             },
         ) {
@@ -360,12 +447,24 @@ object ShiroikumaExport {
         return out
     }
 
+    /**
+     * The backend's progress lines are localized sentences ("Processed 1,234
+     * media files…"); the leading count is the structured number the
+     * automation contract wants alongside the text.
+     */
+    private fun firstNumberIn(text: String): Long =
+        Regex("""\d[\d,]*""")
+            .find(text)
+            ?.value
+            ?.replace(",", "")
+            ?.toLongOrNull() ?: 0L
+
     /** Streams [source] into [zip], reporting "x MB / y MB" every few megabytes. */
     private fun copyWithByteMeter(
         context: Context,
         source: File,
         zip: ZipOutputStream,
-        onProgress: (String) -> Unit,
+        onProgress: (Progress) -> Unit,
         isCancelled: () -> Boolean,
     ) {
         val total = source.length()
@@ -382,10 +481,15 @@ object ShiroikumaExport {
                 if (copied - lastReported >= (4L shl 20) || copied == total) {
                     lastReported = copied
                     onProgress(
-                        context.getString(
-                            R.string.sk_eim_writing_zip,
-                            Formatter.formatShortFileSize(context, copied),
-                            Formatter.formatShortFileSize(context, total),
+                        Progress(
+                            context.getString(
+                                R.string.sk_eim_writing_zip,
+                                Formatter.formatShortFileSize(context, copied),
+                                Formatter.formatShortFileSize(context, total),
+                            ),
+                            copied,
+                            total,
+                            UNIT_BYTES,
                         ),
                     )
                 }
