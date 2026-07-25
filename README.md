@@ -6,11 +6,11 @@
 
 **AnkiDroid in yellow on black — with working video, configurable everything, and a font engine.**
 
-A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, and a category-based Export/Import of the whole collection and every setting.
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, a category-based Export/Import of the whole collection and every setting, and a headless, token-gated backup intent.
 
 Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
-**📥 Latest release: [`2.25.0alpha2+22`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
+**📥 Latest release: [`2.25.0alpha2+23`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
@@ -40,6 +40,10 @@ Deck-list line padding is a slider that goes all the way to 0 — every 48dp min
 ## 💾 Export / Import — the collection and every setting
 
 The first section of the UI page opens a category-based Export/Import panel: tick what travels — the **whole collection** (a backend `.colpkg`, with an *Include media* toggle informed by a live count of your media folder's files and size), the fork's **UI colours & fonts** (including the font files), the **control bindings**, and the remaining **AnkiDroid settings** — and everything lands in one zip in your chosen export directory. The directory is remembered, queried on page open for the latest export, and a one-tap export shows a live progress meter (media counts, then a byte meter) with a working *Cancel export* button. Import applies exactly the categories you tick and offers a clean restart. Account credentials and machine-local paths are deliberately excluded.
+
+## 🤖 Backed up without being touched
+
+The same export runs **headlessly** on a token-gated broadcast, so an automation app can back this one up unattended — as one of many, in a single sweep. A master switch (off until you turn it on) and a 24-byte secret live in a preferences file the export deliberately never walks, so the key can neither leak into a backup nor arrive from someone else's. Callers can enumerate the exportable categories, pick a subset, override the destination directory, and watch progress arrive as **real counts** — categories done, media files processed against the true total, megabytes written — never a percentage. What comes back is an ordinary backup zip, restorable from the panel like any other, named the way every sister app names its own so they all sort together in one directory.
 
 ## 🖤💛 Fork identity
 
