@@ -4,15 +4,18 @@ package com.ichi2.anki.shiroikuma
 
 import android.content.Context
 import android.net.Uri
+import android.text.format.Formatter
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.ProgressContext
 import com.ichi2.anki.R
 import com.ichi2.anki.common.time.Time
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.reopen
+import com.ichi2.anki.withProgress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -126,13 +129,18 @@ object ShiroikumaExport {
      * Writes a zip of the selected categories to [openOutput]'s stream.
      * The collection is exported through the backend first (it needs a real
      * filesystem path), staged in the cache dir and streamed into the zip.
+     *
+     * [onProgress] receives live meter lines — the backend's own export
+     * progress (media counts) while the colpkg is produced, then a byte
+     * meter while it streams into the zip. May be called from any thread.
      */
     suspend fun export(
         context: Context,
         cats: Set<Cat>,
+        onProgress: (String) -> Unit = {},
         openOutput: () -> OutputStream,
     ) {
-        val colpkg = if (Cat.COLLECTION in cats) exportCollectionToCache(context) else null
+        val colpkg = if (Cat.COLLECTION in cats) exportCollectionToCache(context, onProgress) else null
         try {
             withContext(Dispatchers.IO) {
                 ZipOutputStream(openOutput().buffered()).use { zip ->
@@ -148,7 +156,7 @@ object ShiroikumaExport {
                         if (cat !in cats) continue
                         if (cat == Cat.COLLECTION) {
                             zip.putNextEntry(ZipEntry(COLPKG_ENTRY))
-                            colpkg!!.inputStream().use { it.copyTo(zip) }
+                            copyWithByteMeter(context, colpkg!!, zip, onProgress)
                             zip.closeEntry()
                         } else {
                             writeEntry(
@@ -256,17 +264,64 @@ object ShiroikumaExport {
 
     /**
      * Exports the collection (with media) to a temp .colpkg in the cache dir;
-     * the backend cannot write to a SAF stream directly.
+     * the backend cannot write to a SAF stream directly. The backend's own
+     * exporting progress (media file counts) is polled every 100ms and
+     * forwarded to [onProgress] so the long media stage shows a live meter.
      */
-    private suspend fun exportCollectionToCache(context: Context): File {
+    private suspend fun exportCollectionToCache(
+        context: Context,
+        onProgress: (String) -> Unit,
+    ): File {
         val out = File(context.cacheDir, "sk-eximport.colpkg")
         out.delete()
-        withCol {
-            close(forFullSync = true)
-            backend.exportCollectionPackage(outPath = out.path, includeMedia = true, legacy = false)
-            reopen()
+        val progressBackend = CollectionManager.getBackend()
+        progressBackend.withProgress(
+            progressContext = ProgressContext(),
+            extractProgress = {
+                if (progress.hasExporting()) {
+                    text = progress.exporting
+                }
+            },
+            updateUi = { text?.let(onProgress) },
+        ) {
+            withCol {
+                close(forFullSync = true)
+                backend.exportCollectionPackage(outPath = out.path, includeMedia = true, legacy = false)
+                reopen()
+            }
         }
         return out
+    }
+
+    /** Streams [source] into [zip], reporting "x MB / y MB" every few megabytes. */
+    private fun copyWithByteMeter(
+        context: Context,
+        source: File,
+        zip: ZipOutputStream,
+        onProgress: (String) -> Unit,
+    ) {
+        val total = source.length()
+        val buffer = ByteArray(1 shl 19)
+        var copied = 0L
+        var lastReported = -1L
+        source.inputStream().use { input ->
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                zip.write(buffer, 0, read)
+                copied += read
+                if (copied - lastReported >= (4L shl 20) || copied == total) {
+                    lastReported = copied
+                    onProgress(
+                        context.getString(
+                            R.string.sk_eim_writing_zip,
+                            Formatter.formatShortFileSize(context, copied),
+                            Formatter.formatShortFileSize(context, total),
+                        ),
+                    )
+                }
+            }
+        }
     }
 
     private fun writeFonts(
