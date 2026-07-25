@@ -11,6 +11,9 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.net.Uri
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -461,11 +464,11 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     private fun refreshEximStatus() {
         val context = requireContext()
         lifecycleScope.launch {
-            val (dirName, statusText, warn) =
+            val (dirSet, dirName, statusAndWarn) =
                 withContext(Dispatchers.IO) {
                     val dir = ShiroikumaExport.exportDir(context)
                     val name = dir?.name ?: ShiroikumaExport.dirUri(context)?.lastPathSegment
-                    val (text, isWarn) =
+                    val textAndWarn =
                         when {
                             dir == null -> context.getString(R.string.sk_eim_warn_nodir) to true
                             else -> {
@@ -480,13 +483,21 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                                 }
                             }
                         }
-                    Triple(name, text, isWarn)
+                    Triple(dir != null, name, textAndWarn)
                 }
+            val (statusText, warn) = statusAndWarn
             eximDirValue?.text = dirName ?: getString(R.string.sk_eim_dir_unset)
             eximDirValue?.setTextColor(if (dirName == null) EXIM_WARN else EXIM_DIM)
             showEximStatusText(statusText, warn)
-            // the page row carries the same answer, queried on page open
-            findPreference<Preference>(getString(R.string.pref_sk_eximport_key))?.summary = statusText
+            // The page row carries the same answer, queried on page open: red
+            // while no export directory is set, yellow once there is one. A
+            // colour span, because styleSettingsList repaints plain summary
+            // text with the configured summary colour on every draw.
+            val rowColor = if (dirSet) EXIM_YELLOW else EXIM_WARN
+            findPreference<Preference>(getString(R.string.pref_sk_eximport_key))?.summary =
+                SpannableString(statusText).apply {
+                    setSpan(ForegroundColorSpan(rowColor), 0, length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+                }
         }
     }
 
