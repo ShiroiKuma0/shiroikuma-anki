@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -41,6 +42,7 @@ import com.ichi2.utils.ContentResolverUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
 import timber.log.Timber
 import java.io.IOException
 import java.io.OutputStream
@@ -130,6 +132,13 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     private var eximImportButton: Button? = null
     private var eximProgressDialog: AlertDialog? = null
     private var eximProgressText: TextView? = null
+
+    /** Set by the "Cancel export" pill; polled by the export pipeline (any thread) */
+    @Volatile
+    private var eximCancelRequested = false
+
+    /** Deletes the partial export file when the export fails or is cancelled */
+    private var eximPartialDeleter: (() -> Unit)? = null
     private val eximChecks = LinkedHashMap<ShiroikumaExport.Cat, CheckBox>()
 
     /** Categories ticked when the save-as / import file picker was launched */
@@ -160,6 +169,9 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             if (uri == null || cats == null || name == null) return@registerForActivityResult
             val context = requireContext()
             launchEximExport(cats, name) {
+                eximPartialDeleter = {
+                    DocumentsContract.deleteDocument(context.contentResolver, uri)
+                }
                 context.contentResolver.openOutputStream(uri)
                     ?: throw IOException("could not open the chosen file for writing")
             }
@@ -538,6 +550,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             val file =
                 dir.createFile("application/zip", name)
                     ?: throw IOException("could not create $name in the export directory")
+            eximPartialDeleter = { file.delete() }
             context.contentResolver.openOutputStream(file.uri)
                 ?: throw IOException("could not open $name for writing")
         }
@@ -550,13 +563,16 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     ) {
         val context = requireContext()
         setEximBusy(true)
+        eximCancelRequested = false
+        eximPartialDeleter = null
         showEximStatusText(getString(R.string.sk_eim_exporting), warn = false)
         // the meter dialog opens BEFORE any work: the collection/media export
         // takes minutes, and a dead blank screen reads as a freeze
         showEximProgressDialog()
         lifecycleScope.launch {
             try {
-                ShiroikumaExport.export(context, cats, ::onEximProgress, openOutput)
+                ShiroikumaExport.export(context, cats, ::onEximProgress, { eximCancelRequested }, openOutput)
+                eximPartialDeleter = null
                 refreshEximStatus()
                 dismissEximProgress()
                 showEximInfoDialog(
@@ -565,16 +581,37 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                     getString(R.string.dialog_ok) to { dialog -> closeEximChain(dialog) },
                 )
             } catch (e: Exception) {
-                Timber.w(e, "settings export failed")
                 dismissEximProgress()
-                showEximStatusText(
-                    getString(R.string.sk_eim_export_failed, e.message ?: e.javaClass.simpleName),
-                    warn = true,
-                )
+                deletePartialExport()
+                if (eximCancelRequested ||
+                    e is ShiroikumaExport.ExportCancelledException ||
+                    e is BackendInterruptedException
+                ) {
+                    Timber.i("settings export cancelled")
+                    showEximStatusText(getString(R.string.sk_eim_cancelled), warn = true)
+                    refreshEximStatus()
+                } else {
+                    Timber.w(e, "settings export failed")
+                    showEximStatusText(
+                        getString(R.string.sk_eim_export_failed, e.message ?: e.javaClass.simpleName),
+                        warn = true,
+                    )
+                }
             } finally {
                 dismissEximProgress()
                 setEximBusy(false)
             }
+        }
+    }
+
+    /** Removes a partial export file left behind by a failed/cancelled export */
+    private fun deletePartialExport() {
+        val deleter = eximPartialDeleter
+        eximPartialDeleter = null
+        if (deleter == null) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching { deleter() }
+                .onFailure { Timber.w(it, "could not delete the partial export") }
         }
     }
 
@@ -594,6 +631,19 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         eximProgressText =
             eximText("…", 15f, EXIM_YELLOW).apply { setPadding(0, dp(12), 0, 0) }
         box.addView(eximProgressText)
+        val buttons =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.END
+                setPadding(0, dp(16), 0, 0)
+            }
+        buttons.addView(
+            eximPillButton(getString(R.string.sk_eim_cancel_export)) {
+                eximCancelRequested = true
+                eximProgressText?.text = getString(R.string.sk_eim_cancelling)
+            }.apply { setPadding(dp(18), dp(8), dp(18), dp(8)) },
+        )
+        box.addView(buttons)
         eximProgressDialog =
             MaterialAlertDialogBuilder(context)
                 .setView(NestedScrollView(context).apply { addView(box) })
@@ -613,6 +663,8 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
     /** May be called from any thread (backend poller is main, zip meter is IO) */
     private fun onEximProgress(message: String) {
+        // once cancelled, "Cancelling…" must not be overwritten by late meter lines
+        if (eximCancelRequested) return
         eximProgressText?.post { eximProgressText?.text = message }
     }
 
