@@ -17,9 +17,7 @@ import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.reopen
 import com.ichi2.anki.withProgress
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -31,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -66,6 +65,37 @@ object ShiroikumaExport {
 
     /** Thrown when the user taps "Cancel export" */
     class ExportCancelledException : Exception("export cancelled")
+
+    /**
+     * A live media tally: file count and total bytes, filled while the count
+     * runs so callers can render the running numbers before it finishes.
+     * Started when the Export / Import panel opens; the export meter reads
+     * the same instance instead of restarting the count.
+     */
+    class MediaTally {
+        val files = AtomicInteger(0)
+        val bytes = AtomicLong(0)
+
+        @Volatile
+        var done = false
+    }
+
+    /** Counts the collection's media folder into [tally] — live, file by file. */
+    suspend fun tallyMedia(tally: MediaTally) {
+        val mediaDir = withCol { media.dir }
+        withContext(Dispatchers.IO) {
+            runCatching {
+                Files.newDirectoryStream(mediaDir.toPath()).use { stream ->
+                    for (entry in stream) {
+                        if (!isActive) return@use
+                        tally.files.incrementAndGet()
+                        tally.bytes.addAndGet(runCatching { Files.size(entry) }.getOrDefault(0L))
+                    }
+                }
+            }
+            tally.done = true
+        }
+    }
 
     /** A selectable category; `id` is the entry name (`<id>.json`) inside the zip. */
     enum class Cat(
@@ -139,19 +169,27 @@ object ShiroikumaExport {
      * filesystem path), staged in the cache dir and streamed into the zip.
      *
      * [onProgress] receives live meter lines — the backend's own export
-     * progress with an out-of-how-many media total while the colpkg is
-     * produced, then a byte meter while it streams into the zip. May be
-     * called from any thread. [isCancelled] is polled throughout; a true
-     * answer aborts the backend op and raises [ExportCancelledException].
+     * progress with an out-of-how-many media total (read from [mediaTally],
+     * the count the panel already started) while the colpkg is produced,
+     * then a byte meter while it streams into the zip. May be called from
+     * any thread. [isCancelled] is polled throughout; a true answer aborts
+     * the backend op and raises [ExportCancelledException].
      */
     suspend fun export(
         context: Context,
         cats: Set<Cat>,
         onProgress: (String) -> Unit = {},
         isCancelled: () -> Boolean = { false },
+        includeMedia: Boolean = true,
+        mediaTally: MediaTally? = null,
         openOutput: () -> OutputStream,
     ) {
-        val colpkg = if (Cat.COLLECTION in cats) exportCollectionToCache(context, onProgress, isCancelled) else null
+        val colpkg =
+            if (Cat.COLLECTION in cats) {
+                exportCollectionToCache(context, onProgress, isCancelled, includeMedia, mediaTally)
+            } else {
+                null
+            }
         try {
             withContext(Dispatchers.IO) {
                 ZipOutputStream(openOutput().buffered()).use { zip ->
@@ -275,65 +313,47 @@ object ShiroikumaExport {
     }
 
     /**
-     * Exports the collection (with media) to a temp .colpkg in the cache dir;
-     * the backend cannot write to a SAF stream directly. The backend's own
-     * exporting progress (media file counts) is polled every 100ms and
-     * forwarded to [onProgress] with an " / out-of-how-many" suffix — the
-     * total is counted from the media folder in a parallel job and the
-     * running count already shows (with an ellipsis) while it counts.
-     * The 100ms poll also answers [isCancelled] by aborting the backend op.
+     * Exports the collection to a temp .colpkg in the cache dir; the backend
+     * cannot write to a SAF stream directly. The backend's own exporting
+     * progress (media file counts) is polled every 100ms and forwarded to
+     * [onProgress] with an " / out-of-how-many" suffix read from
+     * [mediaTally] — the count the panel started on open, so the meter picks
+     * up the running tally (ellipsis while still counting) instead of
+     * restarting it. The 100ms poll also answers [isCancelled] by aborting
+     * the backend op.
      */
     private suspend fun exportCollectionToCache(
         context: Context,
         onProgress: (String) -> Unit,
         isCancelled: () -> Boolean,
+        includeMedia: Boolean,
+        mediaTally: MediaTally?,
     ): File {
         val out = File(context.cacheDir, "sk-eximport.colpkg")
         out.delete()
         val progressBackend = CollectionManager.getBackend()
-        val mediaDir = withCol { media.dir }
-        val runningCount = AtomicInteger(0)
-        val totalCount = AtomicInteger(-1)
-        coroutineScope {
-            val countJob =
-                launch(Dispatchers.IO) {
-                    var n = 0
-                    runCatching {
-                        Files.newDirectoryStream(mediaDir.toPath()).use { stream ->
-                            for (entry in stream) {
-                                if (!isActive) return@launch
-                                n++
-                                if (n % 500 == 0) runningCount.set(n)
-                            }
-                        }
-                    }
-                    runningCount.set(n)
-                    totalCount.set(n)
+        progressBackend.withProgress(
+            progressContext = ProgressContext(),
+            extractProgress = {
+                if (progress.hasExporting()) {
+                    text = progress.exporting
                 }
-            try {
-                progressBackend.withProgress(
-                    progressContext = ProgressContext(),
-                    extractProgress = {
-                        if (progress.hasExporting()) {
-                            text = progress.exporting
-                        }
-                    },
-                    updateUi = {
-                        if (isCancelled()) progressBackend.setWantsAbort()
-                        text?.let {
-                            val total = totalCount.get()
-                            onProgress(if (total >= 0) "$it / $total" else "$it / ${runningCount.get()}…")
-                        }
-                    },
-                ) {
-                    withCol {
-                        close(forFullSync = true)
-                        backend.exportCollectionPackage(outPath = out.path, includeMedia = true, legacy = false)
-                        reopen()
-                    }
+            },
+            updateUi = {
+                if (isCancelled()) progressBackend.setWantsAbort()
+                text?.let {
+                    val suffix =
+                        mediaTally?.let { tally ->
+                            if (tally.done) " / ${tally.files.get()}" else " / ${tally.files.get()}…"
+                        } ?: ""
+                    onProgress(it + suffix)
                 }
-            } finally {
-                countJob.cancel()
+            },
+        ) {
+            withCol {
+                close(forFullSync = true)
+                backend.exportCollectionPackage(outPath = out.path, includeMedia = includeMedia, legacy = false)
+                reopen()
             }
         }
         if (isCancelled()) throw ExportCancelledException()
