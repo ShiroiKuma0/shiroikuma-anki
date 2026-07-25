@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork: a right-hand secondary action label for a 白い熊 暗記 UI page row
+     (the automation token's "Regenerate"). Sits in the row's widget frame and
+     is tapped on its own — the row's own click stays separate. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sk_preference_action"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:text="@string/sk_automation_regenerate"
+    android:textColor="#FFFF5252"
+    android:textSize="14sp"
+    android:textStyle="bold" />

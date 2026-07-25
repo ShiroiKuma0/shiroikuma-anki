@@ -68,10 +68,21 @@ class ShiroikumaSettingsBackupTest : RobolectricTest() {
     }
 
     @Test
-    fun `export filename carries a datetime stamp`() {
+    fun `export filename follows the sister-app family convention`() {
+        // <english-dash-separated-app-name>_<yyyy-MM-dd_HH-mm-ss>.zip — no
+        // version, no infix, no suffix: all apps' backups share one directory
         val name = ShiroikumaExport.exportFileName()
-        val pattern = Regex("""shiroikuma-anki-export_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip""")
-        assertThat("'$name' matches the datetime-stamped pattern", name.matches(pattern), equalTo(true))
+        val pattern = Regex("""shiroikuma-anki_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip""")
+        assertThat("'$name' matches the family pattern", name.matches(pattern), equalTo(true))
+    }
+
+    @Test
+    fun `backups written under the old name stay recognised`() {
+        assertThat(ShiroikumaExport.isExportFileName("shiroikuma-anki_2026-07-25_18-58-23.zip"), equalTo(true))
+        assertThat(ShiroikumaExport.isExportFileName("shiroikuma-anki-export_2026-07-24_10-00-00.zip"), equalTo(true))
+        assertThat(ShiroikumaExport.isExportFileName("shiroikuma-memo_2026-07-25_18-58-23.zip"), equalTo(false))
+        assertThat(ShiroikumaExport.isExportFileName("shiroikuma-anki_2026-07-25_18-58-23.colpkg"), equalTo(false))
+        assertThat(ShiroikumaExport.isExportFileName(null), equalTo(false))
     }
 
     @Test
