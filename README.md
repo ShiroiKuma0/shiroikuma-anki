@@ -6,11 +6,11 @@
 
 **AnkiDroid in yellow on black — with working video, configurable everything, and a font engine.**
 
-A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, and settings backup.
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, and a category-based Export/Import of the whole collection and every setting.
 
 Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
-**📥 Latest release: [`2.25.0alpha2+17`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
+**📥 Latest release: [`2.25.0alpha2+22`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
@@ -22,7 +22,7 @@ Upstream AnkiDroid broke video in `[sound:]` tags ([issue #20668](https://github
 
 ## 🎨 The 白い熊 暗記 UI page
 
-A dedicated settings page controlling the look of the whole app — reached from Settings, from a drawer entry, or by long-pressing the toolbar hamburger. Every colour is picked with four RGBA sliders and a live preview:
+A dedicated settings page controlling the look of the whole app — reached from Settings, from a drawer entry, by long-pressing the toolbar hamburger, or by long-pressing the deck picker's top-right ⋮ button. The page itself is styled to match: bold yellow headings underlined exactly as wide as their text, hairline section separators, tight indented rows. Every colour is picked with four RGBA sliders and a live preview:
 
 - **Navigation drawer** — background, text, icons and selected-item colours, header visibility, live font preview rows. Yellow on black by default.
 - **Deck picker** — deck-name colour, toolbar icons and hamburger, the studied-today line, the right-pane deck name, the sync icon, and the pane divider (colour and width, 0 hides it).
@@ -37,9 +37,9 @@ Three independent font roles — menu, deck list, settings — each loading an *
 
 Deck-list line padding is a slider that goes all the way to 0 — every 48dp minimum in the row layout is removed so rows can genuinely touch. Fit twice the decks on one screen.
 
-## 💾 Settings backup
+## 💾 Export / Import — the collection and every setting
 
-Export the entire app configuration — fork styling plus all AnkiDroid settings including control bindings — as a type-tagged JSON file, and import it back with a merge and a clean restart. Account credentials and machine-local paths are deliberately excluded.
+The first section of the UI page opens a category-based Export/Import panel: tick what travels — the **whole collection** (a backend `.colpkg`, with an *Include media* toggle informed by a live count of your media folder's files and size), the fork's **UI colours & fonts** (including the font files), the **control bindings**, and the remaining **AnkiDroid settings** — and everything lands in one zip in your chosen export directory. The directory is remembered, queried on page open for the latest export, and a one-tap export shows a live progress meter (media counts, then a byte meter) with a working *Cancel export* button. Import applies exactly the categories you tick and offers a clean restart. Account credentials and machine-local paths are deliberately excluded.
 
 ## 🖤💛 Fork identity
 
