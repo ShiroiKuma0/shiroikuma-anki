@@ -131,6 +131,9 @@
     <string name="sk_eim_none_selected">No categories selected.</string>
     <string name="sk_eim_exporting">Exporting…</string>
     <string name="sk_eim_writing_zip">Writing zip: %1$s / %2$s</string>
+    <string name="sk_eim_cancel_export">Cancel export</string>
+    <string name="sk_eim_cancelling">Cancelling…</string>
+    <string name="sk_eim_cancelled">Export cancelled.</string>
     <string name="sk_eim_importing">Importing…</string>
     <string name="sk_eim_export_done_title">✓ Export finished</string>
     <string name="sk_eim_export_done_body">Exported %1$d categories to\n%2$s</string>
