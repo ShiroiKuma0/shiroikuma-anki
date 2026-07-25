@@ -125,6 +125,8 @@
     <string name="sk_eim_export_label">Export</string>
     <string name="sk_eim_import_label">Import</string>
     <string name="sk_eim_cat_collection">Collection (decks · cards · media)</string>
+    <string name="sk_eim_include_media">Include media</string>
+    <string name="sk_eim_media_line">Media: %1$d files · %2$s</string>
     <string name="sk_eim_cat_ui">UI (colours · fonts)</string>
     <string name="sk_eim_cat_controls">Controls (bindings)</string>
     <string name="sk_eim_cat_app">Anki settings</string>
