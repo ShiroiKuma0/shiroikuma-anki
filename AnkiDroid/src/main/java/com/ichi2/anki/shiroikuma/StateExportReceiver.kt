@@ -15,11 +15,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
 import timber.log.Timber
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Fork: the sister-app **state-export automation contract** — the wire shape
@@ -28,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong
  * `BackupContactsReceiver`, the EMUI-proven round-trip, and 自由作業盤's own
  * `StateExportReceiver`).
  *
- * Two actions, both token-gated by [AutomationAuth]:
+ * Three actions, all token-gated by [AutomationAuth]:
  * - `<pkg>.action.EXPORT_STATE` — runs the Export / Import panel's own export
  *   ([ShiroikumaExport.export]) with no UI, writing **one** zip. Extras (all
  *   String): `token` (required), `path` (optional absolute directory, wins
@@ -37,8 +39,15 @@ import java.util.concurrent.atomic.AtomicLong
  *   `progress_action` (optional), plus the reply trio `reply_action` /
  *   `reply_package` / `reply_id`.
  * - `<pkg>.action.LIST_CATEGORIES` — instant; enumerates the exportable
- *   categories as `id<TAB>label` lines, sub-options carrying their parent id
- *   in a third field.
+ *   categories as `id<TAB>label<TAB>parent<TAB>on|off` lines: the parent id
+ *   of a sub-option (empty for a top-level item), then whether the caller's
+ *   picker starts it ticked.
+ * - `<pkg>.action.CANCEL_EXPORT` — stops the export in flight and deletes the
+ *   file it was writing. Extras: `token` (required) and an optional
+ *   `reply_id` (absent = whatever is running; two exports at once are
+ *   forbidden by the contract). Fire-and-forget: it answers nothing itself,
+ *   the stopped export answers `ERROR:cancelled` to *its* request, and a
+ *   cancel arriving with nothing running is a silent no-op.
  *
  * The reply is a **fresh broadcast** to `reply_package`, action
  * `reply_action`, extras `reply_id` (echoed verbatim) + `result`:
@@ -96,6 +105,7 @@ class StateExportReceiver : BroadcastReceiver() {
 
         when (action) {
             listCategoriesAction(app) -> reply("OK:" + categoryLines(app))
+            cancelExportAction(app) -> cancelRunningExport(replyId)
             exportStateAction(app) -> {
                 val selection =
                     try {
@@ -111,24 +121,67 @@ class StateExportReceiver : BroadcastReceiver() {
     }
 
     /**
-     * `id<TAB>label` per line; the media sub-option carries its parent's id in
-     * a third field, so the caller can render it indented under Collection and
-     * select it independently.
+     * `id<TAB>label<TAB>parent<TAB>on|off` per line — the contract's four
+     * positional fields. The media sub-option carries its parent's id, so the
+     * caller can render it indented under Collection and select it
+     * independently; a top-level item leaves that field empty. The last field
+     * is our answer to "does this start ticked", so the caller's picker never
+     * has to guess.
      */
     private fun categoryLines(context: Context): String =
         buildString {
+            fun line(
+                id: String,
+                label: String,
+                parent: String,
+                defaultOn: Boolean,
+            ) {
+                append(id)
+                    .append('\t')
+                    .append(label)
+                    .append('\t')
+                    .append(parent)
+                    .append('\t')
+                    .append(if (defaultOn) "on" else "off")
+                    .append('\n')
+            }
             for (cat in ShiroikumaExport.Cat.entries) {
-                append(cat.id).append('\t').append(context.getString(cat.labelRes)).append('\n')
+                line(cat.id, context.getString(cat.labelRes), "", cat.defaultOn)
                 if (cat == ShiroikumaExport.Cat.COLLECTION) {
-                    append(ShiroikumaExport.MEDIA_ITEM_ID)
-                        .append('\t')
-                        .append(context.getString(R.string.sk_eim_include_media))
-                        .append('\t')
-                        .append(cat.id)
-                        .append('\n')
+                    line(
+                        ShiroikumaExport.MEDIA_ITEM_ID,
+                        context.getString(R.string.sk_eim_include_media),
+                        cat.id,
+                        ShiroikumaExport.MEDIA_DEFAULT_ON,
+                    )
                 }
             }
         }.trimEnd('\n')
+
+    /**
+     * `CANCEL_EXPORT`: raise the flag the export polls and let it unwind at
+     * the next entry boundary — never an interrupt mid-write, never a kill.
+     * The terminal `ERROR:cancelled` belongs to the *export's* request, so
+     * this one is answered with nothing at all; arriving when nothing is
+     * running, or after the export already finished, is a silent no-op.
+     */
+    private fun cancelRunningExport(replyId: String) {
+        val run = runningExport.get()
+        if (run == null || (replyId.isNotEmpty() && replyId != run.replyId)) {
+            Timber.i("automation cancel: no matching export in flight")
+            return
+        }
+        Timber.i("automation cancel: stopping export %s", run.replyId)
+        run.cancelled = true
+    }
+
+    /** The export in flight, and the one flag that stops it. */
+    private class RunningExport(
+        val replyId: String,
+    ) {
+        @Volatile
+        var cancelled = false
+    }
 
     /**
      * The export holds the broadcast open with `goAsync()` and runs on IO.
@@ -172,6 +225,8 @@ class StateExportReceiver : BroadcastReceiver() {
         }
 
         val pending = goAsync()
+        val run = RunningExport(replyId)
+        runningExport.set(run)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val fileName = ShiroikumaExport.exportFileName()
@@ -179,59 +234,57 @@ class StateExportReceiver : BroadcastReceiver() {
                 // the directory is resolved first: a bad one must fail before
                 // the media count, not after minutes of work
                 val target = resolveTarget(app, pathOverride, fileName)
-                // count the media up front so the meter has a real total from
-                // its first line (the panel starts the same tally on open)
-                val tally =
-                    ShiroikumaExport.MediaTally().also {
-                        if (selection.includeMedia && ShiroikumaExport.Cat.COLLECTION in cats) {
-                            runCatching { ShiroikumaExport.tallyMedia(it) }
-                                .onFailure { e -> Timber.w(e, "media tally failed") }
-                        }
-                    }
-
-                val bytes: Long
-                val shownPath: String
-                when (target) {
-                    is Target.PlainFile -> {
-                        try {
-                            target.file.outputStream().use { out ->
-                                ShiroikumaExport.export(
-                                    app,
-                                    cats,
-                                    onProgress = { sendProgress(it) },
-                                    includeMedia = selection.includeMedia,
-                                    mediaTally = tally,
-                                    openOutput = { out },
-                                )
+                // everything past this point can leave a file behind, so one
+                // guard covers the lot: cancelled or failed, the directory is
+                // left exactly as it was found
+                val (bytes, shownPath) =
+                    try {
+                        // count the media up front so the meter has a real total
+                        // from its first line (the panel starts the same tally
+                        // on open)
+                        val tally =
+                            ShiroikumaExport.MediaTally().also {
+                                if (selection.includeMedia && ShiroikumaExport.Cat.COLLECTION in cats) {
+                                    runCatching { ShiroikumaExport.tallyMedia(it) }
+                                        .onFailure { e -> Timber.w(e, "media tally failed") }
+                                }
                             }
-                        } catch (e: Exception) {
-                            target.file.delete() // no partial file left behind
-                            throw e
-                        }
-                        bytes = target.file.length()
-                        shownPath = target.file.absolutePath
-                    }
-                    is Target.SafFile -> {
-                        try {
-                            app.contentResolver.openOutputStream(target.doc.uri).use { out ->
-                                requireNotNull(out) { "cannot open $fileName for writing" }
-                                ShiroikumaExport.export(
-                                    app,
-                                    cats,
-                                    onProgress = { sendProgress(it) },
-                                    includeMedia = selection.includeMedia,
-                                    mediaTally = tally,
-                                    openOutput = { out },
-                                )
+                        if (run.cancelled) throw ShiroikumaExport.ExportCancelledException()
+                        when (target) {
+                            is Target.PlainFile -> {
+                                target.file.outputStream().use { out ->
+                                    ShiroikumaExport.export(
+                                        app,
+                                        cats,
+                                        onProgress = { sendProgress(it) },
+                                        isCancelled = { run.cancelled },
+                                        includeMedia = selection.includeMedia,
+                                        mediaTally = tally,
+                                        openOutput = { out },
+                                    )
+                                }
+                                target.file.length() to target.file.absolutePath
                             }
-                        } catch (e: Exception) {
-                            target.doc.delete()
-                            throw e
+                            is Target.SafFile -> {
+                                app.contentResolver.openOutputStream(target.doc.uri).use { out ->
+                                    requireNotNull(out) { "cannot open $fileName for writing" }
+                                    ShiroikumaExport.export(
+                                        app,
+                                        cats,
+                                        onProgress = { sendProgress(it) },
+                                        isCancelled = { run.cancelled },
+                                        includeMedia = selection.includeMedia,
+                                        mediaTally = tally,
+                                        openOutput = { out },
+                                    )
+                                }
+                                target.doc.length() to (absolutePathOf(target.doc) ?: target.doc.uri.toString())
+                            }
                         }
-                        bytes = target.doc.length()
-                        shownPath = absolutePathOf(target.doc) ?: target.doc.uri.toString()
+                    } catch (e: Exception) {
+                        deletePartial(target)
+                        throw e
                     }
-                }
                 sendProgress(
                     ShiroikumaExport.Progress(
                         "${ShiroikumaExport.UNIT_CATEGORIES} ${cats.size}/${cats.size} — ${humanSize(bytes)}",
@@ -243,12 +296,34 @@ class StateExportReceiver : BroadcastReceiver() {
                 )
                 reply("OK:$shownPath|$bytes|${humanSize(bytes)}|${cats.size} categories")
             } catch (e: Exception) {
-                Timber.w(e, "automation export failed")
-                reply("ERROR:${e.message ?: e.javaClass.simpleName}")
+                // the same AtomicBoolean guards both, so a cancel racing a
+                // finished export can never turn an OK into an error
+                if (run.cancelled || e is ShiroikumaExport.ExportCancelledException || e is BackendInterruptedException) {
+                    Timber.i("automation export cancelled")
+                    reply("ERROR:cancelled")
+                } else {
+                    Timber.w(e, "automation export failed")
+                    reply("ERROR:${e.message ?: e.javaClass.simpleName}")
+                }
             } finally {
+                runningExport.compareAndSet(run, null)
                 pending.finish()
             }
         }
+    }
+
+    /**
+     * Removes the file the export was writing. A cancelled export must leave
+     * the backup directory exactly as it found it — no short archive, no
+     * stray file for the caller to mistake for a backup.
+     */
+    private fun deletePartial(target: Target) {
+        runCatching {
+            when (target) {
+                is Target.PlainFile -> target.file.delete()
+                is Target.SafFile -> target.doc.delete()
+            }
+        }.onFailure { Timber.w(it, "could not delete the partial export") }
     }
 
     private sealed interface Target {
@@ -316,6 +391,16 @@ class StateExportReceiver : BroadcastReceiver() {
         fun exportStateAction(context: Context) = "${context.packageName}.action.EXPORT_STATE"
 
         fun listCategoriesAction(context: Context) = "${context.packageName}.action.LIST_CATEGORIES"
+
+        fun cancelExportAction(context: Context) = "${context.packageName}.action.CANCEL_EXPORT"
+
+        /**
+         * The export in flight, if any. Static because every broadcast lands
+         * on a *fresh* receiver instance: the cancel could not otherwise reach
+         * the export it has to stop. The contract forbids two exports at once,
+         * so a `CANCEL_EXPORT` without a `reply_id` is unambiguous.
+         */
+        private val runningExport = AtomicReference<RunningExport?>(null)
 
         // Contract extras — deliberately bare names, shared verbatim by every sister app.
         const val EXTRA_TOKEN = "token"
