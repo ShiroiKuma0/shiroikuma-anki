@@ -106,10 +106,17 @@ object ShiroikumaExport {
         }
     }
 
-    /** A selectable category; `id` is the entry name (`<id>.json`) inside the zip. */
+    /**
+     * A selectable category; `id` is the entry name (`<id>.json`) inside the
+     * zip. [defaultOn] is the automation contract's optional fourth
+     * `LIST_CATEGORIES` field: whether a caller's backup-item picker starts
+     * this one ticked. Every category is worth keeping, so they are all `on`;
+     * only the media sub-option ([MEDIA_DEFAULT_ON]) is not.
+     */
     enum class Cat(
         val id: String,
         @StringRes val labelRes: Int,
+        val defaultOn: Boolean = true,
     ) {
         COLLECTION("collection", R.string.sk_eim_cat_collection),
         UI("ui", R.string.sk_eim_cat_ui),
@@ -129,6 +136,14 @@ object ShiroikumaExport {
      * without media and `collection,collection.media` exports it with them.
      */
     const val MEDIA_ITEM_ID = "collection.media"
+
+    /**
+     * The media sub-option starts **unticked** — in every picker seeded from
+     * us, the app's own and the automation caller's alike. It is by far the
+     * largest part of the export, and re-obtainable by syncing the collection
+     * from AnkiWeb; the collection itself stays on.
+     */
+    const val MEDIA_DEFAULT_ON = false
 
     /** What an automation `items` list selects: categories, and whether media rides along. */
     data class Selection(

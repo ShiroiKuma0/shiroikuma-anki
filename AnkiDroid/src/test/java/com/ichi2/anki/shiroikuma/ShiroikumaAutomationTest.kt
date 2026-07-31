@@ -99,9 +99,17 @@ class ShiroikumaAutomationTest : RobolectricTest() {
             val fields = line.split("\t")
             assertThat("'$line' carries a label", fields[1].isNotEmpty(), equalTo(true))
         }
-        // the sub-option names its parent in a third field; parents have none
+        // the sub-option names its parent in a third field; parents leave it
+        // empty, and the fourth field says whether the item starts ticked
         assertThat(lines[1].split("\t")[2], equalTo("collection"))
-        assertThat(lines[0].split("\t").size, equalTo(2))
+        assertThat(lines[0].split("\t")[2], equalTo(""))
+        val flags = lines.map { it.split("\t")[3] }
+        assertThat("the media folder starts unticked", flags[1], equalTo("off"))
+        assertThat(
+            "everything else starts ticked",
+            flags.filterIndexed { i, _ -> i != 1 }.distinct(),
+            equalTo(listOf("on")),
+        )
     }
 
     @Test
