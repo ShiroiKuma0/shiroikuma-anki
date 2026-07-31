@@ -32,7 +32,7 @@ digits as its build counter:
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
   digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500102`.
 
-Current base: **upstream/main at v2.25.0alpha2-21** (last rebase 2026-07-16). Deployed: `2.25.0alpha2+17`.
+Current base: **upstream/main at v2.25.0alpha2-21** (last rebase 2026-07-16). Deployed: `2.25.0alpha2+24`.
 
 ## Environment (export every run; not set in non-interactive shells)
 
@@ -93,7 +93,7 @@ negatives (UTF-16); the `aapt2` application-label line is authoritative.
 
 ```bash
 apk_name="shiroikuma-anki_${version}_arm64-v8a.apk"
-mkdir -p ~/tmp; rm -f ~/tmp/shiroikuma-anki_*.apk
+mkdir -p ~/tmp
 cp "$build_apk" ~/tmp/"$apk_name"
 ```
 
@@ -103,8 +103,13 @@ no device), then `/adb-push` to `/sdcard/tmp/` if a phone is connected (`adb she
 /sdcard/tmp` then `adb push ~/tmp/"$apk_name" /sdcard/tmp/"$apk_name"`), otherwise `/scp` of
 the newest `~/tmp/*.apk` to host `skhw`, and announces the filename that landed.
 
-- **Never delete old APKs on the device** — leave prior
-  `/sdcard/tmp/shiroikuma-anki_*.apk` in place (per 白い熊).
+- **Never delete old APKs — on either side** (hard rule, per 白い熊). Leave prior
+  `/sdcard/tmp/shiroikuma-anki_*.apk` on the device **and** prior
+  `~/tmp/shiroikuma-anki_*.apk` on this machine in place, however many pile up;
+  白い熊 clears them themselves. Each build lands under its own `+N` filename, so
+  nothing is ever clobbered — that is the whole point of bumping the counter.
+  (This skill used to `rm -f ~/tmp/shiroikuma-anki_*.apk` before staging, which
+  destroyed the previous build every time; removed 2026-07-31.)
 - Never `adb install`; 白い熊 installs by hand and verifies.
 - The `~/tmp` copy is always kept; `/after-build` delivers from it (device or skhw).
 
