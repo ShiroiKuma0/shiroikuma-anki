@@ -380,6 +380,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     private fun eximCheckbox(
         label: String,
         bold: Boolean = false,
+        checked: Boolean = true,
     ): CheckBox =
         CheckBox(requireContext()).apply {
             text = label
@@ -388,7 +389,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             if (bold) typeface = Typeface.DEFAULT_BOLD
             buttonTintList = ColorStateList.valueOf(EXIM_YELLOW)
             setPadding(dp(8), dp(7), 0, dp(7))
-            isChecked = true
+            isChecked = checked
         }
 
     private fun eximDivider(topGap: Int = 0): View =
@@ -492,18 +493,28 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
         root.addView(eximDivider())
 
-        val selectAll = eximCheckbox(getString(R.string.sk_eim_select_all), bold = true)
+        // every box starts on the answer we give automation callers in
+        // LIST_CATEGORIES, so both pickers open on the same selection
+        val selectAll =
+            eximCheckbox(
+                getString(R.string.sk_eim_select_all),
+                bold = true,
+                checked = ShiroikumaExport.Cat.entries.all { it.defaultOn },
+            )
         root.addView(selectAll)
         eximChecks.clear()
         for (cat in ShiroikumaExport.Cat.entries) {
-            val checkBox = eximCheckbox(getString(cat.labelRes))
+            val checkBox = eximCheckbox(getString(cat.labelRes), checked = cat.defaultOn)
             eximChecks[cat] = checkBox
             root.addView(checkBox)
             if (cat == ShiroikumaExport.Cat.COLLECTION) {
                 // media is decided separately: the include-media toggle and the
                 // live count/size tally sit indented under the Collection line
                 eximIncludeMedia =
-                    eximCheckbox(getString(R.string.sk_eim_include_media)).apply {
+                    eximCheckbox(
+                        getString(R.string.sk_eim_include_media),
+                        checked = ShiroikumaExport.MEDIA_DEFAULT_ON,
+                    ).apply {
                         setPadding(dp(8), dp(2), 0, dp(2))
                     }
                 root.addView(
