@@ -10,7 +10,7 @@ A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major ad
 
 Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
-**📥 Latest release: [`2.25.0alpha2+23`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
+**📥 Latest release: [`2.25.0alpha2+24`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
@@ -43,7 +43,7 @@ The first section of the UI page opens a category-based Export/Import panel: tic
 
 ## 🤖 Backed up without being touched
 
-The same export runs **headlessly** on a token-gated broadcast, so an automation app can back this one up unattended — as one of many, in a single sweep. A master switch (off until you turn it on) and a 24-byte secret live in a preferences file the export deliberately never walks, so the key can neither leak into a backup nor arrive from someone else's. Callers can enumerate the exportable categories, pick a subset, override the destination directory, and watch progress arrive as **real counts** — categories done, media files processed against the true total, megabytes written — never a percentage. What comes back is an ordinary backup zip, restorable from the panel like any other, named the way every sister app names its own so they all sort together in one directory.
+The same export runs **headlessly** on a token-gated broadcast, so an automation app can back this one up unattended — as one of many, in a single sweep. A master switch (off until you turn it on) and a 24-byte secret live in a preferences file the export deliberately never walks, so the key can neither leak into a backup nor arrive from someone else's. Callers can enumerate the exportable categories, pick a subset, override the destination directory, and watch progress arrive as **real counts** — categories done, media files processed against the true total, megabytes written — never a percentage. The enumeration also **says which items start ticked**, so a backup picker never has to guess: everything but the media folder, which is the bulk of the archive and comes back on the next sync. A running export can be **stopped from outside**, and a stopped one leaves the backup directory exactly as it found it — no short archive, no stray file. What comes back is an ordinary backup zip, restorable from the panel like any other, named the way every sister app names its own so they all sort together in one directory.
 
 ## 🖤💛 Fork identity
 
