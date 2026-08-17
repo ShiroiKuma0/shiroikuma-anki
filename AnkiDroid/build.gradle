@@ -119,6 +119,8 @@ android {
         // upstream base build: build N on upstream base with code C is C+N, versionName
         // <upstream>+N. On public releases (DD=00) that is AbbCC3NN; on alpha/beta bases
         // it continues from the upstream alpha/beta number. Reset to +1 after each rebase.
+        // In versionName the counter is always zero-padded to three digits (+025, not
+        // +25), matching the sister apps so build artefacts sort in build order.
         versionCode=22600102
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
         versionName="2.26.0alpha2"

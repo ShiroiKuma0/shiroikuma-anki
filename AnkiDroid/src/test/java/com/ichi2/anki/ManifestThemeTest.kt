@@ -33,12 +33,17 @@ class ManifestThemeTest : RobolectricTest() {
             "com.ichi2.anki.CardBrowser" to R.style.Theme_Dark_Launcher,
             "com.ichi2.anki.Reviewer" to R.style.Theme_Dark_Launcher,
             "com.ichi2.anki.IntentHandler2" to R.style.Theme_Dark_Launcher,
-            // invisible trampoline: forwards intents without showing UI
-            "com.ichi2.anki.IntentHandler" to android.R.style.Theme_Translucent_NoTitleBar,
+            // invisible trampoline: forwards intents without showing UI. Fork: the
+            // translucent theme is wrapped as Theme_IntentHandler so the launch splash
+            // is black rather than the platform default
+            "com.ichi2.anki.IntentHandler" to R.style.Theme_IntentHandler,
             // ACRA crash report dialog
             "com.ichi2.anki.analytics.AnkiDroidCrashReportDialog" to android.R.style.Theme_DeviceDefault_Dialog,
             // transparent window: the editor is displayed as a dialog over the caller
             "com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity" to R.style.Theme_AppCompat_Transparent_NoActionBar,
+            // Fork: fullscreen video surface for [sound:] video tags (issue 20668). It shows
+            // no themed chrome and never calls Themes.setTheme, so the app theme cannot apply
+            "com.ichi2.anki.cardviewer.VideoPlayerActivity" to android.R.style.Theme_Black_NoTitleBar_Fullscreen,
         )
 
     @Test
