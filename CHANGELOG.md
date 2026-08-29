@@ -11,6 +11,44 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0alpha3+026 — 2026-08-29
+
+Built on AnkiDroid `upstream/main` at `v2.25.0alpha3-20` (`103a807d88`). versionCode
+`22500129`, installed as `322500129` for arm64-v8a.
+
+- **Rebased onto upstream 2.25.0alpha3** — 59 commits, `v2.25.0alpha2-167` →
+  `v2.25.0alpha3-20`. The whole fork stack replayed; nothing dropped. Upstream's churn was
+  dominated by an edge-to-edge sweep (introduction, account, multimedia, permissions,
+  manage-space, study-options, filtered-deck options and every fragment hosted by
+  `SingleFragmentActivity`), the navigation `Destination` migration reaching the card
+  browser, searches and Info, usage analytics moving from raw strings to typed events, and
+  the backend adopting Anki 26.05.
+- **The build counter continues instead of resetting, so the APK can still be installed.**
+  The rebase runbook resets the fork counter to `+1` on a new upstream base, but upstream's
+  alpha bump moved its own versionCode by just one (`22500102` → `22500103`) while this
+  fork's counter had climbed to `+025`/`22500127`. A reset would have produced `22500104` —
+  *lower* than the build already on the device, which Android refuses to install over. The
+  counter carries on to `+026`/`22500129`, and both fork skills now state the rule as
+  "versionCode must never go backwards" rather than "reset when the upstream version string
+  moves", which is what made the trap look safe.
+- **Fork hooks re-anchored where upstream moved the ground under them.** `currentCardId`
+  migrated from `NavigationDrawerActivity` to `AbstractFlashcardViewer`, so the drawer keeps
+  only the fork's own `openShiroikumaUiSettings`. The deck picker's studied-today line kept
+  its fork colour and `ROLE_DECK` typeface while the `doOnLayout` block that used to raise
+  the FAB was dropped, upstream having replaced it with `raiseFabAboveSummary` — keeping the
+  fork's copy would have left two owners fighting over the same margin.
+- **`ManifestThemeTest` allowlist trimmed to what the manifest still sets.** Upstream's
+  edge-to-edge work removed `IntroductionActivity`'s manifest theme, and that test fails on a
+  *stale* allowlist entry exactly as it does on a missing one, so the entry went with it. The
+  fork's two genuine exceptions stay allowlisted with their reasons: `IntentHandler` →
+  `Theme_IntentHandler` for the black launch splash, and `VideoPlayerActivity`'s fullscreen
+  theme.
+- **Video in `[sound:]` tags still needs this fork.** Upstream issue
+  [#20668](https://github.com/ankidroid/Anki-Android/issues/20668) remains open and the
+  community fix (PR #20732) is still unmerged, so the native fullscreen player stays. The
+  rebase confirmed the fix intact: upstream's `CardMediaPlayer` threads a `javascriptEvaluator`
+  into its WebView-based `VideoPlayer`, which this fork does not construct at all.
+
 ## 白い熊 暗記 2.25.0alpha2+025 — 2026-08-17
 
 Built on AnkiDroid `upstream/main` at `v2.25.0alpha2-167` (`12114e7f72`). versionCode
