@@ -109,14 +109,27 @@ grep -nE 'versionCode=|versionName=' AnkiDroid/build.gradle
 # expect: versionCode=AbbCC301   versionName="X.Y.Z+1"
 ```
 
-**Exception — rebasing onto `upstream/main` with NO version bump.** When the
-target is `upstream/main` and upstream has *not* changed `versionName`/
-`versionCode` (still mid-development on the same alpha, e.g. 2.25.0alpha1), do
-**NOT** reset to `+1`: that yields a versionCode *lower* than the deployed
-build, so the new APK will not upgrade the installed one. Instead **continue**
-the counter from the current value (e.g. `+16` → `+17`, `…117` → `…118`).
-Reset only when the upstream version string itself moves. (2026-06-29: rebased
-onto `v2.25.0alpha1-114`; upstream still `2.25.0alpha1`, so continued to `+17`.)
+**The reset is conditional: versionCode must never go backwards.** Compute the
+`+1` candidate, then compare it with the versionCode already deployed. If the
+candidate is not strictly greater, do **NOT** reset — **continue** the counter
+instead, so the new build outranks the installed one. Android refuses to
+install a lower versionCode over a higher one, so a well-meaning reset simply
+produces an APK 白い熊 cannot install.
+
+Whether upstream's version *string* moved is **not** the test — only the number
+is. Two ways the reset goes backwards:
+
+- Upstream did not bump at all (still mid-development on the same alpha).
+  (2026-06-29: rebased onto `v2.25.0alpha1-114`; upstream still `2.25.0alpha1`,
+  so continued to `+17`, `…117` → `…118`.)
+- Upstream bumped, but by less than our counter has climbed. An alpha-to-alpha
+  bump moves upstream's code by **one** while our counter may be dozens ahead.
+  (2026-08-29: rebased onto `v2.25.0alpha3-20`; upstream `22500102` →
+  `22500103`, but we had shipped `+025`/`22500127`, so `+1` would have meant
+  `22500104` — a downgrade. Continued to `2.25.0alpha3+026`/`22500129`.)
+
+Reset to `+1` only on a base whose upstream code clears the deployed one — in
+practice a new public release, which ends `…300`.
 
 ## Step 6 — Build + verify + deploy
 

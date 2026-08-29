@@ -24,7 +24,7 @@ Upstream scheme is `AbbCCtDD` (`A`=major, `bb`=minor, `CC`=maintenance, `t`=type
 digits as its build counter:
 
 - versionName: `<upstream>+<NNN>`, the counter **zero-padded to three digits** —
-  e.g. `2.25.0alpha2+025`, `2.25.0alpha2+026`, … The APK's own version must read
+  e.g. `2.25.0alpha3+026`, `2.25.0alpha3+027`, … The APK's own version must read
   the same as its filename and its release tag, which are padded by the global
   `after-build`/`publish-version` rules; an unpadded `+25` is a bug (fixed
   2026-08-17, when `+25` shipped unpadded and had to be rebuilt).
@@ -33,11 +33,16 @@ digits as its build counter:
   here: it is a number, and leading zeros would change nothing.
 - Both live in `defaultConfig` in `AnkiDroid/build.gradle`. Bump `N` by one for
   each new build deployed to the device; reset to `+1` after a rebase onto a
-  new upstream base (the `upstream-new-version` skill does that).
+  new upstream base (the `upstream-new-version` skill does that) — but only
+  while the reset still leaves versionCode **above** the last deployed one.
+  Upstream's alpha bumps move its code by one while our counter moves by many,
+  so on an alpha-to-alpha rebase the reset would go backwards and the APK would
+  not install over the build on the device; carry the counter on instead
+  (2026-08-29: alpha2+025/`22500127` → alpha3+026/`22500129`, not `+1`).
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
-  digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500102`.
+  digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500129`.
 
-Current base: **upstream/main at v2.25.0alpha2-167** (last rebase 2026-08-17). Deployed: `2.25.0alpha2+025`.
+Current base: **upstream/main at v2.25.0alpha3-20** (last rebase 2026-08-29). Deployed: `2.25.0alpha3+026`.
 
 ## Environment (export every run; not set in non-interactive shells)
 

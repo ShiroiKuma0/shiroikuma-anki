@@ -12,11 +12,11 @@ This is **shiroikuma-anki** — 白い熊's personal fork of AnkiDroid, the semi
 |---|---|
 | applicationId | `shiroikuma.anki` (namespace and code packages stay `com.ichi2.anki`) |
 | App label | `白い熊 暗記` (resValue `app_name` in `AnkiDroid/build.gradle`) |
-| versionName | `<upstream>+<fork build>` with the counter zero-padded to three digits, e.g. `2.25.0alpha2+025` |
-| versionCode | upstream scheme `AbbCCtDD` with the `DD` digits as the fork build counter, e.g. `22500127` |
+| versionName | `<upstream>+<fork build>` with the counter zero-padded to three digits, e.g. `2.25.0alpha3+026` |
+| versionCode | upstream scheme `AbbCCtDD` with the `DD` digits as the fork build counter, e.g. `22500129` |
 | Build flavor | `full` release, arm64-v8a APK, signed with `~/.android-keystores/anki-custom.jks` (alias `anki`) |
 | Remotes | `origin` = `git@github.com:ShiroiKuma0/shiroikuma-anki.git`; `upstream` = `https://github.com/ankidroid/Anki-Android` (push disabled) |
-| Branches | `main` mirrors `upstream/main` (no fork work); `custom` = fork commit stack, rebased onto each upstream release tag (`vX.Y.Z`), or onto `upstream/main` when 白い熊 asks (current base: `upstream/main` at `v2.25.0alpha2-167`, rebased 2026-08-17) |
+| Branches | `main` mirrors `upstream/main` (no fork work); `custom` = fork commit stack, rebased onto each upstream release tag (`vX.Y.Z`), or onto `upstream/main` when 白い熊 asks (current base: `upstream/main` at `v2.25.0alpha3-20`, rebased 2026-08-29) |
 
 Workflow: develop fork additions as a clean commit stack on `custom`; when upstream publishes a new release tag, rebase `custom` onto it (see the `upstream-new-version` skill). Build and deploy via the `build` skill. **Never push without 白い熊 typing "Push."** — and never push to `upstream`.
 
