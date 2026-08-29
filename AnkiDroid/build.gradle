@@ -116,12 +116,16 @@ android {
         // Fork versioning: the fork build counter continues in the DD digits above the
         // upstream base build: build N on upstream base with code C is C+N, versionName
         // <upstream>+N. On public releases (DD=00) that is AbbCC3NN; on alpha/beta bases
-        // it continues from the upstream alpha/beta number. Reset to +1 after each rebase.
+        // it continues from the upstream alpha/beta number. Reset to +1 after a rebase
+        // onto a new upstream base, but ONLY while that keeps versionCode above the last
+        // deployed one; when upstream's own code has not outrun ours (an alpha bump moves
+        // it by one, our counter by more), carry the counter on instead, or the APK will
+        // not install over the build already on the device.
         // In versionName the counter is always zero-padded to three digits (+025, not
         // +25), matching the sister apps so build artefacts sort in build order.
-        versionCode=22500127
+        versionCode=22500129
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
-        versionName="2.25.0alpha2+025"
+        versionName="2.25.0alpha3+026"
         minSdk = libs.versions.minSdk.get().toInteger()
 
         // After #13695: change .tests_emulator.yml
