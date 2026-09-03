@@ -11,6 +11,56 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0alpha4+027 — 2026-09-03
+
+Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`) — a tagged base again, rather than the bare
+`upstream/main` commit the previous two releases sat on. versionCode `22500131`, installed as
+`322500131` for arm64-v8a.
+
+- **Rebased onto upstream 2.25.0alpha4** — 101 commits, `v2.25.0alpha3-20` → `v2.25.0alpha4`.
+  The whole fork stack replayed; nothing dropped. Upstream's churn was again dominated by an
+  edge-to-edge sweep, this time reaching the reviewer (answer buttons, app-bar tint, immersive
+  review, display cutouts and rounded corners, hidden 3-button navigation, "show answer"
+  extended under the insets), the note editor, the preferences screens, the navigation drawer,
+  the card-template editor, review reminders and every fragment hosted by
+  `SingleFragmentActivity`. Alongside it: **targetSdk moved to 36**, path-traversal checks were
+  centralized and import filenames sanitized, a screenshot-test suite arrived for a dozen
+  screens, and `observability`, `SelectableDeck` and the widget classes moved out into
+  `:anki-common` and `:widgets`.
+- **Three collisions, all resolved by keeping both sides.** Upstream added a
+  `SHOW_DONATE_LINKS` build flag immediately beside the `app_name` resValue this fork
+  overrides, so `build.gradle` took upstream's line and kept the fork's identity block. The
+  drawer's edge-to-edge work added `ViewCompat`/`WindowInsetsCompat` imports where the fork
+  adds `children`. And `SettingsFragment.onViewCreated` gained a window-insets listener at
+  exactly the point the fork calls `ShiroikumaUi.styleSettingsList` — both now run, the fork's
+  restyle last, so it still wins on colour.
+- **The build counter continues rather than resetting, for the second rebase running.** Upstream's
+  alpha bump moved its own versionCode by one, `22500103` → `22500104`, while this fork's counter
+  stood at `+026`/`22500129`. A reset to `+1` would have produced `22500105` — *lower* than the
+  build already on the device, which Android refuses to install over. The counter carries on to
+  `+027`/`22500131`.
+- **The newest upstream release tag was a trap this time.** Upstream cut `v2.24.1` from its
+  `release-2.24` branch two days before this rebase, which makes it the newest bare `vX.Y.Z` tag
+  and therefore exactly what the rebase runbook's tag detection selects — but it is not on `main`
+  and is a whole minor version behind this fork's base, so rebasing onto it would have been a
+  downgrade. The right target was `v2.25.0alpha4`, an alpha tag that same detection skips. The
+  runbook now checks a candidate tag against `upstream/main` before treating it as a base.
+- **Fetching from upstream now needs SSH.** An anonymous `git fetch` from github.com answers the
+  protocol-v2 `POST git-upload-pack` with `401` while the ref-listing `GET` succeeds, so git falls
+  through to a username prompt instead of reporting an error — it reads as a credential problem
+  and is not one. The runbook records the SSH URL as the way through.
+- **Video in `[sound:]` tags still needs this fork.** Upstream issue
+  [#20668](https://github.com/ankidroid/Anki-Android/issues/20668) is open — reopened, in fact —
+  and the community fix (PR #20732) is still unmerged. Upstream touched nothing in
+  `com.ichi2.anki.cardviewer` across all 101 commits, so the native fullscreen player replayed
+  untouched.
+- **The `ManifestThemeTest` allowlist needed no change.** Both fork exceptions still match the
+  manifest exactly — `IntentHandler` → `Theme_IntentHandler` for the black launch splash, and
+  `VideoPlayerActivity`'s fullscreen theme — and upstream removed no manifest theme this round,
+  which is the other way that test breaks. The fork's own suites pass on the new base:
+  `ManifestThemeTest`, `ShiroikumaSettingsBackupTest` (10 tests) and `ShiroikumaAutomationTest`
+  (16 tests), 27 in all, green.
+
 ## 白い熊 暗記 2.25.0alpha3+026 — 2026-08-29
 
 Built on AnkiDroid `upstream/main` at `v2.25.0alpha3-20` (`103a807d88`). versionCode
