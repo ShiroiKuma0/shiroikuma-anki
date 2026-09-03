@@ -125,9 +125,9 @@ android {
         // not install over the build already on the device.
         // In versionName the counter is always zero-padded to three digits (+025, not
         // +25), matching the sister apps so build artefacts sort in build order.
-        versionCode=22500129
+        versionCode=22500131
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
-        versionName="2.25.0alpha3+026"
+        versionName="2.25.0alpha4+027"
         minSdk = libs.versions.minSdk.get().toInteger()
 
         // After #13695: change .tests_emulator.yml
