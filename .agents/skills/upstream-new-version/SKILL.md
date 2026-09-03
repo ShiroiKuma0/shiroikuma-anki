@@ -26,14 +26,36 @@ mirrors `upstream/main`; it carries no fork work and never blocks a build.
 ## Step 1 — Detect a new version
 
 ```bash
-git fetch upstream --tags
+git fetch upstream --tags     # if this 401s, see the note below
 base=$(git tag --merged custom --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 new=$(git tag -l 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 echo "base=$base  new=$new"
 ```
 
+- **If the fetch asks for a GitHub username**, it is not a credential
+  problem: GitHub answers the anonymous protocol-v2 `POST git-upload-pack`
+  with `401` while the `GET info/refs` succeeds, so git falls through to a
+  password prompt. `git -c protocol.version=0 ls-remote` reads refs, but a
+  real fetch still POSTs — take the SSH route instead, which `origin` already
+  has keys for (2026-09-03):
+
+  ```bash
+  git fetch --tags git@github.com:ankidroid/Anki-Android \
+      '+refs/heads/*:refs/remotes/upstream/*'
+  ```
+
 - The regex keeps only bare release tags (`v2.24.0`) and skips `v2.24.0alpha12`,
   `v2.24.0beta4`, and oddities like `zeemote_support`.
+- **A bare release tag is not automatically a candidate.** Upstream cuts patch
+  releases from `release-X.Y` branches, so the newest bare tag can be *behind*
+  our base and off `main` entirely — rebasing onto it would be a downgrade.
+  Always test `git merge-base --is-ancestor "$new" upstream/main` and compare
+  versions before treating a tag as the new base. (2026-09-03: `v2.24.1` was
+  cut from `release-2.24` two days after we based on 2.25.0alpha3; the right
+  target was `v2.25.0alpha4`, an alpha tag the regex above skips.)
+- When the fork tracks `upstream/main` rather than release tags, prefer an
+  alpha/beta **tag** on `main` over a bare `upstream/main` commit when one has
+  just been cut — same code, but a base with a name.
 - **If `new == base`**: report "already on the latest upstream (`$base`)" and
   STOP — do nothing else.
 - Otherwise scope the jump so you know what to expect:
