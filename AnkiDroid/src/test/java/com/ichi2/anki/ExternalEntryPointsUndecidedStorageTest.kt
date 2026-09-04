@@ -12,8 +12,12 @@ import android.os.Build
 import androidx.core.net.toUri
 import com.ichi2.anki.common.storage.CollectionHelper
 import com.ichi2.anki.common.storage.StorageDecision
+import com.ichi2.anki.shiroikuma.AutomationProvider
+import com.ichi2.anki.shiroikuma.StateExportReceiver
 import com.ichi2.testutils.ExternalEntryPoints.EntryPoint
 import com.ichi2.testutils.grantPermissions
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -58,7 +62,14 @@ class ExternalEntryPointsUndecidedStorageTest : RobolectricTest() {
             is EntryPoint.WidgetConfig -> launchActivity(entryPoint.className)
             is EntryPoint.WidgetConfigAlias -> launchActivity(entryPoint.targetActivity)
             is EntryPoint.Receiver -> sendBroadcast(entryPoint.className)
-            is EntryPoint.Provider -> queryContentProvider(entryPoint.className)
+            // Fork: the automation data door is call()-only — a query() is the
+            // wrong door and it says so rather than answering an empty cursor
+            is EntryPoint.Provider ->
+                if (entryPoint.className == AUTOMATION_PROVIDER) {
+                    callAutomationProvider(entryPoint.className)
+                } else {
+                    queryContentProvider(entryPoint.className)
+                }
             is EntryPoint.Service -> fail("define how to drive a Service entry point: $entryPoint")
         }
         advanceRobolectricLooper()
@@ -97,6 +108,11 @@ class ExternalEntryPointsUndecidedStorageTest : RobolectricTest() {
             ->
                 Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 1)
             "com.ichi2.anki.receiver.SdCardReceiver" -> Intent(Intent.ACTION_MEDIA_EJECT, "file:///storage/emulated/0".toUri())
+            // Fork: a sister app enumerating what this one can export — the
+            // cheapest of the three automation actions, and the one that must
+            // answer on a phone where storage has not been decided yet
+            "com.ichi2.anki.shiroikuma.StateExportReceiver" ->
+                Intent(StateExportReceiver.listCategoriesAction(targetContext))
             // the widget host redraws the widgets
             "com.ichi2.widget.AddNoteWidget", "com.ichi2.widget.AnkiDroidWidgetSmall" ->
                 Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(1))
@@ -133,6 +149,24 @@ class ExternalEntryPointsUndecidedStorageTest : RobolectricTest() {
         receiverClass.getDeclaredConstructor().newInstance().onReceive(targetContext, intent)
     }
 
+    /**
+     * Fork: the automation data door, driven the only way it can be — `call()`.
+     *
+     * An unidentified caller is refused before anything reads storage, which is
+     * exactly the property this suite exists to pin: 応用管理 reaches this
+     * provider on a freshly wiped phone, where nothing has been decided yet.
+     */
+    private fun callAutomationProvider(className: String) {
+        val providerClass = Class.forName(className).asSubclass(ContentProvider::class.java)
+        val provider =
+            Robolectric
+                .buildContentProvider(providerClass)
+                .create("${targetContext.packageName}.automation")
+                .get()
+        val result = provider.call(AutomationProvider.METHOD_DESCRIBE, null, null)
+        assertThat(result?.getString(AutomationProvider.KEY_RESULT), equalTo("ERROR:caller unknown"))
+    }
+
     private fun queryContentProvider(className: String) {
         grantPermissions(FlashCardsContract.READ_WRITE_PERMISSION)
         val providerClass = Class.forName(className).asSubclass(ContentProvider::class.java)
@@ -148,6 +182,8 @@ class ExternalEntryPointsUndecidedStorageTest : RobolectricTest() {
     }
 
     companion object {
+        private const val AUTOMATION_PROVIDER = "com.ichi2.anki.shiroikuma.AutomationProvider"
+
         @ParameterizedRobolectricTestRunner.Parameters(name = "{1}")
         @JvmStatic // required for initParameters
         fun initParameters(): Collection<Array<Any>> = ExternalEntryPointsTest.EXPECTED.map { arrayOf(it, it.toString()) }

@@ -153,13 +153,17 @@ object ShiroikumaExport {
 
     /**
      * Parses the automation `items` extra — a comma-separated list of the ids
-     * from `LIST_CATEGORIES`. Absent/empty selects everything.
+     * from `LIST_CATEGORIES`. Absent/empty selects our **default set**: the
+     * items we report as `on`, which is every category but *not* the media
+     * folder ([MEDIA_DEFAULT_ON]). Not "everything": a caller 白い熊 has never
+     * picked items for gets what we recommend, and the media folder is by far
+     * the largest part of the export and re-obtainable by syncing.
      *
      * @throws IllegalArgumentException an id is not one of ours
      */
     fun parseItems(items: String): Selection {
         val ids = items.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        if (ids.isEmpty()) return Selection(Cat.entries.toSet(), includeMedia = true)
+        if (ids.isEmpty()) return Selection(Cat.entries.filter { it.defaultOn }.toSet(), includeMedia = MEDIA_DEFAULT_ON)
         val cats = LinkedHashSet<Cat>()
         var media = false
         for (id in ids) {
