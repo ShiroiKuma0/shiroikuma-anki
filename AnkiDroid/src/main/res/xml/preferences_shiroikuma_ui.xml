@@ -17,12 +17,22 @@
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <!-- The automation surface lives with the backup it triggers, never in
-             a section of its own: switch first (default OFF), then the token.
-             Both are device-local (AutomationAuth), hence persistent="false". -->
+             a section of its own: the master switch (default ON since contract
+             v2), then "Use authorization token?" (default OFF), then the token
+             itself — shown only while it is being asked for, because a
+             48-character secret under an off switch invites pasting it
+             somewhere it will do nothing. All three are device-local
+             (AutomationAuth), hence persistent="false". -->
         <SwitchPreferenceCompat
             android:key="@string/pref_sk_automation_enabled_key"
             android:title="@string/sk_automation_switch"
             android:summary="@string/sk_automation_switch_summary"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <SwitchPreferenceCompat
+            android:key="@string/pref_sk_automation_require_token_key"
+            android:title="@string/sk_automation_require_token"
+            android:summary="@string/sk_automation_require_token_summary"
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <com.ichi2.anki.shiroikuma.SecondaryActionPreference
