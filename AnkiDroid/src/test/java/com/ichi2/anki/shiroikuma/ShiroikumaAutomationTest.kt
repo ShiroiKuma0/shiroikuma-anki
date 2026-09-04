@@ -14,15 +14,17 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertFailsWith
 
 /**
- * The sister-app state-export automation contract: the token gate, the
- * category enumeration, and the `items` selection. The export itself needs a
- * live broadcast (`goAsync`) and a real directory, so it is verified on the
- * device against the acceptance checklist.
+ * The sister-app automation contract (v2): the gate — an open switch and an
+ * opt-in token — the category enumeration, the `items` selection, and the data
+ * door's caller check. The export itself needs a live broadcast (`goAsync`) and
+ * a real directory, so it is verified on the device against the acceptance
+ * checklist.
  */
 @RunWith(AndroidJUnit4::class)
 class ShiroikumaAutomationTest : RobolectricTest() {
@@ -32,7 +34,13 @@ class ShiroikumaAutomationTest : RobolectricTest() {
 
     @Before
     fun clearAutomationState() {
-        AutomationAuth.setEnabled(targetContext, false)
+        // cleared rather than closed: v2's defaults are what a fresh install
+        // answers with, and those are what the batch depends on
+        targetContext
+            .getSharedPreferences("sk_automation", 0)
+            .edit()
+            .clear()
+            .commit()
         shadowOf(app).clearBroadcastIntents()
     }
 
@@ -62,29 +70,77 @@ class ShiroikumaAutomationTest : RobolectricTest() {
             ?.getStringExtra(StateExportReceiver.EXTRA_RESULT)
 
     @Test
-    fun `nothing is reachable until the switch is on`() {
-        val token = AutomationAuth.token(targetContext)
-        send(StateExportReceiver.listCategoriesAction(targetContext), token)
+    fun `the surface answers out of the box`() {
+        // v2: nothing to turn on and nothing to paste — a phone that has just
+        // been wiped is exactly where this has to work
+        send(StateExportReceiver.listCategoriesAction(targetContext), "")
+        assertThat(reply()!!.startsWith("OK:"), equalTo(true))
+    }
+
+    @Test
+    fun `the master switch still closes the app off`() {
+        AutomationAuth.setEnabled(targetContext, false)
+        send(StateExportReceiver.listCategoriesAction(targetContext), AutomationAuth.token(targetContext))
         assertThat(reply(), equalTo("ERROR:automation disabled"))
     }
 
     @Test
-    fun `a wrong token is refused, and distinctly from a closed switch`() {
-        AutomationAuth.setEnabled(targetContext, true)
+    fun `a token sent to an app that does not require one is ignored, never refused`() {
+        // tokens outlive the settings they were pasted for; refusing one would
+        // turn "白い熊 turned a switch off" into "half the batch fails"
+        send(StateExportReceiver.listCategoriesAction(targetContext), "a stale token from last year")
+        assertThat(reply()!!.startsWith("OK:"), equalTo(true))
+    }
+
+    @Test
+    fun `a wrong token is refused once the token is required, and distinctly from a closed switch`() {
+        AutomationAuth.setRequireToken(targetContext, true)
         send(StateExportReceiver.listCategoriesAction(targetContext), "wrong")
         assertThat(reply(), equalTo("ERROR:bad token"))
     }
 
     @Test
-    fun `an empty token is refused`() {
-        AutomationAuth.setEnabled(targetContext, true)
+    fun `an empty token is refused once the token is required`() {
+        AutomationAuth.setRequireToken(targetContext, true)
         send(StateExportReceiver.listCategoriesAction(targetContext), "")
         assertThat(reply(), equalTo("ERROR:bad token"))
     }
 
     @Test
+    fun `the right token passes once the token is required`() {
+        AutomationAuth.setRequireToken(targetContext, true)
+        send(StateExportReceiver.listCategoriesAction(targetContext), AutomationAuth.token(targetContext))
+        assertThat(reply()!!.startsWith("OK:"), equalTo(true))
+    }
+
+    @Test
+    fun `the gate is one function, and reports its two failures distinctly`() {
+        assertThat(AutomationAuth.refuse(targetContext, null), nullValue())
+        AutomationAuth.setRequireToken(targetContext, true)
+        assertThat(AutomationAuth.refuse(targetContext, null), equalTo("ERROR:bad token"))
+        assertThat(AutomationAuth.refuse(targetContext, AutomationAuth.token(targetContext)), nullValue())
+        AutomationAuth.setEnabled(targetContext, false)
+        assertThat(
+            "a closed switch outranks a good token",
+            AutomationAuth.refuse(targetContext, AutomationAuth.token(targetContext)),
+            equalTo("ERROR:automation disabled"),
+        )
+    }
+
+    @Test
+    fun `a cancel is answered with nothing at all, refused or not`() {
+        // fire-and-forget: the one terminal reply belongs to the export it
+        // stops, and 自由作業盤 fires it without knowing how far we got
+        send(StateExportReceiver.cancelExportAction(targetContext), "")
+        assertThat(reply(), nullValue())
+
+        AutomationAuth.setEnabled(targetContext, false)
+        send(StateExportReceiver.cancelExportAction(targetContext), "")
+        assertThat(reply(), nullValue())
+    }
+
+    @Test
     fun `the category list is one id-tab-label line per category, media under the collection`() {
-        AutomationAuth.setEnabled(targetContext, true)
         send(StateExportReceiver.listCategoriesAction(targetContext), AutomationAuth.token(targetContext))
 
         val result = reply()!!
@@ -114,7 +170,6 @@ class ShiroikumaAutomationTest : RobolectricTest() {
 
     @Test
     fun `an unknown items id is refused before anything is written`() {
-        AutomationAuth.setEnabled(targetContext, true)
         send(
             StateExportReceiver.exportStateAction(targetContext),
             AutomationAuth.token(targetContext),
@@ -125,16 +180,26 @@ class ShiroikumaAutomationTest : RobolectricTest() {
 
     @Test
     fun `an unknown action is refused`() {
-        AutomationAuth.setEnabled(targetContext, true)
         send("${targetContext.packageName}.action.SOMETHING_ELSE", AutomationAuth.token(targetContext))
         assertThat(reply()!!.startsWith("ERROR:unknown action:"), equalTo(true))
     }
 
     @Test
-    fun `an absent items list selects everything, media included`() {
+    fun `an absent items list selects our default set, not everything`() {
+        // the contract: absent items means the items we report as `on`, which
+        // is every category but NOT the media folder — by far the largest part
+        // of the export, and re-obtainable by syncing
         val all = ShiroikumaExport.parseItems("")
-        assertThat(all.cats, equalTo(ShiroikumaExport.Cat.entries.toSet()))
-        assertThat(all.includeMedia, equalTo(true))
+        assertThat(
+            all.cats,
+            equalTo(
+                ShiroikumaExport.Cat.entries
+                    .filter { it.defaultOn }
+                    .toSet(),
+            ),
+        )
+        assertThat(all.includeMedia, equalTo(ShiroikumaExport.MEDIA_DEFAULT_ON))
+        assertThat("no category is opt-out today", all.cats, equalTo(ShiroikumaExport.Cat.entries.toSet()))
     }
 
     @Test
@@ -181,14 +246,50 @@ class ShiroikumaAutomationTest : RobolectricTest() {
     }
 
     @Test
-    fun `the switch defaults to off`() {
-        // the surface must stay closed on a fresh install (and after a restore)
-        targetContext
-            .getSharedPreferences("sk_automation", 0)
-            .edit()
-            .clear()
-            .commit()
-        assertThat(AutomationAuth.enabled(targetContext), equalTo(false))
+    fun `the switch defaults to on and the token to not-required`() {
+        // v2: a pasted secret cannot survive a wipe, and a clean phone is
+        // exactly where 応用管理 has to be able to restore this app
+        assertThat(AutomationAuth.enabled(targetContext), equalTo(true))
+        assertThat(AutomationAuth.requireToken(targetContext), equalTo(false))
+    }
+
+    @Test
+    fun `the data door refuses a caller it cannot identify`() {
+        // no calling package at all, which is what a direct call() looks like
+        val provider = Robolectric.buildContentProvider(AutomationProvider::class.java).create().get()
+        val result = provider.call(AutomationProvider.METHOD_DESCRIBE, null, null)
+        assertThat(result.getString(AutomationProvider.KEY_RESULT), equalTo("ERROR:caller unknown"))
+    }
+
+    @Test
+    fun `the data door refuses a caller that is not on the list`() {
+        assertThat(
+            AutomationCallers.verify(targetContext, "shiroikuma.evil"),
+            equalTo(AutomationCallers.Verdict.Refused("ERROR:caller not permitted: shiroikuma.evil") as AutomationCallers.Verdict),
+        )
+        assertThat(
+            "a prefix is not an identity",
+            AutomationCallers.verify(targetContext, "shiroikuma.oyokanri.evil"),
+            equalTo(
+                AutomationCallers.Verdict.Refused("ERROR:caller not permitted: shiroikuma.oyokanri.evil")
+                    as AutomationCallers.Verdict,
+            ),
+        )
+        assertThat(
+            AutomationCallers.verify(targetContext, null),
+            equalTo(AutomationCallers.Verdict.Refused("ERROR:caller unknown") as AutomationCallers.Verdict),
+        )
+    }
+
+    @Test
+    fun `a permitted caller name still has to survive the uid check`() {
+        // the name is on the list, but this process is not that package: the
+        // kernel's answer is what decides, and it cannot be borrowed
+        val verdict = AutomationCallers.verify(targetContext, "shiroikuma.oyokanri")
+        assertThat(
+            verdict,
+            equalTo(AutomationCallers.Verdict.Refused("ERROR:caller uid mismatch: shiroikuma.oyokanri") as AutomationCallers.Verdict),
+        )
     }
 
     @Test
@@ -202,7 +303,6 @@ class ShiroikumaAutomationTest : RobolectricTest() {
     @Test
     fun `a zip export carries neither the token nor the switch`() =
         kotlinx.coroutines.test.runTest {
-            AutomationAuth.setEnabled(targetContext, true)
             val token = AutomationAuth.token(targetContext)
             val zip = ByteArrayOutputStream()
             ShiroikumaExport.export(
@@ -217,7 +317,6 @@ class ShiroikumaAutomationTest : RobolectricTest() {
 
     @Test
     fun `the reply is silent when the caller gave no reply target`() {
-        AutomationAuth.setEnabled(targetContext, true)
         StateExportReceiver().onReceive(
             targetContext,
             Intent(StateExportReceiver.listCategoriesAction(targetContext)).apply {
