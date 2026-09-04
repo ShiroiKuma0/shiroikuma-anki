@@ -11,6 +11,78 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0alpha4+029 — 2026-09-04
+
+Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`), the same base as +027. versionCode
+`22500133`, installed as `322500133` for arm64-v8a. (`+028` was built and delivered but
+never released — its manifest was cut minutes before the `<queries>` fix below.)
+
+**Sister-app automation contract v2 — the app can now be backed up *with its data*, and restored onto a wiped phone.**
+
+- **The gate opens by default.** The automation switch now ships **on**, and the
+  authorization token became a separate, **opt-in** switch that ships **off**. A pasted
+  48-character secret cannot survive a factory reset, which is precisely the situation the
+  feature now exists for: restoring this app and its collection onto a clean phone where
+  nothing has been configured. The token still exists, still regenerates, still never leaves
+  the device — it is simply no longer the gate. A token sent to the app while the token
+  switch is off is **ignored rather than refused**, so a caller configured last year keeps
+  working. Both switches and the secret live in a preferences file the export deliberately
+  never walks, and all three are written synchronously — with the switch now defaulting to
+  *on*, a lost write would have silently re-opened a surface you had closed.
+- **A data door that knows who is knocking.** A new content provider at
+  `shiroikuma.anki.automation` answers `describe`, `export`, `import` and `cancel`. A
+  broadcast cannot tell you who sent it, which is what the shared secret used to paper over;
+  a provider learns the caller's identity from the framework. Callers are checked three ways —
+  an **exact** package name (never a prefix: a package name is not a namespace anyone owns,
+  so any sideloaded app may call itself `shiroikuma.evil`), the uid the kernel reports, and a
+  **pinned signing certificate**. The last one matters most on a clean phone, where whichever
+  caller is not yet installed is a name anyone could take.
+- **The backup travels through a file descriptor the caller opens**, never a path and never a
+  URI. The backup app writes into a temporary file and renames it on commit, and it encrypts
+  and checksums per file it knows about — a file this app dropped in itself would be renamed
+  out from under it and would sit in plaintext inside an otherwise encrypted archive. A
+  descriptor is also a capability that expires when it is closed.
+- **`import` exists only on the provider**, never as a broadcast. An import replaces the
+  collection, and the broadcast receiver is exported without a permission — an import there
+  would let any app on the phone wipe your cards.
+- **The work runs in a foreground service** with a partial wakelock, because a collection with
+  media is minutes of writing and a backgrounded app is frozen mid-stream on EMUI — which
+  yields a truncated archive underneath a success reply, the one failure indistinguishable
+  from a good backup until the day you need it.
+
+**Fixes**
+
+- **A headless backup no longer sweeps the entire media folder.** An automation request that
+  named no categories was exporting *everything*, media included, when the contract says an
+  absent list means the app's **default set** — and this app has always reported the media
+  folder as starting unticked, being the bulk of the archive and re-obtainable by syncing.
+  A batch backup of every app was therefore carrying the whole collection's media every single
+  time.
+- **Replies to the automation caller were being discarded.** Android 11+ requires a package to
+  be named under `<queries>` before an app may address it, and the fork named only one of the
+  two callers. The export ran, wrote correctly, and was never heard of. Both are now declared —
+  which is needed twice over, since reading a caller's signing certificate needs the same
+  visibility.
+- **A retried backup request could crash the app it was backing up.** The service read its
+  arguments before going to the foreground, but the platform requires a foreground promise to
+  be kept once made — so a caller retrying with a stale job id killed the process. It now goes
+  foreground as its first statement and stops silently on a stale id.
+- **A restored settings file could be silently undone.** The backup app force-stops this one
+  the instant a restore reports success — a `SIGKILL`, which an asynchronous preferences write
+  does not survive. The restore path now commits synchronously.
+- Upstream's `ExternalEntryPointsTest` pins the set of externally-reachable components, and the
+  fork's automation receiver had never been added to it — the suite was failing before this
+  release touched it. Both it and the storage-undecided suite now know the fork's entry points.
+
+**Internals**
+
+- One progress sender is now shared by both doors, so the broadcast export and the provider
+  export report identically: real counts never a percentage, throttled to one every 500 ms,
+  with a 25-second heartbeat so a long single step is not mistaken for a dead process.
+- The foreground service is declared `dataSync` rather than `specialUse`: that is what writing
+  a backup into a descriptor actually is, the permission was already held, and `specialUse` is
+  an API 34 constant this phone's platform would reject.
+
 ## 白い熊 暗記 2.25.0alpha4+027 — 2026-09-03
 
 Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`) — a tagged base again, rather than the bare
