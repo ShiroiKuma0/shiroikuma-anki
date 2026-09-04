@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Environment
-import android.os.SystemClock
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import com.ichi2.anki.R
@@ -20,7 +19,6 @@ import timber.log.Timber
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -30,20 +28,22 @@ import java.util.concurrent.atomic.AtomicReference
  * `BackupContactsReceiver`, the EMUI-proven round-trip, and 自由作業盤's own
  * `StateExportReceiver`).
  *
- * Three actions, all token-gated by [AutomationAuth]:
+ * Three actions, all gated by [AutomationAuth.refuse] — the switch, and the
+ * token only when this app is asking for one (contract v2; a token sent to an
+ * app that does not require one is ignored, never refused):
  * - `<pkg>.action.EXPORT_STATE` — runs the Export / Import panel's own export
  *   ([ShiroikumaExport.export]) with no UI, writing **one** zip. Extras (all
- *   String): `token` (required), `path` (optional absolute directory, wins
+ *   String): `token` (optional), `path` (optional absolute directory, wins
  *   over the configured SAF directory), `items` (optional comma list of the
- *   ids from `LIST_CATEGORIES`; absent/empty = everything),
- *   `progress_action` (optional), plus the reply trio `reply_action` /
- *   `reply_package` / `reply_id`.
+ *   ids from `LIST_CATEGORIES`; absent/empty = our **default set**, which is
+ *   every category but not the media folder), `progress_action` (optional),
+ *   plus the reply trio `reply_action` / `reply_package` / `reply_id`.
  * - `<pkg>.action.LIST_CATEGORIES` — instant; enumerates the exportable
  *   categories as `id<TAB>label<TAB>parent<TAB>on|off` lines: the parent id
  *   of a sub-option (empty for a top-level item), then whether the caller's
  *   picker starts it ticked.
  * - `<pkg>.action.CANCEL_EXPORT` — stops the export in flight and deletes the
- *   file it was writing. Extras: `token` (required) and an optional
+ *   file it was writing. Extras: `token` (optional) and an optional
  *   `reply_id` (absent = whatever is running; two exports at once are
  *   forbidden by the contract). Fire-and-forget: it answers nothing itself,
  *   the stopped export answers `ERROR:cancelled` to *its* request, and a
@@ -93,19 +93,25 @@ class StateExportReceiver : BroadcastReceiver() {
             )
         }
 
-        // Gate first — "disabled" and "bad token" stay distinct errors.
-        if (!AutomationAuth.enabled(app)) {
-            reply("ERROR:automation disabled")
+        // The gate, asked once, in [AutomationAuth] — "disabled" and "bad
+        // token" stay distinct errors, and a token we are not asking for is
+        // ignored rather than refused.
+        val refusal = AutomationAuth.refuse(app, token)
+
+        // CANCEL_EXPORT answers nothing at all, a refusal included: the one
+        // terminal reply belongs to the export it stops, and a caller that
+        // presses 中止 against a closed app has nothing to be told.
+        if (action == cancelExportAction(app)) {
+            if (refusal == null) cancelRunningExport(replyId) else Timber.i("automation cancel refused: %s", refusal)
             return
         }
-        if (!AutomationAuth.isTokenValid(app, token)) {
-            reply("ERROR:bad token")
+        if (refusal != null) {
+            reply(refusal)
             return
         }
 
         when (action) {
             listCategoriesAction(app) -> reply("OK:" + categoryLines(app))
-            cancelExportAction(app) -> cancelRunningExport(replyId)
             exportStateAction(app) -> {
                 val selection =
                     try {
@@ -198,36 +204,21 @@ class StateExportReceiver : BroadcastReceiver() {
         progressAction: String,
         reply: (String) -> Unit,
     ) {
-        val appLabel = app.packageManager.getApplicationLabel(app.applicationInfo).toString()
-        val lastProgressAt = AtomicLong(0)
+        // the one sender both doors share, heartbeat included — two of them
+        // would mean two watchdogs, and the one that drifts is the one nobody
+        // watches
+        val progress = AutomationProgress(app, replyId, progressAction, replyPackage)
 
         fun sendProgress(
-            progress: ShiroikumaExport.Progress,
+            line: ShiroikumaExport.Progress,
             force: Boolean = false,
-        ) {
-            if (progressAction.isEmpty() || replyPackage.isEmpty()) return
-            // throttled to one every 500ms; the final line is always forced
-            val now = SystemClock.elapsedRealtime()
-            if (!force && now - lastProgressAt.get() < PROGRESS_INTERVAL_MS) return
-            lastProgressAt.set(now)
-            app.sendBroadcast(
-                Intent(progressAction).apply {
-                    setPackage(replyPackage)
-                    addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                    putExtra(EXTRA_REPLY_ID, replyId)
-                    putExtra(EXTRA_PROGRESS_APP, appLabel)
-                    putExtra(EXTRA_PROGRESS_TEXT, progress.text)
-                    putExtra(EXTRA_PROGRESS_CURRENT, progress.current)
-                    putExtra(EXTRA_PROGRESS_TOTAL, progress.total)
-                    putExtra(EXTRA_PROGRESS_UNIT, progress.unit)
-                },
-            )
-        }
+        ) = progress.send(line, force = force)
 
         val pending = goAsync()
         val run = RunningExport(replyId)
         runningExport.set(run)
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            val heartbeat = launch { progress.beat() }
             try {
                 val fileName = ShiroikumaExport.exportFileName()
                 val cats = selection.cats
@@ -306,6 +297,7 @@ class StateExportReceiver : BroadcastReceiver() {
                     reply("ERROR:${e.message ?: e.javaClass.simpleName}")
                 }
             } finally {
+                heartbeat.cancel()
                 runningExport.compareAndSet(run, null)
                 pending.finish()
             }
@@ -416,8 +408,6 @@ class StateExportReceiver : BroadcastReceiver() {
         const val EXTRA_PROGRESS_CURRENT = "current"
         const val EXTRA_PROGRESS_TOTAL = "total"
         const val EXTRA_PROGRESS_UNIT = "unit"
-
-        private const val PROGRESS_INTERVAL_MS = 500L
 
         /**
          * The caller cannot stat the file, so we hand it both the bytes and a

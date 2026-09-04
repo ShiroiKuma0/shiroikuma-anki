@@ -48,6 +48,14 @@ class ExternalEntryPointsTest : RobolectricTest() {
                 EntryPoint.Receiver("com.ichi2.anki.receiver.SdCardReceiver"),
                 EntryPoint.Receiver("com.ichi2.widget.AddNoteWidget"),
                 EntryPoint.Receiver("com.ichi2.widget.AnkiDroidWidgetSmall"),
+                // Fork: the sister-app automation contract. Both are reachable
+                // with no UI and with storage possibly unconfigured — which is
+                // the point: 白い熊 応用管理 restores this app onto a clean
+                // phone. The provider answers `describe` without touching the
+                // collection, and every path that does touch it runs in
+                // AutomationDataService, off the caller's thread.
+                EntryPoint.Provider("com.ichi2.anki.shiroikuma.AutomationProvider"),
+                EntryPoint.Receiver("com.ichi2.anki.shiroikuma.StateExportReceiver"),
             )
     }
 }
