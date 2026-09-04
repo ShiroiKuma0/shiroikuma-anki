@@ -45,6 +45,7 @@
     <string name="pref_sk_settings_header_color_key">sk_settings_header_color</string>
     <string name="pref_sk_eximport_key">sk_eximport</string>
     <string name="pref_sk_automation_enabled_key">sk_automation_enabled</string>
+    <string name="pref_sk_automation_require_token_key">sk_automation_require_token</string>
     <string name="pref_sk_automation_token_key">sk_automation_token</string>
     <string name="pref_sk_reset_key">sk_reset</string>
 
@@ -150,13 +151,18 @@
     <string name="sk_restart_now">Restart now</string>
     <string name="sk_eim_category_meter">区分 %1$d/%2$d — %3$s</string>
 
-    <!-- Automation export: the token-gated EXPORT_STATE intent (sister-app contract) -->
+    <!-- Automation: the EXPORT_STATE intents and the data door (sister-app contract v2) -->
     <string name="sk_automation_switch">Automation export</string>
-    <string name="sk_automation_switch_summary">Let sister-app tasks trigger this export via the token-gated EXPORT_STATE intent.</string>
+    <string name="sk_automation_switch_summary">Let sister apps trigger this export and back this app\'s data up.</string>
+    <string name="sk_automation_require_token">Use authorization token?</string>
+    <string name="sk_automation_require_token_summary">Off: any sister app may drive the automation. On: a caller must also present the token below. The data door checks the caller\'s identity and signature either way.</string>
     <string name="sk_automation_token">Automation token (tap to copy)</string>
     <string name="sk_automation_regenerate">Regenerate</string>
     <string name="sk_automation_token_copied">Automation token copied</string>
     <string name="sk_automation_token_regenerated">Automation token regenerated — update pasted copies</string>
+    <string name="sk_automation_channel">Automation data</string>
+    <string name="sk_automation_exporting">Backing this app up…</string>
+    <string name="sk_automation_importing">Restoring this app\'s data…</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>

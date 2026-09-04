@@ -612,7 +612,11 @@ object ShiroikumaUi {
         require(root.optString("_format") == BACKUP_FORMAT) { "not a 白い熊 暗記 settings file" }
         val entries = root.getJSONObject("entries")
         var applied = 0
-        context.sharedPrefs().edit {
+        // commit, not apply: 応用管理 force-stops this app the instant the data
+        // door replies OK to an import — a SIGKILL, which an apply() in flight
+        // does not survive. A restore that reports success and restored nothing
+        // is the one failure worse than a restore that fails.
+        context.sharedPrefs().edit(commit = true) {
             for (key in entries.keys()) {
                 if (key in BACKUP_BLOCKLIST) continue
                 val entry = entries.getJSONObject(key)

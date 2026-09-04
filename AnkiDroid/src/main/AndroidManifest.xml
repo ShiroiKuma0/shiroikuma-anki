@@ -77,6 +77,16 @@
         <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>
+        <!-- Fork: the two callers of the automation contract — 応用管理 backs
+             this app up through the provider, 自由作業盤 drives the 保存復元
+             batch through the receiver. BOTH are needed twice over: without
+             package visibility a reply's setPackage() fails SILENTLY on
+             Android 11+ (the export runs, writes correctly, and is never heard
+             of), and AutomationCallers cannot read a caller's signing
+             certificate at all, so a legitimate call is refused as "signature
+             unreadable". -->
+        <package android:name="shiroikuma.oyokanri" />
+        <package android:name="shiroikuma.jiyusagyoban" />
     </queries>
 
     <!--
@@ -639,8 +649,11 @@
         </receiver>
 
         <!-- Fork: the sister-app state-export automation contract. No
-             android:permission — the caller cannot hold one, so the shared
-             token (AutomationAuth) is the gate. -->
+             android:permission: in v2 the receiver is the UNAUTHENTICATED half
+             of the surface, deliberately — it only ever writes where it was
+             told to and reports what it did. Everything that moves data through
+             a caller-supplied descriptor lives behind the provider below, which
+             knows who is calling. -->
         <receiver
             android:name=".shiroikuma.StateExportReceiver"
             android:exported="true">
@@ -650,6 +663,34 @@
                 <action android:name="${applicationId}.action.CANCEL_EXPORT" />
             </intent-filter>
         </receiver>
+
+        <!-- Fork: contract v2's data door. No android:permission for a real
+             reason: a custom one would have to be `normal` (any app may hold
+             it) or `signature` (impossible — every app in this family has its
+             own keystore). Neither buys anything AutomationCallers' exact-name
+             + uid + pinned-certificate check does not. -->
+        <provider
+            android:name=".shiroikuma.AutomationProvider"
+            android:authorities="${applicationId}.automation"
+            android:exported="true" />
+
+        <!-- dataSync, not specialUse: writing this app's backup into a
+             descriptor IS a data sync, FOREGROUND_SERVICE_DATA_SYNC is already
+             declared above, and `specialUse` is an API 34 literal that older
+             platforms reject at startForeground(). -->
+        <service
+            android:name=".shiroikuma.AutomationDataService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Fork: capability discovery. Manifest meta-data rather than a query
+             intent, because a FROZEN app cannot be asked anything and 白い熊
+             freezes aggressively; 応用管理 reads these with
+             MATCH_UNINSTALLED_PACKAGES | MATCH_DISABLED_COMPONENTS. An app
+             without them is simply not offered for data backup or restore. -->
+        <meta-data android:name="shiroikuma.automation.contract" android:value="2" />
+        <meta-data android:name="shiroikuma.automation.format" android:value="1" />
+        <meta-data android:name="shiroikuma.automation.min_format" android:value="1" />
 
         <receiver android:name=".services.NotificationService"
             android:enabled="true"

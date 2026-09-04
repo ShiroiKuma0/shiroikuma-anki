@@ -320,12 +320,17 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     }
 
     /**
-     * The automation surface's two rows — the master switch and the token —
-     * appended below the Export / Import row because this is a backup feature
-     * and every sister app puts them in the same place.
+     * The automation surface's three rows — the master switch, "Use
+     * authorization token?", and the token itself — appended below the
+     * Export / Import row because this is a backup feature and every sister app
+     * puts them in the same place.
      *
-     * Both values live in [AutomationAuth]'s own device-local prefs file, so
-     * they are neither exported nor touched by "Reset all to defaults":
+     * The token row is shown **only while a token is being asked for**: a
+     * 48-character secret sitting under an off switch invites 白い熊 to paste it
+     * somewhere it will do nothing.
+     *
+     * All three values live in [AutomationAuth]'s own device-local prefs file,
+     * so they are neither exported nor touched by "Reset all to defaults":
      * repainting the UI must not silently break 白い熊's 保存復元 batch.
      */
     private fun setupAutomationRows() {
@@ -337,7 +342,16 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             true
         }
 
+        val requireToken = requirePreference<SwitchPreferenceCompat>(R.string.pref_sk_automation_require_token_key)
         val tokenRow = requirePreference<SecondaryActionPreference>(R.string.pref_sk_automation_token_key)
+        requireToken.isChecked = AutomationAuth.requireToken(context)
+        tokenRow.isVisible = requireToken.isChecked
+        requireToken.setOnPreferenceChangeListener { _, newValue ->
+            val on = newValue as Boolean
+            AutomationAuth.setRequireToken(context, on)
+            tokenRow.isVisible = on
+            true
+        }
 
         fun showToken() {
             // a colour span, because styleSettingsList repaints plain summary
