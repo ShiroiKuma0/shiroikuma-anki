@@ -62,6 +62,7 @@ import com.ichi2.anki.servicelayer.ThrowableFilterService
 import com.ichi2.anki.services.NotificationService
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.settings.PrefsRepository
+import com.ichi2.anki.shiroikuma.initializeCrashReporter
 import com.ichi2.anki.startup.ensureCollectionPathSet
 import com.ichi2.anki.startup.getDefaultAnkiDroidDirectory
 import com.ichi2.anki.ui.dialogs.ActivityAgnosticDialogs
@@ -138,7 +139,6 @@ open class AnkiDroidApp :
      */
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
-        if (isAcraSenderProcess()) return
         profileManager = ProfileManager.createOrNull(base)
     }
 
@@ -176,7 +176,7 @@ open class AnkiDroidApp :
 
         ApplicationContextInitializer.setInstance(this)
 
-        initializeAcraCrashReporter()
+        initializeCrashReporter()
         initializeNavigator()
         initializeWidgetRepository()
         WidgetNotificationScheduler.register { scheduleNotification() }
@@ -197,7 +197,7 @@ open class AnkiDroidApp :
         Timber.d("Startup - Application Start")
         Timber.i("Timber config: $logType")
 
-        // analytics after ACRA, they both install UncaughtExceptionHandlers but Analytics chains while ACRA does not
+        // analytics installs an UncaughtExceptionHandler, and chains to the previous one
         initializeAnalytics()
         // Last in the UncaughtExceptionHandlers chain is our filter service
         ThrowableFilterService.initialize()
@@ -207,11 +207,6 @@ open class AnkiDroidApp :
             Timber.i(DebugInfoService.getDebugInfo(this@AnkiDroidApp))
         }
 
-        // Stop after analytics and logging are initialised.
-        if (isAcraSenderProcess()) {
-            Timber.d("Skipping AnkiDroidApp.onCreate from ACRA sender process")
-            return
-        }
         ProfileManager.attachError?.let {
             Timber.w(it, "Failed to load the profile environment, running on the base context")
         }
@@ -297,7 +292,7 @@ open class AnkiDroidApp :
     /**
      * Sets [isInitialized] to `true` ([instance] != null)
      *
-     * [onCreate] can be called multiple times due to ACRA using a separate sender process
+     * [onCreate] can be called more than once
      *
      * @return false if `instance.resources` is unusable
      */
@@ -625,7 +620,7 @@ open class AnkiDroidApp :
         fun sharedPrefsOrNull(): SharedPreferences? =
             sharedPreferencesTestingOverride ?: if (isInitialized) instance.sharedPrefs() else null
 
-        /** HACK: Whether an exception report has been thrown - TODO: Rewrite an ACRA Listener to do this  */
+        /** HACK: Whether an exception report has been thrown  */
         @VisibleForTesting
         var sentExceptionReportHack = false
 

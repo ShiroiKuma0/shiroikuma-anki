@@ -12,7 +12,6 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CommonString
 import com.ichi2.anki.R
-import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.common.utils.ext.AddingDefaultsMode
 import com.ichi2.anki.common.utils.ext.addingDefaultsMode
 import com.ichi2.anki.contextmenu.AnkiCardContextMenu
@@ -50,10 +49,6 @@ class GeneralSettingsFragment : SettingsFragment() {
             setOnPreferenceChangeListener { newValue ->
                 launchCatchingTask { withCol { config.setBool(ConfigKey.Bool.PASTE_IMAGES_AS_PNG, newValue) } }
             }
-        }
-        // Error reporting mode
-        requirePreference<ListPreference>(R.string.error_reporting_mode_key).setOnPreferenceChangeListener { newValue ->
-            CrashReportService.onPreferenceChanged(requireContext(), newValue)
         }
         // Anki card context menu
         requirePreference<SwitchPreferenceCompat>(R.string.anki_card_external_context_menu_key).apply {

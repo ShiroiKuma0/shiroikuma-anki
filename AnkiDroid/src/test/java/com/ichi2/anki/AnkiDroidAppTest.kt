@@ -15,8 +15,6 @@ import com.ichi2.anki.common.crashreporting.CrashReportService.sendExceptionRepo
 import com.ichi2.anki.multiprofile.ProfileManager
 import com.ichi2.anki.multiprofile.ProfileManager.Companion.KEY_LAST_ACTIVE_PROFILE_ID
 import com.ichi2.anki.multiprofile.ProfileManager.Companion.PROFILE_REGISTRY_FILENAME
-import io.mockk.every
-import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -103,18 +101,6 @@ class AnkiDroidAppTest {
             app.getDatabasePath("collection.db"),
             app.getDir("textures", Context.MODE_PRIVATE),
         ).forEach { assertTrue("$it is outside $profileDir", it.startsWith(profileDir)) }
-    }
-
-    @Test
-    fun `ACRA process skips the profile environment`() {
-        mockkStatic(::isAcraSenderProcess)
-        every { isAcraSenderProcess() } returns true
-        profileRegistry.edit(commit = true) { clear() }
-
-        val app = startApplication()
-
-        assertNull(profileRegistry.getString(KEY_LAST_ACTIVE_PROFILE_ID, null))
-        assertEquals(frameworkBase.filesDir, app.filesDir)
     }
 
     private fun startApplication(): AnkiDroidApp =

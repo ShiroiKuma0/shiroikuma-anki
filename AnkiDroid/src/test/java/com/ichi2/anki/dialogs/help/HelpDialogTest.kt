@@ -201,11 +201,6 @@ class HelpDialogTest {
             // the feedback url is being shown
             onView(withText(CommonString.help_item_report_bug)).inRoot(isDialog()).perform(click())
             verify(exactly = 1) { mockActionDispatcher.onOpenUrl(AnkiDroidApp.feedbackUrl) }
-            // a report is sent
-            onView(withText(CommonString.help_title_send_exception))
-                .inRoot(isDialog())
-                .perform(click())
-            verify(exactly = 1) { mockActionDispatcher.onSendReport() }
         }
     }
 
