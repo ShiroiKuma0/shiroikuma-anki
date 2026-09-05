@@ -114,7 +114,6 @@ android {
         // The namespace (and all code packages) intentionally stay com.ichi2.anki.
         applicationId = "shiroikuma.anki"
         buildConfigField("Boolean", "CI", (System.getenv("CI") == "true").toString())
-        buildConfigField("String", "ACRA_URL", "\"https://ankidroid.org/acra/report\"")
         buildConfigField("String", "BACKEND_VERSION", "\"${libs.versions.ankiBackend.get()}\"")
         buildConfigField("Boolean", "ENABLE_LEAK_CANARY", "false")
         buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash.get()}\"")
@@ -210,8 +209,6 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
             splits.abi.isUniversalApk = true // Build universal APK for debug always
-            // Check Crash Reports page on developer wiki for info on ACRA testing
-            // buildConfigField "String", "ACRA_URL", '"https://918f7f55-f238-436c-b34f-c8b5f1331fe5-bluemix.cloudant.com/acra-ankidroid/_design/acra-storage/_update/report"'
             val localProperties = Properties()
             if (project.rootProject.file("local.properties").exists()) {
                 localProperties.load(project.rootProject.file("local.properties").inputStream())
@@ -821,12 +818,6 @@ dependencies {
         implementation(libs.ankiBackend.backend)
         testImplementation(libs.ankiBackend.testing)
     }
-
-    // May need a resolution strategy for support libs to our versions
-    implementation(libs.acra.limiter)
-    implementation(libs.acra.toast)
-    implementation(libs.acra.dialog)
-    implementation(libs.acra.http)
 
     implementation(libs.commons.compress)
     implementation(libs.commons.io) // FileUtils.contentEquals

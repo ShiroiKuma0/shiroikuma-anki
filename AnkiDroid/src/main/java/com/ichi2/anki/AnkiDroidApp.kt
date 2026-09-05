@@ -72,6 +72,7 @@ import com.ichi2.anki.servicelayer.ThrowableFilterService
 import com.ichi2.anki.services.NotificationService
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.settings.PrefsRepository
+import com.ichi2.anki.shiroikuma.initializeCrashReporter
 import com.ichi2.anki.startup.FatalInitializationError
 import com.ichi2.anki.startup.StartupErrors
 import com.ichi2.anki.startup.configureBackendTemporaryDirectory
@@ -148,7 +149,7 @@ open class AnkiDroidApp :
      */
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
-        if (isAcraSenderProcess() || isPhoenixProcess()) return
+        if (isPhoenixProcess()) return
         profileManager = ProfileManager.createOrNull(base)
     }
 
@@ -213,11 +214,6 @@ open class AnkiDroidApp :
             launchStartupLogging()
         }
 
-        // Stop after analytics and logging are initialised.
-        if (isAcraSenderProcess()) {
-            Timber.d("Skipping AnkiDroidApp.onCreate from ACRA sender process")
-            return
-        }
         setupMainProcessMaintenance()
         setupContextMenus()
 
@@ -307,7 +303,7 @@ open class AnkiDroidApp :
     /**
      * Sets [isInitialized] to `true` ([instance] != null)
      *
-     * [onCreate] can be called multiple times due to ACRA using a separate sender process
+     * [onCreate] can be called more than once
      *
      * @return false if `instance.resources` is unusable
      */
@@ -330,7 +326,7 @@ open class AnkiDroidApp :
 
     private fun setupCrashReporting() {
         setup("setupCrashReporting") {
-            initializeAcraCrashReporter()
+            initializeCrashReporter()
         }
     }
 
@@ -756,7 +752,7 @@ open class AnkiDroidApp :
 
         fun wrapForActiveProfile(base: Context): Context = (base.applicationContext as? AnkiDroidApp)?.profileManager?.wrap(base) ?: base
 
-        /** HACK: Whether an exception report has been thrown - TODO: Rewrite an ACRA Listener to do this  */
+        /** HACK: Whether an exception report has been thrown  */
         @VisibleForTesting
         var sentExceptionReportHack = false
 

@@ -12,7 +12,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.common.crashreporting.CrashReportService
-import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.exception.AnrReportException
 import com.ichi2.anki.multiprofile.ProfileContextWrapper
 import com.ichi2.anki.multiprofile.ProfileId
@@ -22,13 +21,6 @@ import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
-import org.acra.ACRAConstants
-import org.acra.ReportField
-import org.acra.config.CoreConfigurationBuilder
-import org.acra.config.LimiterConfigurationBuilder
-import org.acra.config.LimiterData
-import org.acra.config.LimitingReportAdministrator
-import org.acra.data.CrashReportData
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,12 +28,9 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Locale
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -104,45 +93,6 @@ class PreviousAnrReporterTest {
         verify(exactly = 0) { old.traceInputStream }
         verify(exactly = 0) { crash.traceInputStream }
         verify(exactly = 0) { sender.traceInputStream }
-    }
-
-    @Test
-    fun `ACRA limits repeated ANR stacks and decoding failures but accepts distinct stacks`() {
-        every { manager.getHistoricalProcessExitReasons(null, 0, 0) } returnsMany
-            listOf(
-                listOf(exit(200)),
-                listOf(exit(300)),
-                listOf(exit(400, trace = TRACE.replace("blockMainThread", "anotherBlock"))),
-                listOf(exit(500, trace = "Unknown trace format")),
-                listOf(exit(600, trace = "Another unknown trace format")),
-            )
-        repeat(5) { with(context) { reportPreviousAnr() } }
-        assertEquals(5, reports.size)
-
-        val application = getApplicationContext<Application>()
-        LimiterData().store(application)
-        val config =
-            CoreConfigurationBuilder()
-                .withPluginConfigurations(
-                    LimiterConfigurationBuilder().withStacktraceLimit(1).withExceptionClassLimit(1000).build(),
-                ).build()
-        val limiter = LimitingReportAdministrator()
-        val reportedAt = SimpleDateFormat(ACRAConstants.DATE_TIME_FORMAT_STRING, Locale.ENGLISH).format(TimeManager.time.currentDate)
-        val accepted =
-            reports.map { exception ->
-                val data =
-                    CrashReportData().apply {
-                        put(ReportField.STACK_TRACE, exception.stackTraceToString())
-                        put(ReportField.USER_CRASH_DATE, reportedAt)
-                    }
-                limiter.shouldSendReport(application, config, data)
-            }
-
-        assertTrue(accepted[0])
-        assertFalse(accepted[1], "An identical ANR stack must hit ACRA's duplicate limit despite a different exit timestamp")
-        assertTrue(accepted[2], "A distinct ANR stack must still be reported")
-        assertTrue(accepted[3], "A decoding failure must be reported")
-        assertFalse(accepted[4], "Repeated decoding failures must hit ACRA's duplicate limit")
     }
 
     @Test
