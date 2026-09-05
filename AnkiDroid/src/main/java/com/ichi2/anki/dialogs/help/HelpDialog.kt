@@ -329,14 +329,6 @@ internal val childHelpMenuItems =
             action = OpenUrl(AnkiDroidApp.feedbackUrl),
         ),
         HelpItem(
-            titleResId = R.string.help_title_send_exception,
-            iconResId = R.drawable.ic_round_assignment_24,
-            analyticsId = LinkAction.EXCEPTION_REPORT,
-            id = 202,
-            parentId = 2,
-            action = SendReport,
-        ),
-        HelpItem(
             titleResId = R.string.help_item_anki_forums,
             iconResId = R.drawable.ic_forum_black_24dp,
             analyticsId = LinkAction.OPENED_ANKI_FORUMS,

@@ -37,8 +37,6 @@ class ManifestThemeTest : RobolectricTest() {
             // translucent theme is wrapped as Theme_IntentHandler so the launch splash
             // is black rather than the platform default
             "com.ichi2.anki.IntentHandler" to R.style.Theme_IntentHandler,
-            // ACRA crash report dialog
-            "com.ichi2.anki.analytics.AnkiDroidCrashReportDialog" to android.R.style.Theme_DeviceDefault_Dialog,
             // transparent window: the editor is displayed as a dialog over the caller
             "com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity" to R.style.Theme_AppCompat_Transparent_NoActionBar,
             // Fork: fullscreen video surface for [sound:] video tags (issue 20668). It shows

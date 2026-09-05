@@ -11,7 +11,6 @@ minSdk = "24"
 apiMinSdk = "16"
 
 targetSdk = "36"  # affects which SDKs download in ../robolectricDownloader.gradle
-acra = '5.13.1'
 ktlint = '1.8.0'
 # AGP is included in Android Studio and changelogs are not well maintained/at a stable URL
 # Open https://developer.android.com/build/releases/gradle-plugin#patch-releases
@@ -134,10 +133,6 @@ triplet = "4.0.0"
 turbine = "1.2.1"
 
 [libraries]
-acra-limiter = { module = "ch.acra:acra-limiter", version.ref = "acra" }
-acra-toast = { module = "ch.acra:acra-toast", version.ref = "acra" }
-acra-dialog = { module = "ch.acra:acra-dialog", version.ref = "acra" }
-acra-http = { module = "ch.acra:acra-http", version.ref = "acra" }
 android-image-cropper = { module = "com.vanniktech:android-image-cropper", version.ref = "imageCropper" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintlayout" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "androidxFragmentKtx" }
