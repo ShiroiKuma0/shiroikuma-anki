@@ -32,14 +32,6 @@
             android:icon="@drawable/ic_language_black_24dp"
             android:title="@string/language"
             app:useSimpleSummaryProvider="true"/>
-        <!-- Fork: default "1" = never, crash reports would go to upstream's ACRA server -->
-        <ListPreference
-            android:defaultValue="1"
-            android:entries="@array/error_reporting_choice_labels"
-            android:entryValues="@array/error_reporting_choice_values"
-            android:key="@string/error_reporting_mode_key"
-            android:title="@string/error_reporting_choice"
-            app:useSimpleSummaryProvider="true"/>
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/analytics_opt_in_key"
