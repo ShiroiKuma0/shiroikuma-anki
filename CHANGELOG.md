@@ -11,6 +11,39 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0alpha4+030 — 2026-09-05
+
+Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`), the same base as +027 and +029.
+versionCode `22500134`, installed as `322500134` for arm64-v8a.
+
+**The one tracker is gone. Nothing in the app reports a crash to anybody.**
+
+- **ACRA removed from the build entirely.** A tracker scan of +029 reported exactly one
+  tracker, and it was upstream's crash reporter. On a crash ACRA uploaded the stack trace,
+  500 lines of logcat, the whole shared-preferences file, the device details and a persistent
+  install UUID to `ankidroid.org/acra/report`. The fork had already defaulted the reporting
+  mode to *never* — but a default is a setting, and the library was still linked in, still ran
+  its own `:acra` process, and still put a "send this" dialog in front of you. Defaulting a
+  thing off is not the same as not shipping it. The four `ch.acra:*` dependencies, the ACRA
+  reporter, its analytics hook, its report dialog and layout, the manifest entry running that
+  dialog in a separate process, the report URL and the ACRA test suite are all deleted. The
+  built APK contains **zero occurrences of the string `acra`** in its bytecode.
+- **Crash reporting still exists as a seam — it simply goes nowhere.** Upstream keeps the
+  `CrashReporter` interface in a shared module with ACRA as one implementation, so the fork
+  supplies its own: an exception is written to logcat, counted in usage analytics *only* if
+  you opted in to those, and that is the end of it. Every one of the app's crash-report call
+  sites is untouched, which is what keeps this a small change rather than a hundred-file one.
+- **Two pieces of UI existed only to feed it, and would now be lying.** *Error reporting mode*
+  in General settings offered a choice between always, never and ask — of nothing. *Send
+  exception report* under Help → Get help offered to send a report that would never be sent.
+  Both are gone.
+- **A test guards the result.** A rebase is how ACRA comes back: upstream's file returns with
+  a conflict resolved the lazy way, and the tracker is quietly shipping again. The fork's new
+  no-trackers test fails loudly the moment `org.acra` is on the classpath.
+- Two incidental uses of ACRA utility classes had to be replaced along the way — the deep copy
+  in the multimedia note editor now serializes through `java.io` directly, and the debug-info
+  screen drops its ACRA UUID line.
+
 ## 白い熊 暗記 2.25.0alpha4+029 — 2026-09-04
 
 Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`), the same base as +027. versionCode
