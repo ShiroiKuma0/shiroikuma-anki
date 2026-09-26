@@ -11,6 +11,46 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0beta2+001 — 2026-09-26
+
+Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), 297 upstream commits on from +030's
+`v2.25.0alpha4` base — the first fork release on a 2.25 **beta**. versionCode `22500203`,
+installed as `322500203` for arm64-v8a. The counter restarts at `+001` because upstream's
+beta bump carried its own code past every fork build so far; it still installs over +030.
+
+**Every fork feature carried over unchanged onto upstream's first 2.25 betas.**
+
+- **The video fix stays.** Upstream issue #20668 is still open, and the competing upstream
+  PR #20732 was closed without being merged, so `[sound:]` videos still play only in the
+  fork's native fullscreen player.
+- **Still no tracker.** Nothing from ACRA came back with the rebase — upstream's new
+  references to it are comments only — and the no-trackers test passes.
+- **Slider fix, now alongside upstream's own test.** Upstream added a test that re-binding a
+  settings slider must not stack touch listeners. The fork's deeper fix (a recycled slider
+  row drives the preference it is *now* bound to, and out-of-range stored values are clamped
+  instead of crashing the screen) passes it, and all three tests now live together.
+- **Copy-token row adapted** to upstream's new clipboard API, which caps copied text at a
+  safe length.
+
+**What upstream brings in this base** (highlights):
+
+- **Studying:** a `nosuggest` field filter and type-answer modifier that turns off keyboard
+  suggestions while typing an answer; chained `[[type:…]]` modifiers parse; answering works
+  after the app was killed in the background; the first answer waits for a custom scheduler;
+  full-screen taps line up with card content; a crashed card WebView recovers instead of
+  leaving a blank screen.
+- **Custom study:** “review ahead” validates its input, shows a day/days suffix, warns on
+  0 days and disables *Create* when nothing can be reviewed ahead.
+- **Review reminders:** notification permission requested before Android 13 too, a
+  battery-optimisation exemption dialog, and copyable debug info.
+- **Keyboard and layout:** the deck picker, card browser, note-type and card-template screens
+  keep their content above the keyboard; edge-to-edge fixes in study options and settings.
+- **Stability:** a corrupted-database dialog for backend corruption, no
+  TransactionTooLargeException on note types with many fields, safer shared-deck downloads,
+  whiteboard and shake-gesture lifecycle fixes, and lower memory use reading note types.
+- Plus sentence-case wording passes, Crowdin translation updates, and licence headers
+  converted to SPDX form.
+
 ## 白い熊 暗記 2.25.0alpha4+030 — 2026-09-05
 
 Built on AnkiDroid `v2.25.0alpha4` (`e2ad79e351`), the same base as +027 and +029.
