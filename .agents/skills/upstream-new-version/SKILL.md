@@ -120,6 +120,14 @@ After resolving, confirm no markers remain:
 git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- '*.gradle' '*.kt' '*.xml' || echo "clean"
 ```
 
+A clean rebase is not a compiling one: upstream changes signatures our fork
+files call without touching those files, so no conflict marks the spot.
+(2026-09-26: `copyToClipboard` began taking a `TruncatedString`, breaking the
+automation-token row.) Fold such fixes into the fork commit that introduced
+the call — `git commit --fixup=<sha>` then
+`GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <newtag>` — so every
+commit keeps compiling.
+
 ## Step 5 — Reset (or continue) the fork build number
 
 First build on a **new upstream version** is `+1`. In `AnkiDroid/build.gradle`
