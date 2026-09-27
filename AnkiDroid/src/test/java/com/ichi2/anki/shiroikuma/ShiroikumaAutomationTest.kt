@@ -140,32 +140,22 @@ class ShiroikumaAutomationTest : RobolectricTest() {
     }
 
     @Test
-    fun `the category list is one id-tab-label line per category, media under the collection`() {
+    fun `the category list is one id-tab-label line per settings category, no collection`() {
         send(StateExportReceiver.listCategoriesAction(targetContext), AutomationAuth.token(targetContext))
 
         val result = reply()!!
         assertThat(result.startsWith("OK:"), equalTo(true))
         val lines = result.removePrefix("OK:").lines()
-        assertThat("every category plus the media sub-option", lines.size, equalTo(ShiroikumaExport.Cat.entries.size + 1))
-
         val ids = lines.map { it.split("\t")[0] }
-        assertThat(ids.take(2), equalTo(listOf("collection", ShiroikumaExport.MEDIA_ITEM_ID)))
-        assertThat("ids are the zip entry names", ids.filter { '.' !in it }, equalTo(ShiroikumaExport.Cat.entries.map { it.id }))
+        // the collection lives on shared storage and survives a reinstall on
+        // its own; a restore must not write there
+        assertThat("ids are the zip entry names", ids, equalTo(listOf("ui", "controls", "app_settings")))
         for (line in lines) {
             val fields = line.split("\t")
             assertThat("'$line' carries a label", fields[1].isNotEmpty(), equalTo(true))
+            assertThat("'$line' is top-level", fields[2], equalTo(""))
+            assertThat("'$line' starts ticked", fields[3], equalTo("on"))
         }
-        // the sub-option names its parent in a third field; parents leave it
-        // empty, and the fourth field says whether the item starts ticked
-        assertThat(lines[1].split("\t")[2], equalTo("collection"))
-        assertThat(lines[0].split("\t")[2], equalTo(""))
-        val flags = lines.map { it.split("\t")[3] }
-        assertThat("the media folder starts unticked", flags[1], equalTo("off"))
-        assertThat(
-            "everything else starts ticked",
-            flags.filterIndexed { i, _ -> i != 1 }.distinct(),
-            equalTo(listOf("on")),
-        )
     }
 
     @Test
@@ -185,43 +175,34 @@ class ShiroikumaAutomationTest : RobolectricTest() {
     }
 
     @Test
-    fun `an absent items list selects our default set, not everything`() {
-        // the contract: absent items means the items we report as `on`, which
-        // is every category but NOT the media folder — by far the largest part
-        // of the export, and re-obtainable by syncing
-        val all = ShiroikumaExport.parseItems("")
+    fun `an absent items list selects our default set`() {
+        assertThat(ShiroikumaExport.parseItems(""), equalTo(ShiroikumaExport.AUTOMATION_CATS))
         assertThat(
-            all.cats,
-            equalTo(
-                ShiroikumaExport.Cat.entries
-                    .filter { it.defaultOn }
-                    .toSet(),
-            ),
+            "the collection never travels through automation",
+            ShiroikumaExport.Cat.COLLECTION in ShiroikumaExport.AUTOMATION_CATS,
+            equalTo(false),
         )
-        assertThat(all.includeMedia, equalTo(ShiroikumaExport.MEDIA_DEFAULT_ON))
-        assertThat("no category is opt-out today", all.cats, equalTo(ShiroikumaExport.Cat.entries.toSet()))
     }
 
     @Test
-    fun `a parent id alone means that category's own data only`() {
-        val collectionOnly = ShiroikumaExport.parseItems("collection")
-        assertThat(collectionOnly.cats, equalTo(setOf(ShiroikumaExport.Cat.COLLECTION)))
-        assertThat("media is a separate, unticked sub-option", collectionOnly.includeMedia, equalTo(false))
-
-        val withMedia = ShiroikumaExport.parseItems("collection,collection.media")
-        assertThat(withMedia.cats, equalTo(setOf(ShiroikumaExport.Cat.COLLECTION)))
-        assertThat(withMedia.includeMedia, equalTo(true))
-
-        // a child on its own implies its parent
-        val mediaOnly = ShiroikumaExport.parseItems(ShiroikumaExport.MEDIA_ITEM_ID)
-        assertThat(mediaOnly.cats, equalTo(setOf(ShiroikumaExport.Cat.COLLECTION)))
-        assertThat(mediaOnly.includeMedia, equalTo(true))
+    fun `the retired collection ids are accepted and ignored`() {
+        // a caller with a selection saved from an older LIST_CATEGORIES must
+        // not fail its whole backup
+        assertThat(
+            ShiroikumaExport.parseItems("collection,collection.media,ui"),
+            equalTo(setOf(ShiroikumaExport.Cat.UI)),
+        )
+        assertThat(
+            "nothing but retired ids still backs up the settings",
+            ShiroikumaExport.parseItems("collection,collection.media"),
+            equalTo(ShiroikumaExport.AUTOMATION_CATS),
+        )
     }
 
     @Test
     fun `a subset of ids selects exactly those categories`() {
         val selection = ShiroikumaExport.parseItems(" ui , controls ")
-        assertThat(selection.cats, equalTo(setOf(ShiroikumaExport.Cat.UI, ShiroikumaExport.Cat.CONTROLS)))
+        assertThat(selection, equalTo(setOf(ShiroikumaExport.Cat.UI, ShiroikumaExport.Cat.CONTROLS)))
     }
 
     @Test

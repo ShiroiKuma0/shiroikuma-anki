@@ -34,10 +34,9 @@ import timber.log.Timber
  *
  * ## What does NOT happen here
  *
- * The payload. [call] validates, starts a foreground service and returns — a
- * collection with media is tens or hundreds of megabytes over minutes, and
- * inside a binder call that would block the caller, report no progress, refuse
- * cancellation and die silently if this process were killed.
+ * The payload. [call] validates, starts a foreground service and returns —
+ * inside a binder call the work would block the caller, report no progress,
+ * refuse cancellation and die silently if this process were killed.
  *
  * ## Why a descriptor and not a path
  *
@@ -52,9 +51,14 @@ import timber.log.Timber
  * that was only ever required because v1 handed apps an absolute path.
  *
  * **[METHOD_IMPORT] exists only here and never gets a broadcast action** — an
- * import overwrites the collection, and [StateExportReceiver] is exported with
- * no permission, so an import there would let any app on the phone wipe this
- * one.
+ * import overwrites every setting, the collection location included, and
+ * [StateExportReceiver] is exported with no permission, so an import there
+ * would let any app on the phone point this one at another collection.
+ *
+ * The collection itself never passes through here
+ * ([ShiroikumaExport.AUTOMATION_CATS]): it lives on shared storage and
+ * survives a reinstall on its own, and an import that wrote to shared storage
+ * would need all-files access that a clean phone has not granted yet.
  */
 class AutomationProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
@@ -107,15 +111,16 @@ class AutomationProvider : ContentProvider() {
      * into an app that would reject them — which it cannot do if the header is
      * buried inside an encrypted archive.
      *
-     * `requires_launch_first` is false: `AnkiDroidApp` sets the collection path
-     * up as the process starts, and the import blocklist keeps `deckPath` out
-     * of a backup, so a freshly installed 白い熊 暗記 can take one without
-     * having been opened.
+     * `requires_launch_first` is false: an import writes the default
+     * preferences and the font files, both app-private, and nothing that the
+     * first open would have to set up — so a freshly installed 白い熊 暗記 can
+     * take one without having been opened. The restored `deckPath` then
+     * overrides the default `AnkiDroidApp` chose as the process started.
      */
     private fun describe(ctx: Context): String {
         val pkg = ctx.getPackageInfoCompat(ctx.packageName, PackageInfoFlagsCompat.EMPTY)
         val contains =
-            ShiroikumaExport.Cat.entries
+            ShiroikumaExport.AUTOMATION_CATS
                 .filter { it.defaultOn }
                 .map { ctx.getString(it.labelRes) }
         val header =
