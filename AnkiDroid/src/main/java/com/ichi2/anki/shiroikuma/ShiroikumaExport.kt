@@ -49,7 +49,9 @@ import java.util.zip.ZipOutputStream
  * ```
  * Every category is an independent entry; import applies the *selected*
  * categories and silently skips those absent from the file, so exports from
- * older or newer builds keep working.
+ * older or newer builds keep working. Only the in-app panel writes or reads
+ * `collection.colpkg`; the automation doors carry the settings alone
+ * ([AUTOMATION_CATS]).
  */
 object ShiroikumaExport {
     const val FORMAT = "shiroikuma-anki-export"
@@ -110,8 +112,10 @@ object ShiroikumaExport {
      * A selectable category; `id` is the entry name (`<id>.json`) inside the
      * zip. [defaultOn] is the automation contract's optional fourth
      * `LIST_CATEGORIES` field: whether a caller's backup-item picker starts
-     * this one ticked. Every category is worth keeping, so they are all `on`;
-     * only the media sub-option ([MEDIA_DEFAULT_ON]) is not.
+     * this one ticked, and the in-app panel's default too. Every category is
+     * worth keeping, so they are all `on`; only the panel's media sub-option
+     * ([MEDIA_DEFAULT_ON]) is not. [Cat.COLLECTION] is the in-app panel's
+     * alone — the automation doors carry [AUTOMATION_CATS].
      */
     enum class Cat(
         val id: String,
@@ -130,52 +134,62 @@ object ShiroikumaExport {
     }
 
     /**
-     * The one sub-option: the media files inside [Cat.COLLECTION]. In the
-     * automation contract's `items` list a parent id on its own means "that
-     * category's own data only", so `collection` exports the collection
-     * without media and `collection,collection.media` exports it with them.
+     * The media files inside [Cat.COLLECTION] — a sub-option of the in-app
+     * panel, and once an item id of the automation contract (see
+     * [RETIRED_ITEM_IDS]).
      */
     const val MEDIA_ITEM_ID = "collection.media"
 
     /**
-     * The media sub-option starts **unticked** — in every picker seeded from
-     * us, the app's own and the automation caller's alike. It is by far the
+     * The panel's media sub-option starts **unticked**: it is by far the
      * largest part of the export, and re-obtainable by syncing the collection
      * from AnkiWeb; the collection itself stays on.
      */
     const val MEDIA_DEFAULT_ON = false
 
-    /** What an automation `items` list selects: categories, and whether media rides along. */
-    data class Selection(
-        val cats: Set<Cat>,
-        val includeMedia: Boolean,
-    )
+    /**
+     * What the automation doors — the `EXPORT_STATE` broadcast and the data
+     * door behind [AutomationProvider] — carry: the settings, never
+     * [Cat.COLLECTION].
+     *
+     * The collection lives on shared storage (`〇/[271] 暗記ドロイド`), outside
+     * the app's private data, so it survives a reinstall and is preserved on
+     * its own; sending it through a backup duplicated a quarter of a gigabyte.
+     * Worse, importing it is what reaches for the collection *directory* —
+     * `CollectionManager.importColpkg` creates, probes and writes it — and a
+     * restore onto a clean phone has no all-files access yet, so it failed
+     * with `No write access to AnkiDroid directory`, and in a directory chosen
+     * before the restored `deckPath` had even landed. A restore now writes
+     * nothing outside the app's private data; all-files access is asked for
+     * when the app is opened.
+     */
+    val AUTOMATION_CATS: Set<Cat> = Cat.entries.filterTo(LinkedHashSet()) { it != Cat.COLLECTION }
+
+    /**
+     * Item ids the automation contract once offered and no longer does.
+     * Accepted and ignored — a caller with a selection saved from an older
+     * `LIST_CATEGORIES` must not fail its whole backup over them.
+     */
+    private val RETIRED_ITEM_IDS = setOf(Cat.COLLECTION.id, MEDIA_ITEM_ID)
 
     /**
      * Parses the automation `items` extra — a comma-separated list of the ids
-     * from `LIST_CATEGORIES`. Absent/empty selects our **default set**: the
-     * items we report as `on`, which is every category but *not* the media
-     * folder ([MEDIA_DEFAULT_ON]). Not "everything": a caller 白い熊 has never
-     * picked items for gets what we recommend, and the media folder is by far
-     * the largest part of the export and re-obtainable by syncing.
+     * from `LIST_CATEGORIES` — into a subset of [AUTOMATION_CATS]. Absent or
+     * empty selects our **default set**: the items we report as `on`. A list
+     * made only of [RETIRED_ITEM_IDS] selects the default set too: that
+     * caller wanted a backup, and one without the collection is still a
+     * backup, where an empty one is a failure.
      *
      * @throws IllegalArgumentException an id is not one of ours
      */
-    fun parseItems(items: String): Selection {
+    fun parseItems(items: String): Set<Cat> {
         val ids = items.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        if (ids.isEmpty()) return Selection(Cat.entries.filter { it.defaultOn }.toSet(), includeMedia = MEDIA_DEFAULT_ON)
         val cats = LinkedHashSet<Cat>()
-        var media = false
         for (id in ids) {
-            if (id == MEDIA_ITEM_ID) {
-                // a child implies its parent
-                media = true
-                cats += Cat.COLLECTION
-                continue
-            }
+            if (id in RETIRED_ITEM_IDS) continue
             cats += Cat.byId(id) ?: throw IllegalArgumentException("unknown category in items: $items")
         }
-        return Selection(cats, media)
+        return cats.ifEmpty { AUTOMATION_CATS.filterTo(LinkedHashSet()) { it.defaultOn } }
     }
 
     /**
@@ -327,6 +341,24 @@ object ShiroikumaExport {
         } finally {
             colpkg?.delete()
         }
+    }
+
+    /**
+     * The automation doors' import: [import] restricted to [AUTOMATION_CATS],
+     * so a restore applies settings and font files — the default preferences
+     * and `filesDir` — and nothing else. A `collection.colpkg` in the archive
+     * is skipped unread, which keeps `CollectionManager.importColpkg`, and
+     * with it every create/probe/write of the collection directory on shared
+     * storage, off this path by construction. Nothing here asks for or
+     * depends on all-files access.
+     */
+    suspend fun importSettings(
+        context: Context,
+        cats: Set<Cat>,
+        openInput: () -> InputStream,
+    ): String {
+        require(cats.all { it in AUTOMATION_CATS }) { "the collection does not travel through automation" }
+        return import(context, cats, openInput)
     }
 
     /**
