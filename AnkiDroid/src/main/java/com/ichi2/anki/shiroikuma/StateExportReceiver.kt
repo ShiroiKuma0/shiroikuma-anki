@@ -35,8 +35,9 @@ import java.util.concurrent.atomic.AtomicReference
  *   ([ShiroikumaExport.export]) with no UI, writing **one** zip. Extras (all
  *   String): `token` (optional), `path` (optional absolute directory, wins
  *   over the configured SAF directory), `items` (optional comma list of the
- *   ids from `LIST_CATEGORIES`; absent/empty = our **default set**, which is
- *   every category but not the media folder), `progress_action` (optional),
+ *   ids from `LIST_CATEGORIES`; absent/empty = our **default set**; the
+ *   retired `collection` / `collection.media` are accepted and ignored),
+ *   `progress_action` (optional),
  *   plus the reply trio `reply_action` / `reply_package` / `reply_id`.
  * - `<pkg>.action.LIST_CATEGORIES` — instant; enumerates the exportable
  *   categories as `id<TAB>label<TAB>parent<TAB>on|off` lines: the parent id
@@ -113,14 +114,14 @@ class StateExportReceiver : BroadcastReceiver() {
         when (action) {
             listCategoriesAction(app) -> reply("OK:" + categoryLines(app))
             exportStateAction(app) -> {
-                val selection =
+                val cats =
                     try {
                         ShiroikumaExport.parseItems(items)
                     } catch (e: IllegalArgumentException) {
                         reply("ERROR:${e.message}")
                         return
                     }
-                exportAsync(app, selection, pathOverride, replyId, replyPackage, progressAction, ::reply)
+                exportAsync(app, cats, pathOverride, replyId, replyPackage, progressAction, ::reply)
             }
             else -> reply("ERROR:unknown action: $action")
         }
@@ -128,11 +129,11 @@ class StateExportReceiver : BroadcastReceiver() {
 
     /**
      * `id<TAB>label<TAB>parent<TAB>on|off` per line — the contract's four
-     * positional fields. The media sub-option carries its parent's id, so the
-     * caller can render it indented under Collection and select it
-     * independently; a top-level item leaves that field empty. The last field
-     * is our answer to "does this start ticked", so the caller's picker never
-     * has to guess.
+     * positional fields. The third names a sub-option's parent; ours are all
+     * top-level now, so it is empty — the collection and its media sub-option
+     * are no longer offered ([ShiroikumaExport.AUTOMATION_CATS]). The last
+     * field is our answer to "does this start ticked", so the caller's picker
+     * never has to guess.
      */
     private fun categoryLines(context: Context): String =
         buildString {
@@ -151,16 +152,8 @@ class StateExportReceiver : BroadcastReceiver() {
                     .append(if (defaultOn) "on" else "off")
                     .append('\n')
             }
-            for (cat in ShiroikumaExport.Cat.entries) {
+            for (cat in ShiroikumaExport.AUTOMATION_CATS) {
                 line(cat.id, context.getString(cat.labelRes), "", cat.defaultOn)
-                if (cat == ShiroikumaExport.Cat.COLLECTION) {
-                    line(
-                        ShiroikumaExport.MEDIA_ITEM_ID,
-                        context.getString(R.string.sk_eim_include_media),
-                        cat.id,
-                        ShiroikumaExport.MEDIA_DEFAULT_ON,
-                    )
-                }
             }
         }.trimEnd('\n')
 
@@ -191,13 +184,12 @@ class StateExportReceiver : BroadcastReceiver() {
 
     /**
      * The export holds the broadcast open with `goAsync()` and runs on IO.
-     * (The collection export is the slow part; should 白い熊's collection ever
-     * grow past the ~10 minute broadcast window, this is the point that has to
-     * become a foreground service.)
+     * Settings only, so it is seconds' work, well inside the ~10 minute
+     * broadcast window.
      */
     private fun exportAsync(
         app: Context,
-        selection: ShiroikumaExport.Selection,
+        cats: Set<ShiroikumaExport.Cat>,
         pathOverride: String,
         replyId: String,
         replyPackage: String,
@@ -221,25 +213,14 @@ class StateExportReceiver : BroadcastReceiver() {
             val heartbeat = launch { progress.beat() }
             try {
                 val fileName = ShiroikumaExport.exportFileName()
-                val cats = selection.cats
                 // the directory is resolved first: a bad one must fail before
-                // the media count, not after minutes of work
+                // anything is written
                 val target = resolveTarget(app, pathOverride, fileName)
                 // everything past this point can leave a file behind, so one
                 // guard covers the lot: cancelled or failed, the directory is
                 // left exactly as it was found
                 val (bytes, shownPath) =
                     try {
-                        // count the media up front so the meter has a real total
-                        // from its first line (the panel starts the same tally
-                        // on open)
-                        val tally =
-                            ShiroikumaExport.MediaTally().also {
-                                if (selection.includeMedia && ShiroikumaExport.Cat.COLLECTION in cats) {
-                                    runCatching { ShiroikumaExport.tallyMedia(it) }
-                                        .onFailure { e -> Timber.w(e, "media tally failed") }
-                                }
-                            }
                         if (run.cancelled) throw ShiroikumaExport.ExportCancelledException()
                         when (target) {
                             is Target.PlainFile -> {
@@ -249,8 +230,6 @@ class StateExportReceiver : BroadcastReceiver() {
                                         cats,
                                         onProgress = { sendProgress(it) },
                                         isCancelled = { run.cancelled },
-                                        includeMedia = selection.includeMedia,
-                                        mediaTally = tally,
                                         openOutput = { out },
                                     )
                                 }
@@ -264,8 +243,6 @@ class StateExportReceiver : BroadcastReceiver() {
                                         cats,
                                         onProgress = { sendProgress(it) },
                                         isCancelled = { run.cancelled },
-                                        includeMedia = selection.includeMedia,
-                                        mediaTally = tally,
                                         openOutput = { out },
                                     )
                                 }

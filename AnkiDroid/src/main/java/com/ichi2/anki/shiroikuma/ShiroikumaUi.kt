@@ -560,11 +560,18 @@ object ShiroikumaUi {
     private const val BACKUP_VERSION = 1
 
     /**
-     * Keys never exported/imported: the device-specific collection path and
-     * sync credentials (mirrors AcraCrashReporter's never-share list). Importing
-     * a foreign deckPath could point the app at a missing collection.
+     * Keys never exported/imported: the sync credentials and the search
+     * history — nothing that identifies 白い熊 to a server ever travels.
+     *
+     * The collection path (`deckPath`) deliberately does travel. The collection
+     * directory is a chosen, portable place under `〇/`, identical on every phone
+     * in the family, and it is the one setting without which a restored install
+     * cannot find its collection at all: absent, startup's
+     * `ensureCollectionPathSet` quietly substitutes the default
+     * `/storage/emulated/0/AnkiDroid` and the app runs on a new, empty collection
+     * beside the real one (a 2026-09-27 restore did exactly that).
      */
-    private val BACKUP_BLOCKLIST = setOf("deckPath", "hkey", "username", "currentSyncUri", "browser_search_history")
+    private val BACKUP_BLOCKLIST = setOf("hkey", "username", "currentSyncUri", "browser_search_history")
 
     /**
      * Serializes the default SharedPreferences (minus credentials) to a type-tagged JSON string.
