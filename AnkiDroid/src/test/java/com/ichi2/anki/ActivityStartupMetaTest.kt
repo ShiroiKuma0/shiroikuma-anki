@@ -46,6 +46,8 @@ class ActivityStartupMetaTest : AndroidTest {
                 .filter { !it.startsWith("leakcanary.internal") }
                 .filter { it != "com.canhub.cropper.CropImageActivity" }
                 .filter { it != "com.jakewharton.processphoenix.PhoenixActivity" }
+                // Fork: closes itself unless a grant is missing; covered by ShiroikumaAllFilesGateTest
+                .filter { it != "com.ichi2.anki.shiroikuma.ShiroikumaAllFilesGateActivity" }
                 .toTypedArray()
         MatcherAssert.assertThat(testedActivityClassNames, Matchers.containsInAnyOrder(*manifestActivityNames))
     }
