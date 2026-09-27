@@ -48,12 +48,12 @@ class ShiroikumaSettingsBackupTest : RobolectricTest() {
     }
 
     @Test
-    fun `credentials and the collection path are never exported`() {
+    fun `credentials are never exported`() {
         val prefs = targetContext.sharedPrefs()
         prefs.edit {
             putString("hkey", "secret-sync-token")
             putString("username", "me@example.com")
-            putString("deckPath", "/data/user/0/com.ichi2.anki/files/collection.anki2")
+            putString("currentSyncUri", "https://sync.example.com/")
             putString("sk_menu_text_color_marker", "kept")
         }
 
@@ -63,8 +63,26 @@ class ShiroikumaSettingsBackupTest : RobolectricTest() {
 
         assertThat(prefs.getString("hkey", null), nullValue())
         assertThat(prefs.getString("username", null), nullValue())
-        assertThat(prefs.getString("deckPath", null), nullValue())
+        assertThat(prefs.getString("currentSyncUri", null), nullValue())
         assertThat("a normal key still travels", prefs.getString("sk_menu_text_color_marker", null), equalTo("kept"))
+    }
+
+    @Test
+    fun `the collection location travels with the app settings`() {
+        // 2026-09-27: a restore without it came up on a silent empty
+        // collection at the default path, with the real one untouched under 〇/
+        val prefs = targetContext.sharedPrefs()
+        prefs.edit { putString("deckPath", COLLECTION_DIR) }
+        val json = ShiroikumaUi.exportSettingsJson(targetContext, ShiroikumaExport.keyFilter(ShiroikumaExport.Cat.APP_SETTINGS)!!)
+
+        // what `ensureCollectionPathSet` leaves behind on a clean phone
+        prefs.edit {
+            clear()
+            putString("deckPath", "/storage/emulated/0/AnkiDroid")
+        }
+        ShiroikumaUi.importSettingsJson(targetContext, json)
+
+        assertThat(prefs.getString("deckPath", null), equalTo(COLLECTION_DIR))
     }
 
     @Test
@@ -180,6 +198,52 @@ class ShiroikumaSettingsBackupTest : RobolectricTest() {
         }
 
     @Test
+    fun `an automation import restores the collection location and skips the collection`() =
+        runTest {
+            // an archive from before the collection stopped travelling: its
+            // colpkg must be skipped unread — importing it is what reached for
+            // the collection directory on shared storage, and failed on a clean
+            // phone with "No write access to AnkiDroid directory"
+            val prefs = targetContext.sharedPrefs()
+            prefs.edit { putString("deckPath", COLLECTION_DIR) }
+            val settings = ShiroikumaUi.exportSettingsJson(targetContext, ShiroikumaExport.keyFilter(ShiroikumaExport.Cat.APP_SETTINGS)!!)
+            val archive = ByteArrayOutputStream()
+            ZipOutputStream(archive).use { zip ->
+                zip.putNextEntry(ZipEntry("manifest.json"))
+                zip.write("""{"format":"${ShiroikumaExport.FORMAT}","version":1}""".toByteArray())
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("collection.colpkg"))
+                zip.write("not a colpkg — importing this would throw".toByteArray())
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("app_settings.json"))
+                zip.write(settings.toByteArray())
+                zip.closeEntry()
+            }
+            prefs.edit {
+                clear()
+                putString("deckPath", "/storage/emulated/0/AnkiDroid")
+            }
+
+            val summary =
+                ShiroikumaExport.importSettings(targetContext, ShiroikumaExport.AUTOMATION_CATS) {
+                    ByteArrayInputStream(archive.toByteArray())
+                }
+
+            assertThat(prefs.getString("deckPath", null), equalTo(COLLECTION_DIR))
+            assertThat("only the settings category is reported", summary.lines().size, equalTo(1))
+        }
+
+    @Test
+    fun `the automation import refuses the collection`() =
+        runTest {
+            assertFailsWith<IllegalArgumentException> {
+                ShiroikumaExport.importSettings(targetContext, setOf(ShiroikumaExport.Cat.COLLECTION)) {
+                    ByteArrayInputStream(ByteArray(0))
+                }
+            }
+        }
+
+    @Test
     fun `importing a foreign file is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             ShiroikumaUi.importSettingsJson(targetContext, """{"some":"other json"}""")
@@ -191,5 +255,9 @@ class ShiroikumaSettingsBackupTest : RobolectricTest() {
         targetContext.sharedPrefs().edit { putString("hkey", "secret-sync-token") }
         val json = ShiroikumaUi.exportSettingsJson(targetContext)
         assertThat(json, not(org.hamcrest.CoreMatchers.containsString("secret-sync-token")))
+    }
+
+    private companion object {
+        const val COLLECTION_DIR = "/storage/emulated/0/〇/[271] 暗記ドロイド"
     }
 }

@@ -43,8 +43,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * from a good backup until the day it is restored.
  *
  * A partial wakelock is held around the work for the same reason: EMUI dozes
- * the CPU with the screen off, and a collection with media is not a few
- * seconds' work.
+ * the CPU with the screen off. (The collection no longer travels, so the work
+ * is small now; the service and the wakelock stay, since they cost nothing
+ * and the contract promises them.)
  *
  * ## The descriptor
  *
@@ -153,25 +154,12 @@ class AutomationDataService : Service() {
         progress: AutomationProgress,
         reply: (String) -> Unit,
     ) {
-        val selection =
+        val cats =
             try {
                 ShiroikumaExport.parseItems(items)
             } catch (e: IllegalArgumentException) {
                 reply("ERROR:${e.message}")
                 return
-            }
-        val cats = selection.cats
-        if (cats.isEmpty()) {
-            reply("ERROR:no categories selected")
-            return
-        }
-        // count the media up front so the meter has a real total from its first line
-        val tally =
-            ShiroikumaExport.MediaTally().also {
-                if (selection.includeMedia && ShiroikumaExport.Cat.COLLECTION in cats) {
-                    runCatching { ShiroikumaExport.tallyMedia(it) }
-                        .onFailure { e -> Timber.w(e, "media tally failed") }
-                }
             }
         var written = 0L
         ParcelFileDescriptor.AutoCloseOutputStream(fd).use { out ->
@@ -196,8 +184,6 @@ class AutomationDataService : Service() {
                 cats = cats,
                 onProgress = { progress.send(it, written) },
                 isCancelled = { AutomationJobs.isCancelled(jobId) },
-                includeMedia = selection.includeMedia,
-                mediaTally = tally,
                 openOutput = { counting },
             )
         }
@@ -221,32 +207,39 @@ class AutomationDataService : Service() {
     /**
      * Reads the archive the caller opened and applies it.
      *
-     * Absent categories are skipped by [ShiroikumaExport.import], so an archive
-     * from an older build restores what it actually carries. 応用管理 force-stops
-     * this app the instant the success reply lands — deliberately, because a
-     * running process writes its cached `SharedPreferences` back out at orderly
-     * shutdown and would silently undo the import that just happened.
+     * Settings only ([ShiroikumaExport.importSettings]): nothing is written
+     * outside this app's private data, and nothing here needs all-files
+     * access — a restore onto a clean phone has none yet, and is asked for it
+     * when the app is first opened. The restored `deckPath` is what lets that
+     * first open find the collection that never left shared storage.
+     *
+     * Absent categories are skipped, so an archive from an older build
+     * restores what it actually carries (its `collection.colpkg`, if any, is
+     * skipped unread). 応用管理 force-stops this app the instant the success
+     * reply lands — deliberately, because a running process writes its cached
+     * `SharedPreferences` back out at orderly shutdown and would silently undo
+     * the import that just happened.
      */
     private suspend fun runImport(
         fd: ParcelFileDescriptor,
         items: String,
         reply: (String) -> Unit,
     ) {
-        // an import restores what the archive carries: everything, unless the
-        // caller narrowed it deliberately
+        // an import restores what the archive carries: everything the doors
+        // carry, unless the caller narrowed it deliberately
         val cats =
             if (items.isEmpty()) {
-                ShiroikumaExport.Cat.entries.toSet()
+                ShiroikumaExport.AUTOMATION_CATS
             } else {
                 try {
-                    ShiroikumaExport.parseItems(items).cats
+                    ShiroikumaExport.parseItems(items)
                 } catch (e: IllegalArgumentException) {
                     reply("ERROR:${e.message}")
                     return
                 }
             }
         val summary =
-            ShiroikumaExport.import(this, cats) {
+            ShiroikumaExport.importSettings(this, cats) {
                 ParcelFileDescriptor.AutoCloseInputStream(fd)
             }
         val restored = summary.lines().count { it.isNotBlank() }
