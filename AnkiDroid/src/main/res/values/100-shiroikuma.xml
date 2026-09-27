@@ -170,4 +170,10 @@
 
     <string name="sk_font_import_failed">Could not load that font file</string>
     <string name="sk_default">Default</string>
+
+    <!-- All-files gate (ShiroikumaAllFilesGate) -->
+    <string name="sk_all_files_gate_title">All-files access is needed</string>
+    <string name="sk_all_files_gate_body">Your collection is kept in shared storage, and this app cannot read it without permission to see files. A freshly installed or restored app starts without it, so everything looks set up while every deck is out of reach. Grant it now to open the collection below.</string>
+    <string name="sk_all_files_gate_grant">Grant access</string>
+    <string name="sk_all_files_gate_skip">Not now</string>
 </resources>
