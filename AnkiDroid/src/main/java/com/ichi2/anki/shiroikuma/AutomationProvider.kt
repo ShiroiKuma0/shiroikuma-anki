@@ -217,10 +217,12 @@ class AutomationProvider : ContentProvider() {
 
         /**
          * Optional, beside [KEY_RESULT] on a terminal data-door reply, never
-         * inside it: the absolute collection directory this app was using when
-         * the job ended — failures included, since "it failed" and "it failed
-         * over there" are different problems. 応用管理 (+047) prints it as
-         * `Written to: <path>` and treats it as opaque text.
+         * inside it: the absolute path of what the job wrote (import) or read
+         * (export) — failures included, since "it failed" and "it failed over
+         * there" are different problems. For this app that is its private
+         * data directory, which holds both the default preferences and the
+         * font files; nothing outside it is touched, the collection directory
+         * least of all. 応用管理 (+047) shows it and treats it as opaque text.
          */
         const val KEY_LOCATION = "location"
         const val KEY_FD = "fd"

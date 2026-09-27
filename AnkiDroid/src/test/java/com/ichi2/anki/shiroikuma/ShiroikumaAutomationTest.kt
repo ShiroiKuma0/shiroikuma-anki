@@ -310,9 +310,11 @@ class ShiroikumaAutomationTest : RobolectricTest() {
     }
 
     @Test
-    fun `a data-door reply names the collection directory beside the result`() {
-        // 応用管理 prints it as "Written to: <path>" — had it existed on
-        // 2026-09-08, the log would have shown /storage/emulated/0/AnkiDroid
+    fun `a data-door reply names where the job wrote or read, beside the result`() {
+        // an import writes the default prefs and the font files, an export
+        // reads them: both live in the app's private data directory. The
+        // collection directory is never touched, so it is never named —
+        // even when deckPath points somewhere
         targetContext.sharedPrefs().edit { putString("deckPath", "/storage/emulated/0/〇/[271] 暗記ドロイド") }
 
         for (result in listOf("OK:3 restored", "ERROR:archive carries no categories")) {
@@ -321,16 +323,9 @@ class ShiroikumaAutomationTest : RobolectricTest() {
             assertThat(
                 "set on '$result' too",
                 reply.getStringExtra(AutomationProvider.KEY_LOCATION),
-                equalTo("/storage/emulated/0/〇/[271] 暗記ドロイド"),
+                equalTo(targetContext.dataDir.absolutePath),
             )
         }
-    }
-
-    @Test
-    fun `no collection path means no location, never a guess`() {
-        targetContext.sharedPrefs().edit { remove("deckPath") }
-        val reply = AutomationDataService.replyIntent(targetContext, "caller.REPLY", "caller.pkg", "job-1", "OK:1 restored")
-        assertThat(reply.hasExtra(AutomationProvider.KEY_LOCATION), equalTo(false))
     }
 
     @Test
