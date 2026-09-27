@@ -46,7 +46,7 @@ digits as its build counter:
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
   digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500203`.
 
-Current base: **the `v2.25.0beta2` tag** (last rebase 2026-09-26). Deployed: `2.25.0beta2+001`.
+Current base: **the `v2.25.0beta2` tag** (last rebase 2026-09-26). Deployed: `2.25.0beta2+002`.
 
 ## Environment (export every run; not set in non-interactive shells)
 
