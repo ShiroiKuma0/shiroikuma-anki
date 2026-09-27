@@ -377,6 +377,10 @@
             android:exported="false"
             />
         <activity
+            android:name="com.ichi2.anki.shiroikuma.ShiroikumaAllFilesGateActivity"
+            android:exported="false"
+            />
+        <activity
             android:name=".NoteTypeFieldEditor"
             android:label="@string/model_editor_label"
             android:configChanges="keyboardHidden|orientation|screenSize"

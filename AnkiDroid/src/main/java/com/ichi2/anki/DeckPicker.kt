@@ -171,6 +171,8 @@ import com.ichi2.anki.servicelayer.ScopedStorageService
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.settings.enums.DayTheme
 import com.ichi2.anki.shareddeck.SharedDecksActivity
+import com.ichi2.anki.shiroikuma.ShiroikumaAllFilesGate
+import com.ichi2.anki.shiroikuma.ShiroikumaAllFilesGateActivity
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
@@ -1090,11 +1092,22 @@ open class DeckPicker :
     private fun handleStartup() {
         val context = appContext
 
+        // Fork: all-files access before the collection is looked at — the
+        // state a restored install opens in. See ShiroikumaAllFilesGate.
+        if (ShiroikumaAllFilesGate.needsGate(context)) {
+            Timber.i("DeckPicker: all-files gate shown")
+            permissionScreenLauncher.launch(ShiroikumaAllFilesGateActivity.getIntent(this))
+            return
+        }
+
         val environment: AnkiDroidEnvironment =
             object : AnkiDroidEnvironment {
                 private val permissions = selectStoragePermissions(context)
 
-                override fun hasRequiredPermissions(): Boolean = permissions.hasRequiredPermissions(context)
+                // Fork: a skipped gate stands in for upstream's unskippable
+                // screen, so startup stops at the directory check instead
+                override fun hasRequiredPermissions(): Boolean =
+                    permissions.hasRequiredPermissions(context) || ShiroikumaAllFilesGate.skippedThisLaunch
 
                 override val requiredPermissions: StoragePermissionSet
                     get() = permissions
