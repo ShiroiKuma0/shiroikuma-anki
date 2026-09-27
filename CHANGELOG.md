@@ -11,6 +11,48 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0beta2+005 — 2026-09-27
+
+Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), the same base as +001. versionCode
+`22500207`, installed as `322500207` for arm64-v8a. +002 to +004 were test builds on the way
+here and were not published.
+
+**A restore onto a clean phone brings back every setting — the collection location
+included — and writes nothing to shared storage.**
+
+- **The collection location travels.** `deckPath` used to be kept out of every backup, so a
+  restored install had no idea where its collection was. Startup then quietly picked the
+  default `/storage/emulated/0/AnkiDroid` and ran on a new, empty collection beside the real
+  one. That happened on 2026-09-08 and went unnoticed for weeks. The collection folder is a
+  deliberate, portable choice under `〇/`, the same on every phone, so it now rides in the
+  Anki-settings category. Sync credentials and the search history still never leave the phone.
+- **The collection no longer travels through automation.** It lives on shared storage and
+  survives a reinstall on its own; sending it duplicated a quarter of a gigabyte per backup.
+  Importing it was also what reached for the collection directory, and a clean install has no
+  all-files access yet, so a restore failed with *No write access to AnkiDroid directory*.
+  Backups and restores driven by 自由作業盤 or 応用管理 now carry the settings categories only:
+  UI, controls and Anki settings.
+- **A restore writes only app-private data.** It goes through a settings-only import that
+  refuses the collection outright and writes nothing but the preferences and the font files.
+  It never touches shared storage and never needs all-files access. An older archive's
+  collection is skipped unread.
+- **Old selections keep working.** The retired item ids `collection` and `collection.media` are
+  accepted and ignored, so a caller with a saved selection does not fail its whole backup.
+- **The in-app Export / Import panel is unchanged.** It still offers the collection, with or
+  without media.
+- **An all-files access gate before the deck list.** A restored install points at the right
+  collection and has no permission to read it: it looks restored and is not. When the
+  collection is on shared storage and the grant is missing, the app now opens on a black and
+  yellow screen first. It says why, shows the collection's path, and offers *Grant access*
+  (this app's page in Settings, or the global list if EMUI refuses it) and *Not now*. It closes
+  itself as soon as you come back with access granted. *Not now* (or back) lasts for this
+  launch only. It also gets you past upstream's permission screen, which has no skip, so a
+  phone that will not grant access can still open the app. It lands on upstream's "collection
+  folder inaccessible" dialog, without a collection being opened or created.
+- **Replies say where the work happened.** A reply to 応用管理 now carries an optional
+  `location` beside the result, never inside it, on failures too: the app's private data
+  directory, where an import writes and an export reads. 応用管理 shows it in its restore log.
+
 ## 白い熊 暗記 2.25.0beta2+001 — 2026-09-26
 
 Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), 297 upstream commits on from +030's
