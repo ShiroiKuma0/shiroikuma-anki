@@ -4,9 +4,11 @@ package com.ichi2.anki.shiroikuma
 
 import android.app.Application
 import android.content.Intent
+import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.common.preferences.sharedPrefs
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.nullValue
@@ -305,6 +307,30 @@ class ShiroikumaAutomationTest : RobolectricTest() {
             },
         )
         assertThat(reply(), nullValue())
+    }
+
+    @Test
+    fun `a data-door reply names the collection directory beside the result`() {
+        // 応用管理 prints it as "Written to: <path>" — had it existed on
+        // 2026-09-08, the log would have shown /storage/emulated/0/AnkiDroid
+        targetContext.sharedPrefs().edit { putString("deckPath", "/storage/emulated/0/〇/[271] 暗記ドロイド") }
+
+        for (result in listOf("OK:3 restored", "ERROR:archive carries no categories")) {
+            val reply = AutomationDataService.replyIntent(targetContext, "caller.REPLY", "caller.pkg", "job-1", result)
+            assertThat("the result string is untouched", reply.getStringExtra(AutomationProvider.KEY_RESULT), equalTo(result))
+            assertThat(
+                "set on '$result' too",
+                reply.getStringExtra(AutomationProvider.KEY_LOCATION),
+                equalTo("/storage/emulated/0/〇/[271] 暗記ドロイド"),
+            )
+        }
+    }
+
+    @Test
+    fun `no collection path means no location, never a guess`() {
+        targetContext.sharedPrefs().edit { remove("deckPath") }
+        val reply = AutomationDataService.replyIntent(targetContext, "caller.REPLY", "caller.pkg", "job-1", "OK:1 restored")
+        assertThat(reply.hasExtra(AutomationProvider.KEY_LOCATION), equalTo(false))
     }
 
     @Test

@@ -214,6 +214,15 @@ class AutomationProvider : ContentProvider() {
         const val METHOD_CANCEL = "cancel"
 
         const val KEY_RESULT = "result"
+
+        /**
+         * Optional, beside [KEY_RESULT] on a terminal data-door reply, never
+         * inside it: the absolute collection directory this app was using when
+         * the job ended — failures included, since "it failed" and "it failed
+         * over there" are different problems. 応用管理 (+047) prints it as
+         * `Written to: <path>` and treats it as opaque text.
+         */
+        const val KEY_LOCATION = "location"
         const val KEY_FD = "fd"
         const val KEY_TOKEN = "token"
         const val KEY_JOB_ID = "job_id"
