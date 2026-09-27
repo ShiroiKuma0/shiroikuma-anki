@@ -18,6 +18,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.ichi2.anki.R
+import com.ichi2.anki.common.storage.CollectionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -94,16 +95,7 @@ class AutomationDataService : Service() {
             AutomationJobs.finish(jobId)
             Timber.i("automation data %s → %s", jobId, result.take(200))
             if (replyAction.isEmpty() || replyPackage.isEmpty()) return
-            sendBroadcast(
-                Intent(replyAction).apply {
-                    setPackage(replyPackage)
-                    // without this a backgrounded caller never hears the answer,
-                    // and on a clean phone it may not have been launched at all
-                    addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                    putExtra(AutomationProvider.KEY_JOB_ID, jobId)
-                    putExtra(AutomationProvider.KEY_RESULT, result)
-                },
-            )
+            sendBroadcast(replyIntent(this, replyAction, replyPackage, jobId, result))
         }
 
         val wakeLock =
@@ -328,6 +320,32 @@ class AutomationDataService : Service() {
          * with exactly one owner — this service, which closes it in a `finally`.
          */
         private val HANDOVER = ConcurrentHashMap<String, ParcelFileDescriptor>()
+
+        /**
+         * The one terminal reply: [AutomationProvider.KEY_RESULT] as the
+         * contract has always carried it, and beside it — never inside it —
+         * [AutomationProvider.KEY_LOCATION], the collection directory in use
+         * as the job ends. Read at reply time, so after an import it is the
+         * restored `deckPath`. Left out when no path is set, rather than
+         * guessed.
+         */
+        fun replyIntent(
+            context: Context,
+            replyAction: String,
+            replyPackage: String,
+            jobId: String,
+            result: String,
+        ): Intent =
+            Intent(replyAction).apply {
+                setPackage(replyPackage)
+                // without this a backgrounded caller never hears the answer,
+                // and on a clean phone it may not have been launched at all
+                addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                putExtra(AutomationProvider.KEY_JOB_ID, jobId)
+                putExtra(AutomationProvider.KEY_RESULT, result)
+                runCatching { CollectionHelper.getCurrentAnkiDroidDirectory(context).absolutePath }
+                    .onSuccess { putExtra(AutomationProvider.KEY_LOCATION, it) }
+            }
 
         fun start(
             context: Context,
