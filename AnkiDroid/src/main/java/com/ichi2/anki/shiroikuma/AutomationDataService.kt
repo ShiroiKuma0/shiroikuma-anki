@@ -18,7 +18,6 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.ichi2.anki.R
-import com.ichi2.anki.common.storage.CollectionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -324,10 +323,11 @@ class AutomationDataService : Service() {
         /**
          * The one terminal reply: [AutomationProvider.KEY_RESULT] as the
          * contract has always carried it, and beside it — never inside it —
-         * [AutomationProvider.KEY_LOCATION], the collection directory in use
-         * as the job ends. Read at reply time, so after an import it is the
-         * restored `deckPath`. Left out when no path is set, rather than
-         * guessed.
+         * [AutomationProvider.KEY_LOCATION]: where the job wrote or read. An
+         * import writes `shared_prefs/` and `files/shiroikuma_fonts/`, an
+         * export reads them, so the honest single path is the private data
+         * directory that holds both. The collection directory is never named:
+         * no job here writes or reads it.
          */
         fun replyIntent(
             context: Context,
@@ -343,8 +343,7 @@ class AutomationDataService : Service() {
                 addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 putExtra(AutomationProvider.KEY_JOB_ID, jobId)
                 putExtra(AutomationProvider.KEY_RESULT, result)
-                runCatching { CollectionHelper.getCurrentAnkiDroidDirectory(context).absolutePath }
-                    .onSuccess { putExtra(AutomationProvider.KEY_LOCATION, it) }
+                putExtra(AutomationProvider.KEY_LOCATION, context.dataDir.absolutePath)
             }
 
         fun start(
