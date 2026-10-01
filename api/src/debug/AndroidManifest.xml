@@ -17,5 +17,5 @@
 
     So this exists in a 'debug' manifest, which is used by androidTest
     -->
-    <uses-permission android:name="com.ichi2.anki.debug.permission.READ_WRITE_DATABASE"/>
+    <uses-permission android:name="shiroikuma.anki.debug.permission.READ_WRITE_DATABASE"/>
 </manifest>

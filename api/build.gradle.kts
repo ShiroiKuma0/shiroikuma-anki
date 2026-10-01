@@ -16,6 +16,10 @@ configure<LibraryExtension> {
         buildConfig = true
     }
 
+    // Fork: the names follow the app's applicationId (`shiroikuma.anki`, with
+    // `.debug` on debug builds), because the manifest declares the provider
+    // and its permission from `${applicationId}`. Upstream's `com.ichi2.anki…`
+    // left every URI unmatched and asked for a permission nobody defines.
     defaultConfig {
         minSdk =
             libs.versions.apiMinSdk
@@ -24,18 +28,18 @@ configure<LibraryExtension> {
         buildConfigField(
             "String",
             "READ_WRITE_PERMISSION",
-            "\"com.ichi2.anki.permission.READ_WRITE_DATABASE\"",
+            "\"shiroikuma.anki.permission.READ_WRITE_DATABASE\"",
         )
-        buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.flashcards\"")
+        buildConfigField("String", "AUTHORITY", "\"shiroikuma.anki.flashcards\"")
     }
     buildTypes {
         debug {
             buildConfigField(
                 "String",
                 "READ_WRITE_PERMISSION",
-                "\"com.ichi2.anki.debug.permission.READ_WRITE_DATABASE\"",
+                "\"shiroikuma.anki.debug.permission.READ_WRITE_DATABASE\"",
             )
-            buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.debug.flashcards\"")
+            buildConfigField("String", "AUTHORITY", "\"shiroikuma.anki.debug.flashcards\"")
         }
         release {
             isMinifyEnabled = false
