@@ -92,8 +92,10 @@ class AutomationProvider : ContentProvider() {
         Timber.i("automation provider: %s from %s", method, callingPackage)
         return when (method) {
             METHOD_DESCRIBE -> ok(describe(ctx))
-            METHOD_EXPORT -> start(ctx, extras, importing = false)
-            METHOD_IMPORT -> start(ctx, extras, importing = true)
+            METHOD_EXPORT -> start(ctx, extras, AutomationDataService.Kind.EXPORT)
+            METHOD_IMPORT -> start(ctx, extras, AutomationDataService.Kind.IMPORT)
+            METHOD_ISLANDS_LIST -> start(ctx, extras, AutomationDataService.Kind.ISLANDS_LIST)
+            METHOD_ISLANDS_SYNC -> start(ctx, extras, AutomationDataService.Kind.ISLANDS_SYNC)
             METHOD_CANCEL -> {
                 AutomationJobs.cancel(extras?.getString(KEY_JOB_ID))
                 ok("OK:cancelled")
@@ -147,7 +149,7 @@ class AutomationProvider : ContentProvider() {
     private fun start(
         ctx: Context,
         extras: Bundle?,
-        importing: Boolean,
+        kind: AutomationDataService.Kind,
     ): Bundle {
         // The deprecated one-arg form deliberately: the typed overload is API
         // 33 and 白い熊's Mate XT answers `SDK_INT = 31` on an Android-13-based
@@ -161,7 +163,7 @@ class AutomationProvider : ContentProvider() {
         val dup = runCatching { fd.dup() }.getOrNull() ?: return fail("ERROR:descriptor unusable")
         val jobId = AutomationJobs.begin()
         return runCatching {
-            AutomationDataService.start(ctx, jobId, dup, importing, extras)
+            AutomationDataService.start(ctx, jobId, dup, kind, extras)
             ok("OK:$jobId")
         }.getOrElse { e ->
             // the service never started, so nothing else will ever close this
@@ -213,6 +215,10 @@ class AutomationProvider : ContentProvider() {
         const val METHOD_IMPORT = "import"
         const val METHOD_CANCEL = "cancel"
 
+        /** The 言語島 sync — `docs/sister-app-contract-anki-islands.md` */
+        const val METHOD_ISLANDS_LIST = "islands.list"
+        const val METHOD_ISLANDS_SYNC = "islands.sync"
+
         const val KEY_RESULT = "result"
 
         /**
@@ -225,6 +231,9 @@ class AutomationProvider : ContentProvider() {
          * least of all. 応用管理 (+047) shows it and treats it as opaque text.
          */
         const val KEY_LOCATION = "location"
+
+        /** `islands.sync` only, optional: `<uuid><TAB><reason>` per sentence that could not be applied */
+        const val KEY_ERRORS = "errors"
         const val KEY_FD = "fd"
         const val KEY_TOKEN = "token"
         const val KEY_JOB_ID = "job_id"

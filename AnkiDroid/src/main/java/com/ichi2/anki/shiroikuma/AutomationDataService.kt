@@ -11,13 +11,17 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.os.PowerManager
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
+import com.ichi2.anki.common.storage.CollectionHelper
+import com.ichi2.anki.observability.undoableOp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,13 +76,13 @@ class AutomationDataService : Service() {
         // backing up. `importing` is read defensively off a nullable intent for
         // the same reason: the notification's wording is not worth a branch
         // that could return first.
-        goForeground(intent?.getBooleanExtra(EXTRA_IMPORTING, false) == true)
+        val kind = Kind.of(intent?.getStringExtra(EXTRA_KIND))
+        goForeground(kind)
 
         val jobId = intent?.getStringExtra(EXTRA_JOB) ?: return stop(startId)
         // a stale job id — a retry of something already finished — stops
         // silently: it is the normal race, not an error
         val fd = HANDOVER.remove(jobId) ?: return stop(startId)
-        val importing = intent.getBooleanExtra(EXTRA_IMPORTING, false)
         val items = intent.getStringExtra(AutomationProvider.KEY_ITEMS)?.trim().orEmpty()
         val replyAction = intent.getStringExtra(AutomationProvider.KEY_REPLY_ACTION)?.trim().orEmpty()
         val replyPackage = intent.getStringExtra(AutomationProvider.KEY_REPLY_PACKAGE)?.trim().orEmpty()
@@ -86,7 +90,10 @@ class AutomationDataService : Service() {
 
         val replied = AtomicBoolean(false)
 
-        fun reply(result: String) {
+        fun reply(
+            result: String,
+            errors: String? = null,
+        ) {
             // Exactly one terminal answer per job, whatever path got here — a
             // synchronous failure and an asynchronous success must never both
             // fire. The same guard the broadcast contract has always carried.
@@ -94,7 +101,11 @@ class AutomationDataService : Service() {
             AutomationJobs.finish(jobId)
             Timber.i("automation data %s → %s", jobId, result.take(200))
             if (replyAction.isEmpty() || replyPackage.isEmpty()) return
-            sendBroadcast(replyIntent(this, replyAction, replyPackage, jobId, result))
+            sendBroadcast(
+                replyIntent(this, replyAction, replyPackage, jobId, result, location(kind)).apply {
+                    errors?.let { putExtra(AutomationProvider.KEY_ERRORS, it) }
+                },
+            )
         }
 
         val wakeLock =
@@ -109,7 +120,12 @@ class AutomationDataService : Service() {
             val heartbeat = launch { progress.beat() }
             try {
                 fd.use { open ->
-                    if (importing) runImport(open, items, ::reply) else runExport(jobId, open, items, progress, ::reply)
+                    when (kind) {
+                        Kind.EXPORT -> runExport(jobId, open, items, progress) { reply(it) }
+                        Kind.IMPORT -> runImport(open, items) { reply(it) }
+                        Kind.ISLANDS_LIST -> runIslandsList(open) { reply(it) }
+                        Kind.ISLANDS_SYNC -> runIslandsSync(jobId, open, progress, ::reply)
+                    }
                 }
             } catch (e: Exception) {
                 if (AutomationJobs.isCancelled(jobId) ||
@@ -241,7 +257,76 @@ class AutomationDataService : Service() {
         reply("OK:$restored restored")
     }
 
-    private fun notification(importing: Boolean): Notification {
+    /** `islands.list`: every `Language Islands` note, as JSON, into the caller's descriptor. */
+    private suspend fun runIslandsList(
+        fd: ParcelFileDescriptor,
+        reply: (String) -> Unit,
+    ) {
+        val (json, count) = withCol { ShiroikumaIslands.listJson(this) }
+        ParcelFileDescriptor.AutoCloseOutputStream(fd).use { it.write(json.toByteArray()) }
+        reply("OK:$count")
+    }
+
+    /**
+     * `islands.sync`: the caller's ZIP applied as one undo step, with the
+     * deck list told about it like any other operation.
+     *
+     * Everything that can refuse — an unreadable archive, a note type we
+     * cannot fill, a cancel — refuses before the collection is touched; past
+     * that point the sync runs to the end, since a half-applied sync is worse
+     * than a late one.
+     */
+    private suspend fun runIslandsSync(
+        jobId: String,
+        fd: ParcelFileDescriptor,
+        progress: AutomationProgress,
+        reply: (String, String?) -> Unit,
+    ) {
+        val (manifest, audio) =
+            try {
+                ParcelFileDescriptor.AutoCloseInputStream(fd).use { ShiroikumaIslands.readZip(it) }
+            } catch (e: IllegalArgumentException) {
+                reply("ERROR:${e.message}", null)
+                return
+            }
+        withCol { ShiroikumaIslands.requireCompatibleNotetype(this) }
+        if (AutomationJobs.isCancelled(jobId)) {
+            reply("ERROR:cancelled", null)
+            return
+        }
+        lateinit var result: ShiroikumaIslands.SyncResult
+        undoableOp {
+            val undo = addCustomUndoEntry(ShiroikumaIslands.UNDO_NAME)
+            result =
+                ShiroikumaIslands.sync(this, manifest, audio) { done, total ->
+                    progress.send(
+                        ShiroikumaExport.Progress(
+                            "${ShiroikumaIslands.UNIT} $done/$total",
+                            done.toLong(),
+                            total.toLong(),
+                            ShiroikumaIslands.UNIT,
+                        ),
+                        force = done == total,
+                    )
+                }
+            mergeUndoEntries(undo)
+        }
+        reply(result.result, result.errorLines)
+    }
+
+    /**
+     * Where a job wrote or read, for [AutomationProvider.KEY_LOCATION]: the
+     * private data directory for a backup or a restore, the collection
+     * directory for the islands (null when no collection path is set).
+     */
+    private fun location(kind: Kind): String? =
+        when (kind) {
+            Kind.EXPORT, Kind.IMPORT -> dataDir.absolutePath
+            Kind.ISLANDS_LIST, Kind.ISLANDS_SYNC ->
+                runCatching { CollectionHelper.getCurrentAnkiDroidDirectory(this).absolutePath }.getOrNull()
+        }
+
+    private fun notification(kind: Kind): Notification {
         NotificationManagerCompat
             .from(this)
             .createNotificationChannel(
@@ -252,7 +337,7 @@ class AutomationDataService : Service() {
             )
         return NotificationCompat
             .Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(if (importing) R.string.sk_automation_importing else R.string.sk_automation_exporting))
+            .setContentTitle(getString(kind.titleRes))
             .setSmallIcon(R.drawable.ic_star_notify)
             .setOngoing(true)
             .setSilent(true)
@@ -282,8 +367,8 @@ class AutomationDataService : Service() {
      * question worth asking here. Try typed, fall back to untyped, and carry on
      * either way: losing the notification is worth less than losing the export.
      */
-    private fun goForeground(importing: Boolean) {
-        val notification = notification(importing)
+    private fun goForeground(kind: Kind) {
+        val notification = notification(kind)
         try {
             ServiceCompat.startForeground(
                 this,
@@ -307,7 +392,7 @@ class AutomationDataService : Service() {
         private const val CHANNEL_ID = "shiroikuma_automation_data"
         private const val NOTIFICATION_ID = 9714
         private const val EXTRA_JOB = "job"
-        private const val EXTRA_IMPORTING = "importing"
+        private const val EXTRA_KIND = "kind"
         private const val WAKELOCK_TAG = "AnkiDroid:sk-automation-data"
         private const val WAKELOCK_TIMEOUT_MS = 60L * 60L * 1000L
 
@@ -335,6 +420,7 @@ class AutomationDataService : Service() {
             replyPackage: String,
             jobId: String,
             result: String,
+            location: String? = context.dataDir.absolutePath,
         ): Intent =
             Intent(replyAction).apply {
                 setPackage(replyPackage)
@@ -343,14 +429,14 @@ class AutomationDataService : Service() {
                 addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 putExtra(AutomationProvider.KEY_JOB_ID, jobId)
                 putExtra(AutomationProvider.KEY_RESULT, result)
-                putExtra(AutomationProvider.KEY_LOCATION, context.dataDir.absolutePath)
+                location?.let { putExtra(AutomationProvider.KEY_LOCATION, it) }
             }
 
         fun start(
             context: Context,
             jobId: String,
             fd: ParcelFileDescriptor,
-            importing: Boolean,
+            kind: Kind,
             extras: Bundle?,
         ) {
             HANDOVER[jobId] = fd
@@ -359,7 +445,7 @@ class AutomationDataService : Service() {
                     context,
                     Intent(context, AutomationDataService::class.java).apply {
                         putExtra(EXTRA_JOB, jobId)
-                        putExtra(EXTRA_IMPORTING, importing)
+                        putExtra(EXTRA_KIND, kind.name)
                         putExtra(AutomationProvider.KEY_ITEMS, extras?.getString(AutomationProvider.KEY_ITEMS))
                         putExtra(AutomationProvider.KEY_REPLY_ACTION, extras?.getString(AutomationProvider.KEY_REPLY_ACTION))
                         putExtra(AutomationProvider.KEY_REPLY_PACKAGE, extras?.getString(AutomationProvider.KEY_REPLY_PACKAGE))
@@ -371,6 +457,22 @@ class AutomationDataService : Service() {
                 HANDOVER.remove(jobId)
                 throw e
             }
+        }
+    }
+
+    /** What a data-door job does; travels to the service as its name. */
+    enum class Kind(
+        @StringRes val titleRes: Int,
+    ) {
+        EXPORT(R.string.sk_automation_exporting),
+        IMPORT(R.string.sk_automation_importing),
+        ISLANDS_LIST(R.string.sk_automation_islands_list),
+        ISLANDS_SYNC(R.string.sk_automation_islands_sync),
+        ;
+
+        companion object {
+            /** Read defensively: the notification must go up before anything can return early. */
+            fun of(name: String?): Kind = entries.firstOrNull { it.name == name } ?: EXPORT
         }
     }
 }
