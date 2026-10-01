@@ -163,6 +163,8 @@
     <string name="sk_automation_channel">Automation data</string>
     <string name="sk_automation_exporting">Backing this app up…</string>
     <string name="sk_automation_importing">Restoring this app\'s data…</string>
+    <string name="sk_automation_islands_list">Reading the 言語島 notes…</string>
+    <string name="sk_automation_islands_sync">Syncing the 言語島 notes…</string>
 
     <string name="sk_reset_all">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
