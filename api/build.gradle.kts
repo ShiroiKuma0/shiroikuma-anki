@@ -16,16 +16,20 @@ configure<LibraryExtension> {
         buildConfig = true
     }
 
+    // Fork: the names follow the app's applicationId (`shiroikuma.anki`, with
+    // `.debug` on debug builds), because the manifest declares the provider
+    // and its permission from `${applicationId}`. Upstream's `com.ichi2.anki…`
+    // left every URI unmatched and asked for a permission nobody defines.
     defaultConfig {
         minSdk =
             libs.versions.apiMinSdk
                 .get()
                 .toInt()
-        buildConfigField("String", "ANKI_PACKAGE_NAME", "\"com.ichi2.anki\"")
+        buildConfigField("String", "ANKI_PACKAGE_NAME", "\"shiroikuma.anki\"")
     }
     buildTypes {
         debug {
-            buildConfigField("String", "ANKI_PACKAGE_NAME", "\"com.ichi2.anki.debug\"")
+            buildConfigField("String", "ANKI_PACKAGE_NAME", "\"shiroikuma.anki.debug\"")
         }
         release {
             isMinifyEnabled = false

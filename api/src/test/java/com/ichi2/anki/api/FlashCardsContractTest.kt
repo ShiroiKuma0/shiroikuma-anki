@@ -25,7 +25,7 @@ internal class FlashCardsContractTest {
 
     @Test
     fun defaultCardUriRemainsUnchanged() {
-        val packageName = if (BuildConfig.DEBUG) "com.ichi2.anki.debug" else "com.ichi2.anki"
+        val packageName = if (BuildConfig.DEBUG) "shiroikuma.anki.debug" else "shiroikuma.anki"
 
         assertEquals("content://$packageName.flashcards/cards", FlashCardsContract.Card.CONTENT_URI.toString())
     }
