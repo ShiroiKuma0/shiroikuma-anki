@@ -133,7 +133,19 @@ Every fork commit that bumped the version conflicts on the
 stops onto `v2.25.0`). When the conflict hunks hold nothing but those lines
 (and upstream's `// If you change this…` comment), take HEAD's side —
 upstream's version — and continue; Step 5 sets the fork number once on top.
-Any hunk with other content stops the loop for a real look.
+Any hunk with other content stops the loop for a real look. Fork commits
+that also *added comment lines* beside the version lines (the versioning
+notes) are just as mechanical: keep the fork's `//` lines, take HEAD's
+version lines.
+
+**Moving from a release tag to an alpha on `main`** (2026-10-02, `v2.25.0`
+→ `v2.26.0alpha2`): a release tag sits on the `release-X.Y` branch and is
+not an ancestor of `main`, so a plain `git rebase <alpha>` would replay
+the release branch's own commits too. Name the old base explicitly:
+`git rebase --onto <alpha> <old release tag> custom`. Expect upstream code
+written after the fork removed ACRA to call ACRA helpers (that rebase:
+`isAcraSenderProcess()` in the new profiles `attachBaseContext`, plus
+`AcraBuildConfigTest`) — drop those with the ACRA commit.
 
 ## Step 5 — Reset (or continue) the fork build number
 
