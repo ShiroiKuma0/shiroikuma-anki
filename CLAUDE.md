@@ -40,6 +40,22 @@ Workflow: develop fork additions as a clean commit stack on `custom`; when upstr
 - Two fork entries in upstream's `ManifestThemeTest` allowlist (`IntentHandler` → `Theme_IntentHandler` for the black launch splash, and `VideoPlayerActivity`'s fullscreen theme). Upstream added the test on 2026-08-16 to forbid `android:theme` in the manifest; re-check on each rebase that the allowlist still has both, since a moved or renamed entry fails the test rather than the build.
 - Fork entries in two more upstream tests, for the same reason — they pin a set rather than a behaviour, so a rename fails the test rather than the build. `ExternalEntryPointsTest.EXPECTED` gains `AutomationProvider` and `StateExportReceiver` (every externally-reachable component is pinned there); `ExternalEntryPointsUndecidedStorageTest` gains the intent that drives the receiver (`LIST_CATEGORIES`) and a `call()`-based branch for the provider, since it is not a `query()` provider. Re-check both on each rebase.
 
+## 言語島 (Language Islands) sync
+
+- **Purpose:** the `islands.list` / `islands.sync` methods on the data door
+  (`content://shiroikuma.anki.automation`) keep 白い熊's Japanese Language
+  Islands sentences in 暗記 in sync with 白い熊 自由作業盤's 言語島 suite.
+- **Contract:** `docs/sister-app-contract-anki-islands.md`.
+- **Caller:** `shiroikuma.jiyusagyoban` (白い熊 自由作業盤), pinned like every
+  data-door caller.
+- **Suite-level design record:** `~/git/shiroikuma-jiyusagyoban/docs/gengoshima.md`.
+- **Layout:** note type `Language Islands`; decks
+  `言語島々::認識::<island>` (Recognition, card ord 0) and
+  `言語島々::製作::<island>` (Production, card ord 1).
+- **Never remove the `li::uuid::<uuid>` tags by hand.** They are how the sync
+  finds its notes; a note without one is treated as hand-made, so it is
+  adopted again or duplicated, and its scheduling link is lost.
+
 ## Commands
 
 ```bash
