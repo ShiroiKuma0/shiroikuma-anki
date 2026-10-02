@@ -11,6 +11,56 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.26.0alpha2+001 — 2026-10-02
+
+Built on AnkiDroid `v2.26.0alpha2` (`79157890e2`), the second alpha of the 2.26 series on
+upstream `main`, 293 upstream commits past +001's `v2.25.0` base. versionCode `22600103`,
+installed as `322600103` for arm64-v8a. The counter restarts at `+001` because upstream's
+2.26 alpha code is above every 2.25 build, so it still installs over 2.25.0+001.
+
+**The fork moves from the stable 2.25.0 release onto the 2.26 alpha series.**
+
+- **Every fork feature carried over.** That covers the yellow-on-black UI page, the fonts,
+  export and import, the automation contract, the 言語島 sync door and the all-files gate.
+- **The video fix stays.** Upstream issue #20668 is still open, so `[sound:]` videos still play
+  only in the fork's native fullscreen player.
+- **Still no crash reporter.** Upstream's new profile startup code checked whether it was
+  running in ACRA's sender process. The fork has no such process, so that check is gone, and
+  so are the two new upstream tests that need ACRA (`AcraBuildConfigTest` and one profile
+  test). `ShiroikumaNoTrackersTest` still confirms `org.acra` is off the classpath.
+- **Manifest:** upstream's new camera-capture `<queries>` entry sits beside the fork's two
+  automation callers.
+
+**What upstream brings in this base:**
+
+- **Backend:** upgraded to Anki 26.09.3.
+- **Profiles groundwork:** a per-profile app environment is installed at startup.
+  Preferences, files, caches and databases can now live under a profile directory.
+- **Reviewer:**
+  - A JS API to set and toggle fullscreen mode.
+  - MathJax loads lazily.
+  - The *Disable card hardware render* setting is honoured on the new study screen.
+  - TTS languages are cached early.
+- **Whiteboard:** the stylus button toggles the eraser.
+- **Note editor:**
+  - A preview sidebar toggle.
+  - Switching note type no longer silently discards the unsaved-changes warning.
+- **Card browser:** a *Default search text* setting.
+- **Deck options:** stay open after optimizing presets, and reloads wait until saving finishes.
+- **Settings:** a new directory picker for the collection folder.
+- **Tags:**
+  - Faster sorting.
+  - Parent states refresh after *check all*.
+  - *Manage tags* messages stay until acknowledged.
+- **Backups and sync:**
+  - A skipped manual backup is reported.
+  - The collection reopens after a failed backup.
+  - Empty sync endpoints are no longer sent as `""`.
+- **Pages:** bundled assets are served only to the app, and external links stay outside
+  bundled pages.
+- **Other fixes:** media check shows errors instead of crashing, a clearer clock-error message
+  in the deck list, and many test and CI fixes.
+
 ## 白い熊 暗記 2.25.0+001 — 2026-10-02
 
 Built on AnkiDroid `v2.25.0` (`7a18581937`), the stable 2.25.0 public release, which is
