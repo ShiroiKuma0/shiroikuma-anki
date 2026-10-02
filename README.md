@@ -6,11 +6,11 @@
 
 **AnkiDroid in yellow on black — with working video, configurable everything, and a font engine.**
 
-A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, a category-based Export/Import of the whole collection and every setting, a headless backup surface that lets a sister app back up every setting and restore it onto a wiped phone — pointing the app straight back at a collection that never left shared storage — and **not one tracker**.
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, a category-based Export/Import of the whole collection and every setting, a headless backup surface that lets a sister app back up every setting and restore it onto a wiped phone — pointing the app straight back at a collection that never left shared storage — a sync door that keeps a 言語島 (Language Islands) deck in step with 白い熊 自由作業盤, and **not one tracker**.
 
 Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
-**📥 Latest release: [`2.25.0beta2+005`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
+**📥 Latest release: [`2.25.0beta2+006`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
@@ -47,13 +47,17 @@ The same export runs **headlessly**, so an automation app can back this one up u
 
 A restored install has everything but permission, so the app opens on an **all-files access gate** before anything looks at the collection: why it is needed, the collection's path, *Grant access* — and *Not now*, so a phone that will not grant it can still open the app.
 
+## 🏝️ 言語島 sync
+
+白い熊 自由作業盤's 言語島 suite writes islands of sentences, translates them and voices them in Japanese and English; this app is where they are reviewed. After every edit there, the suite syncs the `Language Islands` notes here through the same caller-checked door the backups use. New sentences become notes, edited ones are **updated in place, so their review history survives**, removed ones are deleted, and each island gets its own pair of decks — Recognition under `言語島々::認識`, Production under `言語島々::製作` — renamed when the island is. A one-time adoption takes over an existing hand-made deck note by note, keeping every review and putting misfiled cards where they belong. Audio is stored under content-hashed names, and files nothing uses any more go to the media trash. Every sync is a single undo step, and only the notes the suite owns are ever deleted.
+
 ## 🚫 Zero trackers
 
 Upstream reports crashes with ACRA, which uploads the stack trace, 500 lines of logcat, your whole preferences file, your device details and a persistent install UUID to a server. This fork does not ship it — not switched off, **not there**: the dependencies, the reporter, the report dialog, its separate process and the report URL are all removed, and the built APK contains zero occurrences of the string `acra`. Crash reporting still exists as a seam, but it writes to the log and stops. The two settings that only fed it — *Error reporting mode* and *Send exception report* — are gone with it, because a switch controlling nothing is worse than no switch. A test in the build fails the moment a rebase brings the library back.
 
 ## 🖤💛 Fork identity
 
-Black-and-yellow traced launcher icon and a black splash screen (including the Android 12+ splash API). The app id `shiroikuma.anki` keeps permissions and provider authorities separate, so it coexists with the official build on the same device.
+Black-and-yellow traced launcher icon and a black splash screen (including the Android 12+ splash API). The app id `shiroikuma.anki` keeps permissions and provider authorities separate, so it coexists with the official build on the same device — and the public card API answers under that id too (`shiroikuma.anki.flashcards`).
 
 ---
 
