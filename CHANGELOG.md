@@ -11,6 +11,42 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0beta2+006 — 2026-10-02
+
+Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), the same base as +001 and +005. versionCode
+`22500208`, installed as `322500208` for arm64-v8a.
+
+**A 言語島 deck that keeps itself in step with 白い熊 自由作業盤.**
+
+- **The 言語島 sync door.** 自由作業盤's 言語島 suite keeps the `Language Islands` notes here in
+  step with its islands through two new methods on the existing data door. The same check
+  applies: exact package, uid and pinned signing certificate. The wire is documented in
+  `docs/sister-app-contract-anki-islands.md`.
+  - `islands.list` hands back every `Language Islands` note: fields, tags, and each card's
+    home deck.
+  - `islands.sync` applies a ZIP of a manifest and audio as **one undo step**, *言語島 sync*:
+    - New sentences become notes.
+    - Edited ones are updated in place, so **their scheduling survives**.
+    - Removed ones are deleted. Only notes the suite created or adopted are ever deleted.
+    - Each island gets `言語島々::認識::<island>` for its Recognition cards and
+      `言語島々::製作::<island>` for its Production cards, and both are renamed when the
+      island is.
+  - The note type is created if missing, exactly as the hand-made deck has it, and an existing
+    one is never altered.
+  - Audio is stored as `li_<sha1>.<ext>`, and `li_` files no note uses any more go to the media
+    trash. Other media is never touched.
+  - The reply counts what happened: `OK:<added>|<updated>|<moved>|<deleted>`. Any sentence that
+    could not be applied is listed beside it, and the rest still go ahead.
+- **Adoption of the hand-made deck, tested on the phone.** All 150 hand-made notes were taken
+  over with their original note ids, and 7 new ones came from 仕事の話: 157 notes, 314
+  cards. The 46 cards that sat in the wrong tree were moved where they belong. The 46 reviewed
+  cards kept all 142 reviews, and 314 new Opus audio files replaced the HyperTTS MP3s. The old
+  MP3s are now unused; Check Media will list them.
+- **The public card API works under this fork's id.** The provider is declared as
+  `shiroikuma.anki.flashcards`, but the API library still named upstream's
+  `com.ichi2.anki.flashcards` and its permission. The provider therefore matched no request,
+  and no app could reach it. The names now follow the app id.
+
 ## 白い熊 暗記 2.25.0beta2+005 — 2026-09-27
 
 Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), the same base as +001. versionCode
