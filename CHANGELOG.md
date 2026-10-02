@@ -11,6 +11,28 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.25.0+001 — 2026-10-02
+
+Built on AnkiDroid `v2.25.0` (`7a18581937`), the stable 2.25.0 public release, which is
+3 upstream commits past +006's `v2.25.0beta2` base. versionCode `22500301`, installed as
+`322500301` for arm64-v8a. The counter restarts at `+001` because upstream's release code
+(`…300`) is above every beta build, so it still installs over +006.
+
+**The fork, unchanged, on the stable AnkiDroid 2.25.0 release.**
+
+- **Every fork feature carried over as it was.** Upstream's three commits don't touch any fork
+  file except the version line.
+- **The video fix stays.** Upstream issue #20668 is still open, so `[sound:]` videos still play
+  only in the fork's native fullscreen player.
+- **The 言語島 sync door, the automation contract and the all-files gate** are carried over
+  unchanged.
+
+**What upstream brings in this base:**
+
+- **Card browser:** the *Manage columns* dialog now draws edge to edge, so its list and
+  buttons are no longer hidden under the system bars (upstream #22092).
+- The 2.25.0 release changelog and version bump.
+
 ## 白い熊 暗記 2.25.0beta2+006 — 2026-10-02
 
 Built on AnkiDroid `v2.25.0beta2` (`99efe56916`), the same base as +001 and +005. versionCode
