@@ -128,6 +128,13 @@ the call — `git commit --fixup=<sha>` then
 `GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <newtag>` — so every
 commit keeps compiling.
 
+Every fork commit that bumped the version conflicts on the
+`versionCode`/`versionName` lines, one stop per bump commit (2026-10-02: ~35
+stops onto `v2.25.0`). When the conflict hunks hold nothing but those lines
+(and upstream's `// If you change this…` comment), take HEAD's side —
+upstream's version — and continue; Step 5 sets the fork number once on top.
+Any hunk with other content stops the loop for a real look.
+
 ## Step 5 — Reset (or continue) the fork build number
 
 First build on a **new upstream version** is `+1`. In `AnkiDroid/build.gradle`

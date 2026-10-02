@@ -24,11 +24,11 @@ Upstream scheme is `AbbCCtDD` (`A`=major, `bb`=minor, `CC`=maintenance, `t`=type
 digits as its build counter:
 
 - versionName: `<upstream>+<NNN>`, the counter **zero-padded to three digits** —
-  e.g. `2.25.0beta2+001`, `2.25.0beta2+002`, … The APK's own version must read
+  e.g. `2.25.0+001`, `2.25.0+002`, … The APK's own version must read
   the same as its filename and its release tag, which are padded by the global
   `after-build`/`publish-version` rules; an unpadded `+25` is a bug (fixed
   2026-08-17, when `+25` shipped unpadded and had to be rebuilt).
-- versionCode: upstream code `+N` — e.g. `22500203`, `22500204`, …
+- versionCode: upstream code `+N` — e.g. `22500301`, `22500302`, …
   (on a public-release base, which ends `…300`, that is `AbbCC3NN`). No padding
   here: it is a number, and leading zeros would change nothing.
 - Both live in `defaultConfig` in `AnkiDroid/build.gradle`. Bump `N` by one for
@@ -46,7 +46,7 @@ digits as its build counter:
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
   digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500203`.
 
-Current base: **the `v2.25.0beta2` tag** (last rebase 2026-09-26). Deployed: `2.25.0beta2+006`.
+Current base: **the `v2.25.0` release tag** (last rebase 2026-10-02). Deployed: `2.25.0+001`.
 
 ## Environment (export every run; not set in non-interactive shells)
 
