@@ -112,6 +112,7 @@ Result grammar — this is all of it:
       "position": 1,
       "english": "I worked seven years in Russia starting in 2009.",
       "japanese": "私は2009年から7年間ロシアで働きました。",
+      "language": "en",
       "ja_audio": "audio/<uuid>-ja.ogg",
       "en_audio": "audio/<uuid>-en.ogg"
     }
@@ -130,6 +131,7 @@ Result grammar — this is all of it:
 | `islands` | Every island any sentence in this manifest refers to, plus any being renamed. |
 | `sentences` | The sentences to create or update. |
 | `english`, `japanese` | **Plain text**; 暗記 escapes `&`, `<`, `>` when it writes the field. |
+| `language` | The source language: `en` or `cs`; absent or anything else reads as `en`. The source field (`english`) and the source audio (`en_audio`) are in that language — the names stay. |
 | `ja_audio`, `en_audio` | Paths **inside the ZIP**. Absent or `null`: leave the field as it is (a new note gets it empty). `""`: clear the field. |
 | `position` | Order of the sentence within its island; new notes are added in island order, then position, so their new cards come up in that order. Existing notes are not repositioned. |
 | `deleted` | Sentence uuids whose notes to delete. |
@@ -155,7 +157,11 @@ a fold still fails, the sync answers `OK:` all the same, as the changes are in b
    - `adopt` first: the named note is tagged (a note id that does not exist, or is not a
      `Language Islands` note, is an `errors` line).
    - A tagged note is updated in place — **scheduling is kept**; `updated` counts it only if a
-     field changed.
+     field or its language tag changed.
+   - **Language tag**, set and cleared on every sync, for new and updated notes alike: a `cs`
+     sentence's note carries `li::lang::cs`; an English note carries **no** `li::lang::` tag (so
+     the English norm never touches existing notes). Czech notes are found with
+     `tag:li::lang::cs`.
    - No tagged note: a new one is created (`added`).
 4. **Card placement.** Card ord 0 goes to `<root>::<recognition>::<island>`, ord 1 to
    `<root>::<production>::<island>` (`moved` counts the cards that changed deck; a card in a

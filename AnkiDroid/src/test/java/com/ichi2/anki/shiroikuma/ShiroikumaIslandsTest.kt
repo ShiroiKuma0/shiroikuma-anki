@@ -40,7 +40,8 @@ class ShiroikumaIslandsTest : RobolectricTest() {
         japanese: String = "ロシアで働きました。",
         jaAudio: String? = "audio/$uuid-ja.ogg",
         enAudio: String? = "audio/$uuid-en.ogg",
-    ) = Sentence(uuid, island.uuid, position, english, japanese, jaAudio, enAudio)
+        language: String = "en",
+    ) = Sentence(uuid, island.uuid, position, english, japanese, jaAudio, enAudio, language)
 
     private fun manifest(
         vararg sentences: Sentence,
@@ -105,6 +106,40 @@ class ShiroikumaIslandsTest : RobolectricTest() {
         assertThat(col.undoStatus().undo, equalTo(ShiroikumaIslands.UNDO_NAME))
         col.undo()
         assertThat("one undo takes the whole sync back", col.findNotes("tag:li::uuid::*"), equalTo(emptyList()))
+    }
+
+    @Test
+    fun `a Czech sentence is tagged li lang cs, an English one carries no language tag`() {
+        sync(manifest(sentence("cz", english = "Šel jsem k řece.", language = "cs"), sentence("en", position = 2)))
+
+        assertThat(col.getNote(noteOf("cz")).tags, hasItem("li::lang::cs"))
+        assertThat(col.getNote(noteOf("en")).tags.none { it.startsWith("li::lang::") }, equalTo(true))
+    }
+
+    @Test
+    fun `a language switch alone is an update, either way`() {
+        sync(manifest(sentence("s1")))
+
+        assertThat(sync(manifest(sentence("s1", language = "cs"))).result, equalTo("OK:0|1|0|0"))
+        assertThat(col.getNote(noteOf("s1")).tags, hasItem("li::lang::cs"))
+
+        assertThat(sync(manifest(sentence("s1"))).result, equalTo("OK:0|1|0|0"))
+        assertThat(col.getNote(noteOf("s1")).tags.none { it.startsWith("li::lang::") }, equalTo(true))
+        assertThat("an English note stays untouched", sync(manifest(sentence("s1"))).result, equalTo("OK:0|0|0|0"))
+    }
+
+    @Test
+    fun `the language parses to cs or else en`() {
+        fun languageOf(entry: String) =
+            ShiroikumaIslands
+                .parseManifest("""{"sentences":[{"uuid":"s","island":"i"$entry}]}""")
+                .sentences
+                .single()
+                .language
+        assertThat(languageOf(""","language":"cs""""), equalTo("cs"))
+        assertThat(languageOf(""","language":" CS """"), equalTo("cs"))
+        assertThat(languageOf(""), equalTo("en"))
+        assertThat(languageOf(""","language":"de""""), equalTo("en"))
     }
 
     @Test
