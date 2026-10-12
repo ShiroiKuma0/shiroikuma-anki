@@ -37,6 +37,12 @@ object ShiroikumaIslands {
     /** A note belongs to sentence `<uuid>` when it carries `li::uuid::<uuid>`. */
     const val TAG_PREFIX = "li::uuid::"
 
+    /**
+     * A sentence whose source is not English carries `li::lang::<language>`;
+     * English, the norm, carries no language tag at all.
+     */
+    const val LANG_TAG_PREFIX = "li::lang::"
+
     /** Island uuid → the name its two decks were last given (collection config, so it syncs). */
     const val DECKS_CONFIG_KEY = "shiroikuma_islands_decks"
 
@@ -61,11 +67,15 @@ object ShiroikumaIslands {
         val uuid: String,
         val island: String,
         val position: Int,
+        /** The source sentence, in [language] despite the name */
         val english: String,
         val japanese: String,
         /** Path inside the ZIP; null = leave the field alone, "" = clear it */
         val jaAudio: String?,
+        /** The source reading, in [language] */
         val enAudio: String?,
+        /** `en` or `cs`; anything else, or absent (an older 言語島), reads as `en` */
+        val language: String = "en",
     )
 
     data class Manifest(
@@ -195,6 +205,12 @@ object ShiroikumaIslands {
                                 japanese = it.optString("japanese"),
                                 jaAudio = it.audio("ja_audio"),
                                 enAudio = it.audio("en_audio"),
+                                language =
+                                    it
+                                        .optString("language")
+                                        .trim()
+                                        .lowercase()
+                                        .takeIf { it == "cs" } ?: "en",
                             )
                         }
                     }
@@ -321,11 +337,13 @@ object ShiroikumaIslands {
                 if (existing != null) {
                     note = existing
                     val before = note.fields.toList()
+                    val tagsBefore = note.tags.toList()
                     note.setItem(F_EN, escape(sentence.english))
                     note.setItem(F_JA, escape(sentence.japanese))
                     jaAudio?.let { note.setItem(F_JA_AUDIO, it) }
                     enAudio?.let { note.setItem(F_EN_AUDIO, it) }
-                    if (note.fields != before) {
+                    setLanguageTag(note, sentence.language)
+                    if (note.fields != before || note.tags != tagsBefore) {
                         col.updateNote(note).let { } // the OpChanges reach the deck list through the merged undo step
                         updatedNids += note.id
                     }
@@ -336,6 +354,7 @@ object ShiroikumaIslands {
                     note.setItem(F_JA_AUDIO, jaAudio.orEmpty())
                     note.setItem(F_EN_AUDIO, enAudio.orEmpty())
                     note.addTag(TAG_PREFIX + sentence.uuid)
+                    setLanguageTag(note, sentence.language)
                     col.addNote(note, recognitionDid)
                     owned[sentence.uuid] = note.id
                     added++
@@ -455,6 +474,15 @@ object ShiroikumaIslands {
             studyQueues = true
             mtime = true
         }
+
+    /** Makes [note]'s `li::lang::` tag say [language]: none for English. */
+    private fun setLanguageTag(
+        note: Note,
+        language: String,
+    ) {
+        note.tags.removeAll { it.startsWith(LANG_TAG_PREFIX, ignoreCase = true) }
+        if (language != "en") note.addTag(LANG_TAG_PREFIX + language)
+    }
 
     /** All notes of the [NOTETYPE] note type (empty when it does not exist). */
     private fun notesOf(col: Collection): List<NoteId> =
