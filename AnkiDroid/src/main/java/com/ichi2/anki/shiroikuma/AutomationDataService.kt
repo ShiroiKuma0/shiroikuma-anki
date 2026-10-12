@@ -296,9 +296,8 @@ class AutomationDataService : Service() {
         }
         lateinit var result: ShiroikumaIslands.SyncResult
         undoableOp {
-            val undo = addCustomUndoEntry(ShiroikumaIslands.UNDO_NAME)
-            result =
-                ShiroikumaIslands.sync(this, manifest, audio) { done, total ->
+            val (synced, changes) =
+                ShiroikumaIslands.syncAsOneStep(this, manifest, audio) { done, total ->
                     progress.send(
                         ShiroikumaExport.Progress(
                             "${ShiroikumaIslands.UNIT} $done/$total",
@@ -309,7 +308,8 @@ class AutomationDataService : Service() {
                         force = done == total,
                     )
                 }
-            mergeUndoEntries(undo)
+            result = synced
+            changes
         }
         reply(result.result, result.errorLines)
     }

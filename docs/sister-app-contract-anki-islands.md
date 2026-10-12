@@ -138,7 +138,9 @@ Result grammar — this is all of it:
 
 ## 6. What 暗記 does with it
 
-All in one operation, recorded as a single undo step `言語島 sync`:
+All in one operation, recorded as a single undo step `言語島 sync`, however many notes it touches
+(the backend's own steps are folded into it as the sync goes, since the backend keeps only 30; if
+a fold still fails, the sync answers `OK:` all the same, as the changes are in by then):
 
 1. **Note type.** `Language Islands` is created if missing — fields `english`, `japanese`,
    `japanese-audio`, `english-audio`; templates `Recognition` (front `{{japanese}}` +

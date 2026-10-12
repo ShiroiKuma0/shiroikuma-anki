@@ -2,6 +2,8 @@
 
 package com.ichi2.anki.shiroikuma
 
+import anki.collection.OpChanges
+import anki.collection.opChanges
 import com.google.protobuf.ByteString
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.DeckId
@@ -10,6 +12,7 @@ import com.ichi2.anki.libanki.NoteId
 import com.ichi2.anki.libanki.NotetypeJson
 import org.json.JSONArray
 import org.json.JSONObject
+import timber.log.Timber
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.ZipInputStream
@@ -219,10 +222,14 @@ object ShiroikumaIslands {
      * sentence that cannot be applied is reported in [SyncResult.errors] and
      * the rest goes ahead.
      *
-     * The caller wraps this in a custom undo entry ([UNDO_NAME]).
+     * The caller wraps this in a custom undo entry ([UNDO_NAME]); see
+     * [syncAsOneStep].
      *
      * @param audio the ZIP's other entries, by path
      * @param onProgress sentences done, out of how many
+     * @param checkpoint called after every few backend operations, so the
+     * caller can fold them into its undo entry before the backend's undo
+     * queue (30 steps) pushes that entry out
      * @throws IllegalStateException the note type exists but is not one we can fill
      */
     fun sync(
@@ -230,6 +237,7 @@ object ShiroikumaIslands {
         manifest: Manifest,
         audio: Map<String, ByteArray>,
         onProgress: (Int, Int) -> Unit = { _, _ -> },
+        checkpoint: () -> Unit = {},
     ): SyncResult {
         val notetype = ensureNotetype(col)
         val errors = mutableListOf<Pair<String, String>>()
@@ -255,6 +263,7 @@ object ShiroikumaIslands {
             col.decks.id(manifest.recognitionDeck(island.name))
             col.decks.id(manifest.productionDeck(island.name))
             deckNames.put(island.uuid, island.name)
+            checkpoint()
         }
 
         // 2. the notes this door already owns, by sentence uuid
@@ -279,6 +288,7 @@ object ShiroikumaIslands {
                     col.updateNote(note).let { } // the OpChanges reach the deck list through the merged undo step
                     owned[uuid] = nid
                     updatedNids += nid
+                    checkpoint()
                 }
             }
         }
@@ -347,6 +357,7 @@ object ShiroikumaIslands {
             } catch (e: Exception) {
                 errors += sentence.uuid to (e.message ?: e.javaClass.simpleName)
             }
+            checkpoint()
         }
         onProgress(ordered.size, ordered.size)
         for ((did, cids) in moves) col.setDeck(cids, did)
@@ -376,6 +387,7 @@ object ShiroikumaIslands {
                 }
             }
             deckNames.remove(uuid)
+            checkpoint()
         }
         col.config.set(DECKS_CONFIG_KEY, deckNames)
 
@@ -390,6 +402,59 @@ object ShiroikumaIslands {
             errors = errors,
         )
     }
+
+    /**
+     * [sync] as one undo step named [UNDO_NAME], which is how the data door
+     * runs it.
+     *
+     * Every note, deck and card change inside a sync is a backend operation
+     * with its own undo step, and the backend keeps only the latest 30: folded
+     * in only at the end, a sync of 30-odd sentences had already pushed its
+     * own entry out, and the fold failed with "target undo op not found" after
+     * every write was in (2026-10-12). So the steps are folded in as they
+     * come, and should a fold still fail, the sync's result stands — the
+     * changes are saved by then, only their undo grouping is lost.
+     *
+     * @return the result, and the changes to tell the UI about
+     */
+    fun syncAsOneStep(
+        col: Collection,
+        manifest: Manifest,
+        audio: Map<String, ByteArray>,
+        onProgress: (Int, Int) -> Unit = { _, _ -> },
+    ): Pair<SyncResult, OpChanges> {
+        val undo = col.addCustomUndoEntry(UNDO_NAME)
+        var changes: OpChanges? = null
+        var folding = true
+
+        fun fold() {
+            if (!folding) return
+            try {
+                changes = col.mergeUndoEntries(undo)
+            } catch (e: Exception) {
+                Timber.w(e, "言語島 sync: undo steps no longer foldable; the sync goes on without them")
+                folding = false
+            }
+        }
+        val result = sync(col, manifest, audio, onProgress, checkpoint = ::fold)
+        fold()
+        return result to (changes.takeIf { folding } ?: EVERYTHING_CHANGED)
+    }
+
+    /** What a sync can touch, for the UI when no merged [OpChanges] is at hand */
+    private val EVERYTHING_CHANGED =
+        opChanges {
+            card = true
+            note = true
+            deck = true
+            tag = true
+            notetype = true
+            config = true
+            browserTable = true
+            noteText = true
+            studyQueues = true
+            mtime = true
+        }
 
     /** All notes of the [NOTETYPE] note type (empty when it does not exist). */
     private fun notesOf(col: Collection): List<NoteId> =
