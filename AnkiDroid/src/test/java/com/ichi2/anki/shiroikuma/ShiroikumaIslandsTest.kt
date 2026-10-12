@@ -89,6 +89,24 @@ class ShiroikumaIslandsTest : RobolectricTest() {
         assertThat("the audio is in the media folder", File(col.media.dir, media).exists(), equalTo(true))
     }
 
+    /** The sync as the data door runs it: one undo step. */
+    private fun syncAsOneStep(manifest: Manifest) =
+        ShiroikumaIslands.syncAsOneStep(col, manifest, audioFor(*manifest.sentences.toTypedArray())).first
+
+    @Test
+    fun `a sync larger than the undo queue is still one undo step`() {
+        // 2026-10-12: a 34-sentence delta failed with "target undo op not found"
+        // because the backend keeps 30 undo steps and each note was its own
+        val sentences = (1..40).map { sentence("s$it", position = it) }.toTypedArray()
+
+        val result = syncAsOneStep(manifest(*sentences))
+
+        assertThat(result.result, equalTo("OK:40|0|0|0"))
+        assertThat(col.undoStatus().undo, equalTo(ShiroikumaIslands.UNDO_NAME))
+        col.undo()
+        assertThat("one undo takes the whole sync back", col.findNotes("tag:li::uuid::*"), equalTo(emptyList()))
+    }
+
     @Test
     fun `the note type matches the hand-made deck and is created once`() {
         sync(manifest(sentence("s1")))
