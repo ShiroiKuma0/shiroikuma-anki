@@ -11,6 +11,111 @@ the first fork release below lists the whole feature set.
 
 ---
 
+## 白い熊 暗記 2.26.0alpha15+004 — 2026-11-22
+
+Built on AnkiDroid `v2.26.0alpha15` (`a98f38a0c8`), the fifteenth alpha of the 2.26 series on
+upstream `main`, 1226 upstream commits past +001's `v2.26.0alpha2` base. versionCode
+`22600119`, installed as `322600119` for arm64-v8a. The counter restarts at `+001` on this
+base because upstream's alpha15 code (`22600115`) is above every 2.26.0alpha2 build;
++001 to +003 were test builds and were not released.
+
+**The whole app is black and yellow now — every screen, not just the fork's own.**
+
+### The black-yellow theme, app-wide
+
+- **108 colour roles, every one settable.** Each kind of text, frame, ground, icon, divider and
+  control state is a role of its own, with a swatch row in the section of the UI page its item
+  belongs to: Foundation, Text and icons, Buttons, Dialogs, Switches, Check boxes and radio
+  buttons, Menus, Lists, Text fields, Bars, Navigation drawer, Deck list, Study screen, Card
+  browser, Settings screens, Sheets and messages, Web pages. The defaults are `#FFFF00` and
+  `#000000`; a role never set by itself follows the foundation colours, so changing the accent
+  moves everything that was not set separately.
+- **Always on.** The theme picker no longer changes the app's chrome; it only affects cards.
+- **Upstream's screens follow the roles without being edited.** A theme overlay points 112
+  colour attributes of AnkiDroid and Material at the roles, and the stored colours are laid
+  over them at run time (Android 11 and later; older systems show each role's default).
+- **Buttons are outlined pills everywhere**, never filled: a button upstream drew filled is the
+  heavy main action (3 dp frame, bold), every other is 1.25 dp, a delete button is red, a
+  button with a colour of its own (an answer button) lends it to its frame.
+- **Switches are the outlined pill with a dot**, right and yellow when on, left and dim yellow
+  when off. Check boxes and radio buttons stay selection marks, in their own two roles.
+- **Dialogs**: a framed black panel, pill buttons (the positive one heavy), red delete
+  buttons, title and text in their roles — for all of upstream's dialogs, classic and
+  Compose, from one hook.
+- **Menus**: every popup row is a full-width outlined pill with an icon coloured by what it
+  does, a › on rows that open something, red delete rows, the outlined switch on toggle
+  rows, and a clear divider between groups. A tall menu moves up before it scrolls.
+- **Settings screens**: every row has an icon coloured by what it does, set right before its
+  label; rows that open or run something are pills hugging their label; no row is taller
+  than its content; explained rows carry a dim-gold rule down their left edge.
+- **Navigation drawer, bottom sheets, the message bar, floating buttons, the older and newer
+  study screens' answer buttons** all follow the same rules.
+- **Web pages** from Anki desktop (deck options, statistics, card info, import) take the
+  "Web pages" roles through Anki's and Bootstrap's CSS variables. **Cards are untouched**:
+  they stay as your note templates draw them.
+
+### The 白い熊 暗記 UI page
+
+- **A folding accordion with a chip index.** Every section starts folded; a row of small chips
+  at the top jumps to a section and unfolds it; long-press a chip and drag to reorder the
+  sections, live. Order and fold state travel in the UI export.
+- **An "App settings" pill** at the top opens AnkiDroid's own settings.
+- **Maintenance**: Reset section order and Reset all colours. "Default" in the colour picker
+  resets one role.
+- Section headings carry an icon coloured by what the section is about.
+
+### Smaller changes
+
+- **The outdated-WebView warning can be switched off.** Upstream now asks for WebView 116 and
+  warns on every start below it; where cards and video work regardless, its new "Don't show
+  again" button silences it, and a switch under UI page → Dialogs brings it back. While it is
+  off, the Anki pages load instead of stopping at the warning.
+- **言語島 sync: one undo step however large the delta.** The backend keeps only 30 undo steps,
+  so a long sync failed to fold its steps together (`target undo op not found`). The sync now
+  folds as it goes; a fold that still fails is logged, and the sync answers `OK:` regardless.
+- **言語島 sync: Czech sentences are tagged** `li::lang::cs`, set and cleared every sync.
+- **The card browser no longer throws** when a row's colour is dark under a day theme: a dark
+  colour is lightened for its pressed state instead of darkened into itself.
+- The fork's strings file is renamed to `shiroikuma_strings.xml`, because upstream reserves
+  the numbered form for Crowdin files.
+
+### Carried over from earlier releases
+
+- **The video fix stays.** Upstream closed issue #20668 on 2026-11-10 saying cards no longer
+  load from `localhost`, with no fix of its own; cards now load from
+  `https://appassets.androidplatform.net/`. Nobody has confirmed video plays there, and short
+  clips are still misclassified as audio by the content probe, so `[sound:]` videos still play
+  in the fork's native fullscreen player.
+- **Still no crash reporter.** Upstream's new code around ACRA (a sanitizing report collector,
+  an ACRA sender-process branch in the restructured startup, ACRA-only tests) went with the
+  fork's ACRA removal. Upstream's new previous-ANR reporter stays; it goes through the fork's
+  inert reporter, so it only logs.
+- **Public card API under the fork's id**: upstream now derives the authority and permission
+  from one `ANKI_PACKAGE_NAME` field, which the fork sets to `shiroikuma.anki`.
+
+**What upstream brings in this base** (1226 commits):
+
+- **Backend:** Anki 26.09.4 (`anki-backend-android` 0.1.77).
+- **No local server any more.** Pages and cards load from
+  `https://appassets.androidplatform.net/` and send their requests through a bridge;
+  **WebView 116 or later is required** (a dialog says so below it).
+- **The INTERNET permission is no longer required** to run the app.
+- **Profiles**: add, rename and switch profiles; activity storage is routed to the active
+  profile, with safety checks before a switch.
+- **Storage**: the collection path is decided once and persisted; the decision is deferred
+  when public storage is not reachable yet.
+- **Settings**: answer buttons and the timebox move to Compose screens; a "Use theme colors"
+  answer-button setting; a toolbar layout chooser; E-Ink as a night theme.
+- **Editing and media**: an inline audio recorder card; external image editors connected to
+  image actions; multi-line and validated text-input dialogs.
+- **Tags**: move tag subtrees, rename checks, sentence-case wording.
+- **Shared decks**: the download screen is redesigned in Compose, with speed and time left.
+- **Reliability**: previous ANRs are reported (here: logged), database checks are offered for
+  inconsistent collections, background work holds a lock, the app restarts after closing the
+  collection.
+
+---
+
 ## 白い熊 暗記 2.26.0alpha2+001 — 2026-10-02
 
 Built on AnkiDroid `v2.26.0alpha2` (`79157890e2`), the second alpha of the 2.26 series on

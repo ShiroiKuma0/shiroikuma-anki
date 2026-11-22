@@ -4,13 +4,13 @@
 
 # 白い熊 暗記 (shiroikuma-anki)
 
-**AnkiDroid in yellow on black — with working video, configurable everything, and a font engine.**
+**AnkiDroid in yellow on black, every screen of it — with working video, 108 settable colours, and a font engine.**
 
-A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, a full colour-and-font management page, deep yellow-on-black theming of the whole app, role-based external fonts, deck-list density control, a category-based Export/Import of the whole collection and every setting, a headless backup surface that lets a sister app back up every setting and restore it onto a wiped phone — pointing the app straight back at a collection that never left shared storage — a sync door that keeps a 言語島 (Language Islands) deck in step with 白い熊 自由作業盤, and **not one tracker**.
+A fork of [AnkiDroid](https://github.com/ankidroid/Anki-Android) with **major additions**: a native fullscreen video player for `[sound:]` tags, yellow-on-black theming of every screen with 108 individually settable colours on a folding, reorderable settings page, role-based external fonts, deck-list density control, a category-based Export/Import of the whole collection and every setting, a headless backup surface that lets a sister app back up every setting and restore it onto a wiped phone — pointing the app straight back at a collection that never left shared storage — a sync door that keeps a 言語島 (Language Islands) deck in step with 白い熊 自由作業盤, and **not one tracker**.
 
 Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
-**📥 Latest release: [`2.26.0alpha2+001`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
+**📥 Latest release: [`2.26.0alpha15+004`](https://github.com/ShiroiKuma0/shiroikuma-anki/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-anki/releases)
 
 </div>
 
@@ -18,16 +18,19 @@ Installs **side-by-side** with official AnkiDroid (app id `shiroikuma.anki`).
 
 ## 🎬 Video that actually plays
 
-Upstream AnkiDroid broke video in `[sound:]` tags ([issue #20668](https://github.com/ankidroid/Anki-Android/issues/20668)): the WebView blocks `file://` sources from its `http://127.0.0.1` base URL, and short clips get misclassified as audio. This fork restores the pre-2.17 behavior with a **native fullscreen video player** — video tags are classified by file extension alone, render a play button on the card, and open in a dedicated `VideoPlayerActivity`.
+Upstream AnkiDroid broke video in `[sound:]` tags ([issue #20668](https://github.com/ankidroid/Anki-Android/issues/20668)): the WebView blocked `file://` sources from its old `http://127.0.0.1` base URL, and short clips still get misclassified as audio. Upstream has since closed the issue without a fix of its own. This fork restores the pre-2.17 behavior with a **native fullscreen video player** — video tags are classified by file extension alone, render a play button on the card, and open in a dedicated `VideoPlayerActivity`.
 
-## 🎨 The 白い熊 暗記 UI page
+## 🖤 Black and yellow, every screen
 
-A dedicated settings page controlling the look of the whole app — reached from Settings, from a drawer entry, by long-pressing the toolbar hamburger, or by long-pressing the deck picker's top-right ⋮ button. The page itself is styled to match: bold yellow headings underlined exactly as wide as their text, hairline section separators, tight indented rows. Every colour is picked with four RGBA sliders and a live preview:
+Not a coat of paint on a few screens: **every surface of the app** follows one set of rules. Buttons are **outlined pills**, never filled — the main action of a block heavier, a delete button red. Switches are an **outlined pill with a dot**. Dialogs are framed black panels with pill buttons. Popup menus are columns of full-width pills, each with an **icon coloured by what it does** — green to study and sync, blue to write, cyan for decks and cards, orange to share and export, magenta to suspend and bury, red to delete. Settings screens, the navigation drawer, bottom sheets, the message bar and both study screens' answer buttons follow suit, and the web pages from Anki desktop (deck options, statistics) take the same colours. **Cards stay exactly as your note templates draw them.**
 
-- **Navigation drawer** — background, text, icons and selected-item colours, header visibility, live font preview rows. Yellow on black by default.
-- **Deck picker** — deck-name colour, toolbar icons and hamburger, the studied-today line, the right-pane deck name, the sync icon, and the pane divider (colour and width, 0 hides it).
-- **Study screen** — the study button in yellow border/text on black.
-- **Settings screens** — titles, secondary text, icons, toggles, sliders and screen headers, all restyled live.
+Upstream's screens are not edited for it: a theme overlay points every colour AnkiDroid and Material read at the fork's colour roles, and the stored colours are laid over them at run time — so the look survives every rebase onto a new upstream.
+
+## 🎨 108 colours, each one settable
+
+A dedicated page — reached from Settings, from a drawer entry, by long-pressing the toolbar hamburger, or by long-pressing the deck picker's top-right ⋮ — where **every kind of text, frame, ground, icon, divider and control state is a colour of its own**, set with four RGBA sliders and a live preview. The defaults are pure yellow `#FFFF00` on black; a colour you never touched follows the foundation colours, so changing the accent moves everything you did not set separately.
+
+The page is a **folding accordion**: every section starts folded, a grid of small chips on top jumps straight to one, and **long-pressing a chip drags it** to reorder the sections, live. Sections follow the surfaces — Buttons, Dialogs, Switches, Menus, Lists, Bars, Navigation drawer, Deck list, Study screen, Card browser, Settings screens, Web pages and more — and Maintenance resets the section order or every colour at once.
 
 ## 🔤 Role-based fonts
 
