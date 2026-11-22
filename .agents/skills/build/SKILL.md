@@ -12,7 +12,7 @@ and auto-delivers it via the global `/after-build` skill. See `CLAUDE.md` for th
 ## Identity (must hold in every build)
 
 - applicationId `shiroikuma.anki` — namespace/code packages stay `com.ichi2.anki`.
-- App label `白い熊 暗記` — `resValue "string", "app_name"` in `AnkiDroid/build.gradle`.
+- App label `白い熊 暗記` — `resValue("string", "app_name", …)` in `AnkiDroid/build.gradle.kts`.
 - The manifest derives permissions/provider authorities from `${applicationId}`
   (`shiroikuma.anki.permission.READ_WRITE_DATABASE`, `shiroikuma.anki.flashcards`,
   `shiroikuma.anki.apkgfileprovider`), so the fork installs alongside official AnkiDroid.
@@ -24,14 +24,14 @@ Upstream scheme is `AbbCCtDD` (`A`=major, `bb`=minor, `CC`=maintenance, `t`=type
 digits as its build counter:
 
 - versionName: `<upstream>+<NNN>`, the counter **zero-padded to three digits** —
-  e.g. `2.26.0alpha2+001`, `2.26.0alpha2+002`, … The APK's own version must read
+  e.g. `2.26.0alpha15+001`, `2.26.0alpha15+002`, … The APK's own version must read
   the same as its filename and its release tag, which are padded by the global
   `after-build`/`publish-version` rules; an unpadded `+25` is a bug (fixed
   2026-08-17, when `+25` shipped unpadded and had to be rebuilt).
-- versionCode: upstream code `+N` — e.g. `22600103`, `22600104`, …
+- versionCode: upstream code `+N` — e.g. `22600116`, `22600117`, …
   (on a public-release base, which ends `…300`, that is `AbbCC3NN`). No padding
   here: it is a number, and leading zeros would change nothing.
-- Both live in `defaultConfig` in `AnkiDroid/build.gradle`. Bump `N` by one for
+- Both live in `defaultConfig` in `AnkiDroid/build.gradle.kts`. Bump `N` by one for
   each new build deployed to the device; reset to `+1` after a rebase onto a
   new upstream base (the `upstream-new-version` skill does that) — but only
   while the reset still leaves versionCode **above** the last deployed one.
@@ -46,7 +46,7 @@ digits as its build counter:
 - `N` has a budget of 99 per upstream release. Release ABI splits prefix a 9th
   digit (arm64-v8a = 3), so the installed versionCode reads e.g. `322500203`.
 
-Current base: **the `v2.26.0alpha2` tag** (last rebase 2026-10-02). Deployed: `2.26.0alpha2+002`.
+Current base: **the `v2.26.0alpha15` tag** (last rebase 2026-11-22). Deployed: `2.26.0alpha15+004`.
 
 ## Environment (export every run; not set in non-interactive shells)
 
@@ -58,7 +58,7 @@ export ANDROID_HOME=$HOME/android-sdk ANDROID_SDK_ROOT=$HOME/android-sdk
 ## Signing
 
 Per-fork keystore, read by the existing `signingConfigs.release` env-var hooks in
-`AnkiDroid/build.gradle` — no gradle edits needed (and none should be made; the
+`AnkiDroid/build.gradle.kts` — no gradle edits needed (and none should be made; the
 env route survives rebases):
 
 ```bash
@@ -74,7 +74,7 @@ upgrade an install signed with ours. Always export them.
 
 ```bash
 cd "/datadisk/〇牛羚羊/[710] git/anki-android"
-version=$(grep -oP 'versionName="\K[^"]+' AnkiDroid/build.gradle)
+version=$(grep -oP 'versionName = "\K[^"]+' AnkiDroid/build.gradle.kts)
 ./gradlew :AnkiDroid:assembleFullRelease -x lintVitalFullRelease \
     2>&1 | tee /tmp/claude/anki-build-${version}.log
 build_apk=$(ls -t AnkiDroid/build/outputs/apk/full/release/*arm64-v8a*.apk | head -1)

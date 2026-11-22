@@ -11,18 +11,18 @@ This is **shiroikuma-anki** — 白い熊's personal fork of AnkiDroid, the semi
 | | |
 |---|---|
 | applicationId | `shiroikuma.anki` (namespace and code packages stay `com.ichi2.anki`) |
-| App label | `白い熊 暗記` (resValue `app_name` in `AnkiDroid/build.gradle`) |
-| versionName | `<upstream>+<fork build>` with the counter zero-padded to three digits, e.g. `2.26.0alpha2+001` |
-| versionCode | upstream scheme `AbbCCtDD` with the `DD` digits as the fork build counter, e.g. `22600103` |
+| App label | `白い熊 暗記` (resValue `app_name` in `AnkiDroid/build.gradle.kts`) |
+| versionName | `<upstream>+<fork build>` with the counter zero-padded to three digits, e.g. `2.26.0alpha15+001` |
+| versionCode | upstream scheme `AbbCCtDD` with the `DD` digits as the fork build counter, e.g. `22600116` |
 | Build flavor | `full` release, arm64-v8a APK, signed with `~/.android-keystores/anki-custom.jks` (alias `anki`) |
 | Remotes | `origin` = `git@github.com:ShiroiKuma0/shiroikuma-anki.git`; `upstream` = `https://github.com/ankidroid/Anki-Android` (push disabled) |
-| Branches | `main` mirrors `upstream/main` (no fork work); `custom` = fork commit stack, rebased onto each upstream release tag (`vX.Y.Z`), or onto `upstream/main` when 白い熊 asks (current base: the `v2.26.0alpha2` tag on `upstream/main`, rebased 2026-10-02 at 白い熊's request) |
+| Branches | `main` mirrors `upstream/main` (no fork work); `custom` = fork commit stack, rebased onto each upstream release tag (`vX.Y.Z`), or onto `upstream/main` when 白い熊 asks (current base: the `v2.26.0alpha15` tag on `upstream/main`, rebased 2026-11-22) |
 
 Workflow: develop fork additions as a clean commit stack on `custom`; when upstream publishes a new release tag, rebase `custom` onto it (see the `upstream-new-version` skill). Build and deploy via the `build` skill. **Never push without 白い熊 typing "Push."** — and never push to `upstream`.
 
 ### Fork changes (commit stack on `custom`)
 
-- Fork identity: applicationId, app label, fork versioning (`AnkiDroid/build.gradle`).
+- Fork identity: applicationId, app label, fork versioning (`AnkiDroid/build.gradle.kts`).
 - Fork docs and skills (`CLAUDE.md`, `.agents/skills/build`, `.agents/skills/upstream-new-version` — reached through upstream's `.claude/skills` symlink).
 - Video playback fix for `[sound:]` tags — upstream issue [#20668](https://github.com/ankidroid/Anki-Android/issues/20668), reported by 白い熊, unfixed upstream. Native fullscreen `VideoPlayerActivity` (restores pre-2.17 behavior), extension-only tag classification, play-button rendering for video. Check on every rebase whether upstream has fixed it; drop the commit if so.
 - No crash-report tracker. Upstream reports crashes with ACRA, which tracker scanners flag: it uploads the stack trace, 500 lines of logcat, the shared preferences, device details and an install UUID to `ankidroid.org/acra/report`. Removed entirely — the four `ch.acra:*` dependencies, `AcraCrashReporter`, `AcraAnalyticsInteraction`, the `:acra` sender process, `AnkiDroidCrashReportDialog` with its `dialog_feedback` layout, the `ACRA_URL` build field and `ACRATest`. `com.ichi2.anki.shiroikuma.ShiroikumaCrashReporter` implements upstream's `CrashReporter` interface inertly (log only, analytics hit kept for the opt-in path), so every `CrashReportService` call site still compiles; `AnkiDroidApp` calls `initializeCrashReporter()`. The two pieces of UI that only fed ACRA went with it: "Error reporting mode" in General settings and "Send exception report" in Help → Get help. Upstream's incidental uses of ACRA utilities were replaced — a local Java-serialization deep copy in `MultimediaEditableNote`, and the ACRA UUID line dropped from `DebugInfoService`. `ShiroikumaNoTrackersTest` fails if a rebase brings `org.acra` back, which is the likely way it would return.

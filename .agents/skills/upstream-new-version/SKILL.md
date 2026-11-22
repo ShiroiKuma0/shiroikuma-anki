@@ -67,7 +67,7 @@ comm -12 <(git diff --name-only "$base"..custom | sort) \
 ```
 
 The second command is the tell: only files in both sets can conflict.
-Expected: `AnkiDroid/build.gradle` (upstream bumps versionCode/versionName every
+Expected: `AnkiDroid/build.gradle.kts` (upstream bumps versionCode/versionName every
 release) and whatever sources our feature commits touch.
 
 ## Step 2 — Check whether upstream fixed our issues
@@ -93,7 +93,7 @@ deeper net.
 
 ## Step 4 — Reconcile conflicts (resolve at the root, never blindly)
 
-**`AnkiDroid/build.gradle`** — the recurring one:
+**`AnkiDroid/build.gradle.kts`** — the recurring one:
 
 - **Keep ours**: `applicationId = "shiroikuma.anki"` (+ its comment), the
   `resValue "string", "app_name", "白い熊 暗記"` line, and the fork-versioning
@@ -128,6 +128,12 @@ the call — `git commit --fixup=<sha>` then
 `GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <newtag>` — so every
 commit keeps compiling.
 
+Upstream's newer tests pin sets — the activity list, the settings fragments, the analytics key
+lists, title lengths, the names of Crowdin files — so a fork piece fails the test rather than the
+build. Run the full unit suite after a rebase (2026-11-22: six such failures surfaced only then;
+`CLAUDE.md` lists the conventions). Seven failures come from this checkout's non-ASCII path
+(`AddonModelTest`, `TgzPackageExtractTest`, one `ManageTagsViewModelTest` case) and are not ours.
+
 Every fork commit that bumped the version conflicts on the
 `versionCode`/`versionName` lines, one stop per bump commit (2026-10-02: ~35
 stops onto `v2.25.0`). When the conflict hunks hold nothing but those lines
@@ -149,13 +155,13 @@ written after the fork removed ACRA to call ACRA helpers (that rebase:
 
 ## Step 5 — Reset (or continue) the fork build number
 
-First build on a **new upstream version** is `+1`. In `AnkiDroid/build.gradle`
+First build on a **new upstream version** is `+1`. In `AnkiDroid/build.gradle.kts`
 `defaultConfig`: versionName `<new without v>+1`, versionCode = upstream's new
 code `+1` (upstream releases end `…300`, so ours ends `…301`).
 
 ```bash
-grep -nE 'versionCode=|versionName=' AnkiDroid/build.gradle
-# expect: versionCode=AbbCC301   versionName="X.Y.Z+1"
+grep -nE 'version(Code|Name) =' AnkiDroid/build.gradle.kts
+# expect: versionCode = AbbCC301   versionName = "X.Y.Z+001"
 ```
 
 **The reset is conditional: versionCode must never go backwards.** Compute the
