@@ -48,6 +48,14 @@
     <string name="pref_sk_automation_require_token_key">sk_automation_require_token</string>
     <string name="pref_sk_automation_token_key">sk_automation_token</string>
     <string name="pref_sk_reset_key">sk_reset</string>
+    <string name="pref_sk_dialog_ground_key">sk_dialog_ground</string>
+    <string name="pref_sk_dialog_frame_key">sk_dialog_frame</string>
+    <string name="pref_sk_dialog_title_key">sk_dialog_title</string>
+    <string name="pref_sk_dialog_text_key">sk_dialog_text</string>
+    <string name="pref_sk_dialog_button_text_key">sk_dialog_button_text</string>
+    <string name="pref_sk_dialog_button_frame_key">sk_dialog_button_frame</string>
+    <string name="pref_sk_dialog_mark_key">sk_dialog_mark</string>
+    <string name="pref_sk_dialog_delete_key">sk_dialog_delete</string>
 
     <!-- Page -->
     <string name="shiroikuma_ui_title">白い熊 暗記 UI</string>
@@ -178,4 +186,22 @@
     <string name="sk_all_files_gate_body">Your collection is kept in shared storage, and this app cannot read it without permission to see files. A freshly installed or restored app starts without it, so everything looks set up while every deck is out of reach. Grant it now to open the collection below.</string>
     <string name="sk_all_files_gate_grant">Grant access</string>
     <string name="sk_all_files_gate_skip">Not now</string>
+
+    <!-- Dialogs -->
+    <string name="sk_section_dialogs">Dialogs</string>
+    <string name="sk_dialog_ground">Background</string>
+    <string name="sk_dialog_frame">Frame</string>
+    <string name="sk_dialog_title">Title</string>
+    <string name="sk_dialog_text">Text</string>
+    <string name="sk_dialog_button_text">Button label</string>
+    <string name="sk_dialog_button_frame">Button frame</string>
+    <string name="sk_dialog_mark">Check boxes and radio buttons</string>
+    <string name="sk_dialog_delete">Buttons that delete</string>
+
+    <!-- Fork: applied to every theme in code (ShiroikumaDialogs.install); carries no colour -->
+    <style name="ThemeOverlay.Shiroikuma" parent="">
+        <item name="viewInflaterClass">com.ichi2.anki.shiroikuma.ShiroikumaViewInflater</item>
+    </style>
+    <item name="tag_sk_dialog_styled" type="id"/>
+    <item name="tag_sk_dialog_keep" type="id"/>
 </resources>

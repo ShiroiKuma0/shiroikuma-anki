@@ -79,7 +79,10 @@ fun AnkiDroidDialog(
                 }
             }
             MaterialTheme(typography = typography) {
-                CompositionLocalProvider(LocalTextStyle provides typography.bodyLarge.copy(lineHeightStyle = null), content = content)
+                // Fork: the dialog's colour roles and frame (inert until the app supplies them)
+                CompositionLocalProvider(LocalTextStyle provides typography.bodyLarge.copy(lineHeightStyle = null)) {
+                    ForkDialogTheme(content)
+                }
             }
         }
     }
@@ -103,13 +106,20 @@ fun AnkiDroidDialogButtons(
     Layout(
         modifier = Modifier.fillMaxWidth().padding(top = topPadding),
         content = {
-            TextButton(
-                onClick = onDismissRequest,
-            ) { Text(dismissText) }
-            TextButton(
-                onClick = onConfirm,
-                enabled = confirmEnabled,
-            ) { Text(confirmText) }
+            // Fork: outlined pills, the confirmation being the main one
+            val fork = ForkDialogChrome.current()
+            if (fork != null) {
+                ForkDialogChrome.Pill(dismissText, main = false, enabled = true, p = fork, onClick = onDismissRequest)
+                ForkDialogChrome.Pill(confirmText, main = true, enabled = confirmEnabled, p = fork, onClick = onConfirm)
+            } else {
+                TextButton(
+                    onClick = onDismissRequest,
+                ) { Text(dismissText) }
+                TextButton(
+                    onClick = onConfirm,
+                    enabled = confirmEnabled,
+                ) { Text(confirmText) }
+            }
         },
     ) { children, constraints ->
         val buttonConstraints = constraints.copy(minWidth = 0, minHeight = 0)

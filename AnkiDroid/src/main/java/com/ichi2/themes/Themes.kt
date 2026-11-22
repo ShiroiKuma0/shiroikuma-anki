@@ -24,6 +24,7 @@ import com.ichi2.anki.settings.enums.AppTheme
 import com.ichi2.anki.settings.enums.DayTheme
 import com.ichi2.anki.settings.enums.NightTheme
 import com.ichi2.anki.settings.enums.Theme
+import com.ichi2.anki.shiroikuma.ShiroikumaDialogs
 import com.ichi2.themes.Themes.currentTheme
 import timber.log.Timber
 
@@ -40,6 +41,8 @@ object Themes {
     fun setTheme(context: Context) {
         updateCurrentTheme(context)
         context.setTheme(currentTheme.styleResId)
+        // Fork: dialogs follow the 白い熊 暗記 UI colour roles
+        ShiroikumaDialogs.install(context)
         val isEink = currentTheme == DayTheme.EINK || currentTheme == NightTheme.EINK
         if (context is Activity && !isEink && PrefsRepository(context).devMaterialYouEnabled) {
             DynamicColors.applyToActivityIfAvailable(context)

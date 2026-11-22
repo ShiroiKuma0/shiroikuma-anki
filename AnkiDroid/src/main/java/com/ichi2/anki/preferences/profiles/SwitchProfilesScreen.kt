@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,6 +38,8 @@ import com.ichi2.anki.multiprofile.ProfileName
 import com.ichi2.compose.theme.AnkiDroidTheme
 import com.ichi2.compose.theme.dimensions
 import com.ichi2.compose.ui.components.AnkiDroidExtendedFab
+import com.ichi2.compose.ui.dialogs.ForkDialogButton
+import com.ichi2.compose.ui.dialogs.ForkDialogScheme
 import com.ichi2.compose.ui.dialogs.MessageDialog
 import com.ichi2.compose.ui.preview.ThemePreviews
 import androidx.appcompat.R as AppCompatR
@@ -138,28 +139,29 @@ fun SwitchProfilesScreen(
         )
     }
 
+    // Fork: both dialogs take the dialog colour roles
     if (isSwitchBlocked) {
-        AlertDialog(
-            onDismissRequest = onSwitchBlockedDismiss,
-            text = { Text(stringResource(CommonString.switch_profile_blocked, stringResource(CommonString.app_name))) },
-            confirmButton = {
-                TextButton(onClick = onSwitchBlockedDismiss) {
-                    Text(stringResource(CommonString.dialog_ok))
-                }
-            },
-        )
+        ForkDialogScheme {
+            AlertDialog(
+                onDismissRequest = onSwitchBlockedDismiss,
+                text = { Text(stringResource(CommonString.switch_profile_blocked, stringResource(CommonString.app_name))) },
+                confirmButton = {
+                    ForkDialogButton(stringResource(CommonString.dialog_ok), main = true, onClick = onSwitchBlockedDismiss)
+                },
+            )
+        }
     }
 
     profileSwitchFailed?.let { profile ->
-        AlertDialog(
-            onDismissRequest = onSwitchFailedDismiss,
-            text = { Text(stringResource(CommonString.switch_profile_failed, profile.name)) },
-            confirmButton = {
-                TextButton(onClick = onSwitchFailedDismiss) {
-                    Text(stringResource(CommonString.dialog_ok))
-                }
-            },
-        )
+        ForkDialogScheme {
+            AlertDialog(
+                onDismissRequest = onSwitchFailedDismiss,
+                text = { Text(stringResource(CommonString.switch_profile_failed, profile.name)) },
+                confirmButton = {
+                    ForkDialogButton(stringResource(CommonString.dialog_ok), main = true, onClick = onSwitchFailedDismiss)
+                },
+            )
+        }
     }
 }
 

@@ -542,6 +542,14 @@ object ShiroikumaUi {
                 R.string.pref_sk_pane_divider_color_key,
                 R.string.pref_sk_pane_divider_width_key,
                 R.string.pref_sk_deck_row_padding_key,
+                R.string.pref_sk_dialog_ground_key,
+                R.string.pref_sk_dialog_frame_key,
+                R.string.pref_sk_dialog_title_key,
+                R.string.pref_sk_dialog_text_key,
+                R.string.pref_sk_dialog_button_text_key,
+                R.string.pref_sk_dialog_button_frame_key,
+                R.string.pref_sk_dialog_mark_key,
+                R.string.pref_sk_dialog_delete_key,
             )) {
                 remove(context.getString(keyRes))
             }

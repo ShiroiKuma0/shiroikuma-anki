@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -212,11 +211,9 @@ fun TextInputDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    TextButton(onClick = dismiss) { Text(dismissText) }
-                    TextButton(
-                        onClick = validationState.onConfirm,
-                        enabled = validationState.canConfirm,
-                    ) { Text(confirmText) }
+                    // Fork: outlined pills, the confirmation being the main one
+                    ForkDialogButton(dismissText, main = false, onClick = dismiss)
+                    ForkDialogButton(confirmText, main = true, onClick = validationState.onConfirm, enabled = validationState.canConfirm)
                 }
             }) { children, constraints ->
                 val actions = children[1].measure(constraints.copy(minHeight = 0))

@@ -38,6 +38,7 @@ import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.shiroikuma.AutomationAuth
 import com.ichi2.anki.shiroikuma.SecondaryActionPreference
+import com.ichi2.anki.shiroikuma.ShiroikumaDialogs
 import com.ichi2.anki.shiroikuma.ShiroikumaExport
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
 import com.ichi2.anki.snackbar.showSnackbar
@@ -266,6 +267,15 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         setupColorPreference(R.string.pref_sk_settings_toggle_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TOGGLE)
         setupColorPreference(R.string.pref_sk_settings_slider_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SLIDER)
         setupColorPreference(R.string.pref_sk_settings_header_color_key, ShiroikumaUi.DEFAULT_SETTINGS_HEADER)
+
+        setupColorPreference(R.string.pref_sk_dialog_ground_key, ShiroikumaDialogs.DEFAULT_GROUND)
+        setupColorPreference(R.string.pref_sk_dialog_frame_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_title_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_text_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_button_text_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_button_frame_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_mark_key, ShiroikumaDialogs.DEFAULT_ACCENT)
+        setupColorPreference(R.string.pref_sk_dialog_delete_key, ShiroikumaDialogs.DEFAULT_DELETE)
 
         for (fontGroup in fontGroups) setupFontGroup(fontGroup)
 
@@ -602,8 +612,12 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                     eximMediaLine = null
                     eximIncludeMedia = null
                     eximChecks.clear()
-                }.show()
-                .apply { window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)) }
+                }.create()
+                .apply {
+                    ShiroikumaDialogs.keepOwnChrome(this)
+                    show()
+                    window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                }
 
         refreshEximStatus()
         // the media tally starts (or resumes rendering) the moment the panel
@@ -803,6 +817,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
                 .setCancelable(false)
                 .create()
                 .apply {
+                    ShiroikumaDialogs.keepOwnChrome(this)
                     show()
                     window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 }
@@ -912,6 +927,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         }
         box.addView(buttons)
 
+        ShiroikumaDialogs.keepOwnChrome(dialog)
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     }
@@ -1030,6 +1046,8 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             preview.setTextColor(if (luminance > 128) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
         }
         refreshPreview()
+        // the hex reads black or white against its own swatch, not in a dialog role
+        ShiroikumaDialogs.keep(preview)
 
         val container =
             LinearLayout(context).apply {

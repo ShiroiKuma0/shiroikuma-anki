@@ -349,6 +349,57 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:title="@string/sk_section_dialogs"
+        android:layout="@layout/sk_preference_category">
+        <Preference
+            android:title="@string/sk_sub_colours"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_ground_key"
+            android:title="@string/sk_dialog_ground"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_frame_key"
+            android:title="@string/sk_dialog_frame"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_title_key"
+            android:title="@string/sk_dialog_title"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_text_key"
+            android:title="@string/sk_dialog_text"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_button_text_key"
+            android:title="@string/sk_dialog_button_text"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_button_frame_key"
+            android:title="@string/sk_dialog_button_frame"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_mark_key"
+            android:title="@string/sk_dialog_mark"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+        <Preference
+            android:key="@string/pref_sk_dialog_delete_key"
+            android:title="@string/sk_dialog_delete"
+            android:layout="@layout/sk_preference_indented"
+            android:persistent="false"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/sk_cat_reset"
         android:layout="@layout/sk_preference_category">
         <Preference
