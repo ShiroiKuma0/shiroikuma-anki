@@ -153,9 +153,9 @@ android {
         // not install over the build already on the device.
         // In versionName the counter is always zero-padded to three digits (+025, not
         // +25), matching the sister apps so build artefacts sort in build order.
-        versionCode = 22600115
+        versionCode = 22600116
         // If you change this to a new version, you probably also want to update .gradle/workflows/milestone.yml for the new version...
-        versionName = "2.26.0alpha15"
+        versionName = "2.26.0alpha15+001"
         testApplicationId = "com.ichi2.anki.tests"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.ichi2.testutils.NewCollectionPathTestRunner"
