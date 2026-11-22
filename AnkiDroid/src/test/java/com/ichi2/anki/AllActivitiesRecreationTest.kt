@@ -8,6 +8,7 @@ import androidx.core.content.edit
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import com.ichi2.anki.account.AccountActivity
+import com.ichi2.anki.cardviewer.VideoPlayerActivity
 import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.anki.multimedia.MultimediaActivity
 import com.ichi2.anki.preferences.PreferencesActivity
@@ -163,6 +164,8 @@ class AllActivitiesRecreationTest : RobolectricTest() {
                 NoteTypeFieldEditor::class.java,
                 PermissionsActivity::class.java,
                 Reviewer::class.java,
+                // Fork: the video player closes itself when it is given no file to play
+                VideoPlayerActivity::class.java,
             )
 
         /**

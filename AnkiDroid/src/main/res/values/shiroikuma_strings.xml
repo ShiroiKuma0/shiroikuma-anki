@@ -59,7 +59,7 @@
     <string name="pref_sk_webview_warning_key">sk_webview_warning</string>
 
     <!-- Page -->
-    <string name="shiroikuma_ui_title">白い熊 暗記 UI</string>
+    <string name="shiroikuma_ui_title" maxLength="28">白い熊 暗記 UI</string>
     <string name="sk_cat_menu_colours">Menu — colours</string>
     <string name="sk_cat_menu_font">Menu — font</string>
     <string name="sk_cat_menu_header">Menu — header</string>
@@ -71,17 +71,17 @@
     <string name="sk_menu_selected_color">Selected item</string>
     <string name="sk_menu_selected_background">Selected item background</string>
 
-    <string name="sk_menu_font">Font</string>
+    <string name="sk_menu_font" maxLength="41">Font</string>
     <string name="sk_menu_font_summary_default">System default — tap to pick a font file (ttf/otf)</string>
-    <string name="sk_menu_font_reset">Reset font</string>
+    <string name="sk_menu_font_reset" maxLength="41">Reset font</string>
     <string name="sk_menu_font_reset_summary">Return to the system font</string>
-    <string name="sk_menu_font_size">Text size</string>
-    <string name="sk_font_weight">Weight</string>
+    <string name="sk_menu_font_size" maxLength="41">Text size</string>
+    <string name="sk_font_weight" maxLength="41">Weight</string>
     <string name="sk_zero_default">0 = default</string>
     <string name="sk_format_sp">%s sp</string>
     <string name="sk_format_plain">%s</string>
 
-    <string name="sk_menu_show_header">Show header image</string>
+    <string name="sk_menu_show_header" maxLength="41">Show header image</string>
     <string name="sk_menu_show_header_summary">Show the picture above the menu items</string>
 
     <string name="sk_menu_font_preview_text">白い熊 暗記 — Anki 123</string>
@@ -106,22 +106,22 @@
     <string name="sk_toolbar_subtitle_color">Cards-due line</string>
     <string name="sk_deck_detail_name_color">Deck name (right pane)</string>
     <string name="sk_pane_divider_color">Pane divider</string>
-    <string name="sk_pane_divider_width">Pane divider width</string>
+    <string name="sk_pane_divider_width" maxLength="41">Pane divider width</string>
     <string name="sk_format_dp">%s dp</string>
 
     <!-- Section / subheading titles for the reorganized page -->
     <string name="sk_sub_colours">Colours</string>
-    <string name="sk_sub_font">Font</string>
-    <string name="sk_sub_header">Header</string>
+    <string name="sk_sub_font" maxLength="41">Font</string>
+    <string name="sk_sub_header" maxLength="41">Header</string>
     <string name="sk_sub_toolbar">Toolbar</string>
     <string name="sk_sub_study_button">Study button</string>
-    <string name="sk_sub_pane_divider">Pane divider</string>
-    <string name="sk_sub_rows">Rows</string>
-    <string name="sk_deck_row_padding">Line padding</string>
+    <string name="sk_sub_pane_divider" maxLength="41">Pane divider</string>
+    <string name="sk_sub_rows" maxLength="41">Rows</string>
+    <string name="sk_deck_row_padding" maxLength="41">Line padding</string>
     <string name="sk_deck_row_padding_summary">0 = lines touch</string>
 
     <!-- Export / Import (the panel at the top of the page, Kōjiki-style) -->
-    <string name="sk_cat_eximport">Export / Import</string>
+    <string name="sk_cat_eximport" maxLength="41">Export / Import</string>
     <string name="sk_eim_row_summary">Back up or restore the collection and every setting, by category</string>
     <string name="sk_eim_title">Export / Import — 白い熊 暗記</string>
     <string name="sk_eim_desc">Save or load the collection and every setting — colours, fonts, controls — as selectable categories.</string>
@@ -158,11 +158,11 @@
     <string name="sk_eim_category_meter">区分 %1$d/%2$d — %3$s</string>
 
     <!-- Automation: the EXPORT_STATE intents and the data door (sister-app contract v2) -->
-    <string name="sk_automation_switch">Automation export</string>
+    <string name="sk_automation_switch" maxLength="41">Automation export</string>
     <string name="sk_automation_switch_summary">Let sister apps trigger this export and back this app\'s data up.</string>
-    <string name="sk_automation_require_token">Use authorization token?</string>
+    <string name="sk_automation_require_token" maxLength="41">Use authorization token?</string>
     <string name="sk_automation_require_token_summary">Off: any sister app may drive the automation. On: a caller must also present the token below. The data door checks the caller\'s identity and signature either way.</string>
-    <string name="sk_automation_token">Automation token (tap to copy)</string>
+    <string name="sk_automation_token" maxLength="41">Automation token (tap to copy)</string>
     <string name="sk_automation_regenerate">Regenerate</string>
     <string name="sk_automation_token_copied">Automation token copied</string>
     <string name="sk_automation_token_regenerated">Automation token regenerated — update pasted copies</string>
@@ -172,7 +172,7 @@
     <string name="sk_automation_islands_list">Reading the 言語島 notes…</string>
     <string name="sk_automation_islands_sync">Syncing the 言語島 notes…</string>
 
-    <string name="sk_reset_all">Reset all to defaults</string>
+    <string name="sk_reset_all" maxLength="41">Reset all to defaults</string>
     <string name="sk_reset_all_summary">Yellow on black, system font</string>
     <string name="sk_reset_all_confirm">Reset all 白い熊 暗記 UI settings to their defaults?</string>
 
@@ -186,7 +186,7 @@
     <string name="sk_all_files_gate_skip">Not now</string>
 
     <!-- Dialogs -->
-    <string name="sk_sub_warnings">Warnings</string>
+    <string name="sk_sub_warnings" maxLength="41">Warnings</string>
     <string name="sk_dialog_ground">Background</string>
     <string name="sk_dialog_frame">Frame</string>
     <string name="sk_dialog_title">Title</string>
@@ -195,7 +195,7 @@
     <string name="sk_dialog_button_frame">Button frame</string>
     <string name="sk_dialog_mark">Check boxes and radio buttons</string>
     <string name="sk_dialog_delete">Buttons that delete</string>
-    <string name="sk_webview_warning">Warn about an outdated WebView</string>
+    <string name="sk_webview_warning" maxLength="41">Warn about an outdated WebView</string>
     <string name="sk_webview_warning_summary">Shown at start and on pages that need a newer system WebView. Off after “Don’t show again”.</string>
     <string name="sk_dont_show_again">Don’t show again</string>
 

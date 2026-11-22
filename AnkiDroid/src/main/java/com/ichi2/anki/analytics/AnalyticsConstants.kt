@@ -18,7 +18,7 @@ object AnalyticsConstants {
     val reportablePrefKeys =
         setOf(
             // ******************************** General ************************************************
-            R.string.error_reporting_mode_key, // Error reporting mode
+            // Fork: "Error reporting mode" went with ACRA, so there is no such preference to report
             R.string.paste_png_key, // Paste clipboard images as PNG
             R.string.deck_for_new_cards_key, // Deck for new cards
             R.string.exit_via_double_tap_back_key, // Press back twice to go back/exit

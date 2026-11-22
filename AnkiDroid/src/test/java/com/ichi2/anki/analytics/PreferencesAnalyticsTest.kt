@@ -90,7 +90,10 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             R.string.pref_allow_dangerous_js_api, // allow_dangerous_js_api
             // Security-sensitive settings (GHSL-2026-085)
             R.string.pref_allow_card_external_launch_key, // allowCardExternalLaunch
-        ).toStringResourceSet()
+        ).toStringResourceSet() +
+            // Fork: nothing of the 白い熊 暗記 UI page is reported — its looks, its automation
+            // switches and token, its section nodes
+            PreferenceTestUtils.getKeysFromXml(targetContext, R.xml.preferences_shiroikuma_ui)
 
     @Test
     fun `The include and excluded prefs lists don't share elements`() {
