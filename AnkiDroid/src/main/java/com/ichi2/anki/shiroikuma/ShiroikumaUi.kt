@@ -550,6 +550,7 @@ object ShiroikumaUi {
                 R.string.pref_sk_dialog_button_frame_key,
                 R.string.pref_sk_dialog_mark_key,
                 R.string.pref_sk_dialog_delete_key,
+                R.string.pref_sk_webview_warning_key,
             )) {
                 remove(context.getString(keyRes))
             }

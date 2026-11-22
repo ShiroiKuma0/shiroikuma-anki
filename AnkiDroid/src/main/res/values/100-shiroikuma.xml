@@ -56,6 +56,7 @@
     <string name="pref_sk_dialog_button_frame_key">sk_dialog_button_frame</string>
     <string name="pref_sk_dialog_mark_key">sk_dialog_mark</string>
     <string name="pref_sk_dialog_delete_key">sk_dialog_delete</string>
+    <string name="pref_sk_webview_warning_key">sk_webview_warning</string>
 
     <!-- Page -->
     <string name="shiroikuma_ui_title">白い熊 暗記 UI</string>
@@ -189,6 +190,7 @@
 
     <!-- Dialogs -->
     <string name="sk_section_dialogs">Dialogs</string>
+    <string name="sk_sub_warnings">Warnings</string>
     <string name="sk_dialog_ground">Background</string>
     <string name="sk_dialog_frame">Frame</string>
     <string name="sk_dialog_title">Title</string>
@@ -197,6 +199,9 @@
     <string name="sk_dialog_button_frame">Button frame</string>
     <string name="sk_dialog_mark">Check boxes and radio buttons</string>
     <string name="sk_dialog_delete">Buttons that delete</string>
+    <string name="sk_webview_warning">Warn about an outdated WebView</string>
+    <string name="sk_webview_warning_summary">Shown at start and on pages that need a newer system WebView. Off after “Don’t show again”.</string>
+    <string name="sk_dont_show_again">Don’t show again</string>
 
     <!-- Fork: applied to every theme in code (ShiroikumaDialogs.install); carries no colour -->
     <style name="ThemeOverlay.Shiroikuma" parent="">

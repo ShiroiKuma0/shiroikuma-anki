@@ -16,6 +16,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.themes.Themes
+import com.ichi2.utils.isWebViewWarningEnabled
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.greaterThan
@@ -100,5 +101,14 @@ class ShiroikumaDialogsTest : RobolectricTest() {
         val dialog = show { setMessage("Message") }
         val decor = dialog.window!!.decorView
         assertThat(decor.getTag(R.id.tag_sk_dialog_styled) != null, equalTo(true))
+    }
+
+    @Test
+    fun `the outdated WebView warning stays off until reset`() {
+        assertThat("on by default", isWebViewWarningEnabled(targetContext), equalTo(true))
+        targetContext.sharedPrefs().edit { putBoolean(targetContext.getString(R.string.pref_sk_webview_warning_key), false) }
+        assertThat(isWebViewWarningEnabled(targetContext), equalTo(false))
+        ShiroikumaUi.resetAll(targetContext)
+        assertThat(isWebViewWarningEnabled(targetContext), equalTo(true))
     }
 }

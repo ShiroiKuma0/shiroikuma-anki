@@ -12,11 +12,13 @@ import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
 import com.ichi2.anki.CommonString
 import com.ichi2.anki.R
 import com.ichi2.anki.common.crashreporting.CrashReportService
+import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.utils.openUrl
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +57,8 @@ fun showDialogIfWebViewOutdated(
     onOutdated: () -> Unit = {},
 ): Boolean {
     if (WebViewCompat.getCurrentWebViewPackage(context) == null) return false
+    // Fork: the warning can be switched off (its own "Don't show again", or the 白い熊 暗記 UI page)
+    if (!isWebViewWarningEnabled(context)) return false
     val outdatedVersion = getChromeLikeWebViewVersionIfOutdated(context, minimumWebViewVersion)
     val message =
         when {
@@ -195,9 +199,17 @@ private fun showOutdatedWebViewDialog(
         setPositiveButton(CommonString.scoped_storage_learn_more) { _, _ ->
             context.openUrl(learnMoreUrl)
         }
+        // Fork: on a device where everything works on the older WebView the warning is noise
+        setNeutralButton(R.string.sk_dont_show_again) { _, _ ->
+            context.sharedPrefs().edit { putBoolean(context.getString(R.string.pref_sk_webview_warning_key), false) }
+        }
         setOnDismissListener { onDismiss() }
     }
 }
+
+/** Fork: whether the outdated-WebView warning is still wanted (default: yes) */
+internal fun isWebViewWarningEnabled(context: Context): Boolean =
+    context.sharedPrefs().getBoolean(context.getString(R.string.pref_sk_webview_warning_key), true)
 
 private fun getLegacyWebViewPackageInfo(packageManager: PackageManager): PackageInfo? =
     try {

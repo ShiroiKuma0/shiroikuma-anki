@@ -397,6 +397,17 @@
             android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
 
+        <Preference
+            android:title="@string/sk_sub_warnings"
+            android:layout="@layout/sk_preference_subheader"
+            android:selectable="false"
+            android:persistent="false"/>
+        <SwitchPreferenceCompat
+            android:key="@string/pref_sk_webview_warning_key"
+            android:defaultValue="true"
+            android:title="@string/sk_webview_warning"
+            android:summary="@string/sk_webview_warning_summary"
+            android:layout="@layout/sk_preference_indented"/>
     </PreferenceCategory>
 
     <PreferenceCategory
