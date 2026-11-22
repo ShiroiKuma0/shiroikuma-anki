@@ -292,22 +292,14 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         val screen = preferenceScreen
         SkTheme.markCurrent(requireActivity())
         sections.clear()
+        builtSections.clear()
         for (section in SkSection.entries) {
             val cat = screen.findPreference<SkSectionCategory>(SkSectionCategory.PREFIX + section.key) ?: continue
-            cat.sectionIcon = SECTION_ICONS[section] ?: SkIcons.Icon.PALETTE
+            cat.sectionIcon = SECTION_ICONS[section]?.first ?: SkIcons.Icon.PALETTE
+            cat.sectionDoes = SECTION_ICONS[section]?.second ?: SkIcons.Does.VIEW
             cat.onToggle = { setSectionOpen(it, !SkPageState.isOpen(context, it.sectionKey)) }
             sections += cat
-            SkRole.entries.filter { it.section == section }.forEachIndexed { i, role ->
-                cat.addPreference(
-                    SkRolePreference(context, role).apply {
-                        order = -1000 + i
-                        setOnPreferenceClickListener {
-                            showColorDialog(role)
-                            true
-                        }
-                    },
-                )
-            }
+            if (SkPageState.isOpen(context, section.key)) addRoleRows(cat)
         }
 
         sections.firstOrNull { it.sectionKey == SkSection.MAINTENANCE.key }?.let { maintenance ->
@@ -371,6 +363,26 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         SkPreferences.decorate(screen)
     }
 
+    private val builtSections = mutableSetOf<String>()
+
+    /** The colour rows of a section, one per role; built when the section is first opened */
+    private fun addRoleRows(cat: SkSectionCategory) {
+        if (!builtSections.add(cat.sectionKey)) return
+        val context = requireContext()
+        SkRole.entries.filter { it.section.key == cat.sectionKey }.forEachIndexed { i, role ->
+            cat.addPreference(
+                SkRolePreference(context, role).apply {
+                    order = -1000 + i
+                    setOnPreferenceClickListener {
+                        showColorDialog(role)
+                        true
+                    }
+                },
+            )
+        }
+        SkPreferences.decorate(cat)
+    }
+
     private fun actionRow(
         rowKey: String,
         @StringRes titleRes: Int,
@@ -415,6 +427,7 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         open: Boolean,
     ) {
         SkPageState.setOpen(requireContext(), cat.sectionKey, open)
+        if (open) addRoleRows(cat)
         applyFold(cat)
         cat.refresh()
     }
@@ -1228,27 +1241,30 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
     }
 
     companion object {
+        // The heading icon of each section and what the section is about, which colours it:
+        // green for studying and switching things on, blue for writing and messages, cyan for
+        // decks, cards and lists, orange for export, red for resets, the accent for looks.
         private val SECTION_ICONS =
             mapOf(
-                SkSection.EXIMPORT to SkIcons.Icon.EXPORT,
-                SkSection.FOUNDATION to SkIcons.Icon.PALETTE,
-                SkSection.TEXT to SkIcons.Icon.TEXT,
-                SkSection.BUTTONS to SkIcons.Icon.KEYCAP,
-                SkSection.DIALOGS to SkIcons.Icon.COPY,
-                SkSection.SWITCHES to SkIcons.Icon.TOGGLE,
-                SkSection.MARKS to SkIcons.Icon.CHECK,
-                SkSection.MENUS to SkIcons.Icon.LIST,
-                SkSection.LISTS to SkIcons.Icon.LAYERS,
-                SkSection.FIELDS to SkIcons.Icon.EDIT,
-                SkSection.BARS to SkIcons.Icon.DEVICE,
-                SkSection.DRAWER to SkIcons.Icon.LEFT,
-                SkSection.DECK to SkIcons.Icon.BOOK,
-                SkSection.STUDY to SkIcons.Icon.PLAY,
-                SkSection.BROWSER to SkIcons.Icon.EYE,
-                SkSection.SETTINGS to SkIcons.Icon.SLIDERS,
-                SkSection.SHEETS to SkIcons.Icon.INFO,
-                SkSection.PAGES to SkIcons.Icon.GLOBE,
-                SkSection.MAINTENANCE to SkIcons.Icon.RESET,
+                SkSection.EXIMPORT to (SkIcons.Icon.EXPORT to SkIcons.Does.SHARE),
+                SkSection.FOUNDATION to (SkIcons.Icon.PALETTE to SkIcons.Does.VIEW),
+                SkSection.TEXT to (SkIcons.Icon.TEXT to SkIcons.Does.MESSAGE),
+                SkSection.BUTTONS to (SkIcons.Icon.KEYCAP to SkIcons.Does.CONNECT),
+                SkSection.DIALOGS to (SkIcons.Icon.COPY to SkIcons.Does.MESSAGE),
+                SkSection.SWITCHES to (SkIcons.Icon.TOGGLE to SkIcons.Does.CONNECT),
+                SkSection.MARKS to (SkIcons.Icon.CHECK to SkIcons.Does.CONNECT),
+                SkSection.MENUS to (SkIcons.Icon.LIST to SkIcons.Does.VIEW),
+                SkSection.LISTS to (SkIcons.Icon.LAYERS to SkIcons.Does.CONTACT),
+                SkSection.FIELDS to (SkIcons.Icon.EDIT to SkIcons.Does.MESSAGE),
+                SkSection.BARS to (SkIcons.Icon.DEVICE to SkIcons.Does.VIEW),
+                SkSection.DRAWER to (SkIcons.Icon.LEFT to SkIcons.Does.VIEW),
+                SkSection.DECK to (SkIcons.Icon.BOOK to SkIcons.Does.CONTACT),
+                SkSection.STUDY to (SkIcons.Icon.PLAY to SkIcons.Does.CONNECT),
+                SkSection.BROWSER to (SkIcons.Icon.EYE to SkIcons.Does.CONTACT),
+                SkSection.SETTINGS to (SkIcons.Icon.SLIDERS to SkIcons.Does.VIEW),
+                SkSection.SHEETS to (SkIcons.Icon.INFO to SkIcons.Does.MESSAGE),
+                SkSection.PAGES to (SkIcons.Icon.GLOBE to SkIcons.Does.SHARE),
+                SkSection.MAINTENANCE to (SkIcons.Icon.RESET to SkIcons.Does.DELETE),
             )
 
         private const val EXIM_BLACK = 0xFF000000.toInt()

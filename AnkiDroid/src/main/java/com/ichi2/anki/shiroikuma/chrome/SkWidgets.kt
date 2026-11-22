@@ -223,6 +223,46 @@ object SkWidgets {
         (text as? android.widget.TextView)?.setTextColor(SkRoles[SkRole.SNACK_TEXT])
     }
 
+    /**
+     * A bottom sheet: its panel gets the sheet ground and frame, round at the top, and the icons
+     * of its rows take the colour of what each row does (told from the row's or the icon's id).
+     * Material sets its own background at the first layout, so this is applied after it.
+     */
+    fun sheet(panel: View) {
+        panel.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+            if (v.background !is SheetPanel) {
+                v.background = SheetPanel(v.context)
+                v.backgroundTintList = null
+            }
+            tintSheetIcons(v)
+        }
+    }
+
+    private class SheetPanel(
+        context: android.content.Context,
+    ) : GradientDrawable() {
+        init {
+            val r = Pills.dp(context, 20f).toFloat()
+            cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+            setColor(SkRoles[SkRole.SHEET_GROUND])
+            setStroke(maxOf(1, Pills.dp(context, Pills.REGULAR_DP)), SkRoles[SkRole.SHEET_FRAME])
+        }
+    }
+
+    private fun tintSheetIcons(view: View) {
+        if (view is android.widget.ImageView) {
+            if (view.getTag(R.id.tag_sk_dialog_styled) == null && view.drawable != null) {
+                view.setTag(R.id.tag_sk_dialog_styled, true)
+                val own = MenuPills.of(view.context, view.id)
+                val what = if (own.does != SkIcons.Does.VIEW) own else MenuPills.of(view.context, (view.parent as? View)?.id ?: 0)
+                val color = if (what.destructive) SkRoles[SkRole.DELETE] else SkIcons.color(what.does)
+                view.imageTintList = ColorStateList.valueOf(color)
+            }
+            return
+        }
+        if (view is android.view.ViewGroup) for (i in 0 until view.childCount) tintSheetIcons(view.getChildAt(i))
+    }
+
     fun stateful(color: Int): ColorStateList =
         ColorStateList(
             arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()),

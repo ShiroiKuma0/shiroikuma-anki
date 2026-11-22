@@ -11,7 +11,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:minHeight="0dp"
-    android:paddingStart="28dp"
+    android:paddingStart="50dp"
     android:paddingEnd="16dp"
     android:paddingTop="2dp"
     android:paddingBottom="2dp"

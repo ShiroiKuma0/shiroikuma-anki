@@ -285,7 +285,8 @@ x = ['<?xml version="1.0" encoding="utf-8"?>', "<!-- Fork: the colour ROLES as r
      "     Default values/ only: a qualified copy would beat the run-time value. -->",
      '<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources,MissingTranslation">']
 x += ['    <color name="sk_role_%s">%s</color>' % (n.lower(), hexs(value(n))) for n, *_ in ROLES]
-x += ['    <string name="sk_section_%s">%s</string>' % (k, l) for k, l in SECTIONS]
+# section labels are preference titles: upstream's PreferenceTitleLengthTest wants the limit named
+x += ['    <string name="sk_section_%s" maxLength="41">%s</string>' % (k, l) for k, l in SECTIONS]
 x += ['    <string name="sk_role_label_%s">%s</string>' % (n.lower(), l.replace("'", "\\'")) for n, _, _, l, _ in ROLES]
 x += ["</resources>", ""]
 open(V + "sk_roles.xml", "w", encoding="utf-8").write("\n".join(x))
@@ -301,6 +302,9 @@ t += ['        <item name="android:textColorPrimary">@color/sk_text_primary</ite
       '        <item name="elevationOverlayEnabled">false</item>',
       "        <!-- upstream's own outline for widgets (made for its E-Ink theme): a regular pill's frame -->",
       '        <item name="widgetStrokeWidth">1.25dp</item>',
+      "        <!-- the older study screen's answer buttons: an outlined pill -->",
+      '        <item name="answerButtonRef">@drawable/sk_answer_button</item>',
+      '        <item name="answerButtonRippleRef">@drawable/sk_answer_button</item>',
       '        <item name="viewInflaterClass">com.ichi2.anki.shiroikuma.ShiroikumaViewInflater</item>',
       "    </style>", "</resources>", ""]
 open(V + "sk_theme.xml", "w", encoding="utf-8").write("\n".join(t))

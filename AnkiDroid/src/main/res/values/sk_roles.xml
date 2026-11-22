@@ -112,25 +112,25 @@
     <color name="sk_role_page_text">#FFFFFF00</color>
     <color name="sk_role_page_accent">#FFFFFF00</color>
     <color name="sk_role_page_frame">#FF8C8C00</color>
-    <string name="sk_section_eximport">Export / Import</string>
-    <string name="sk_section_foundation">Foundation</string>
-    <string name="sk_section_text">Text and icons</string>
-    <string name="sk_section_buttons">Buttons</string>
-    <string name="sk_section_dialogs">Dialogs</string>
-    <string name="sk_section_switches">Switches</string>
-    <string name="sk_section_marks">Check boxes and radio buttons</string>
-    <string name="sk_section_menus">Menus</string>
-    <string name="sk_section_lists">Lists</string>
-    <string name="sk_section_fields">Text fields</string>
-    <string name="sk_section_bars">Bars</string>
-    <string name="sk_section_drawer">Navigation drawer</string>
-    <string name="sk_section_deck">Deck list</string>
-    <string name="sk_section_study">Study screen</string>
-    <string name="sk_section_browser">Card browser</string>
-    <string name="sk_section_settings">Settings screens</string>
-    <string name="sk_section_sheets">Sheets and messages</string>
-    <string name="sk_section_pages">Web pages</string>
-    <string name="sk_section_maintenance">Maintenance</string>
+    <string name="sk_section_eximport" maxLength="41">Export / Import</string>
+    <string name="sk_section_foundation" maxLength="41">Foundation</string>
+    <string name="sk_section_text" maxLength="41">Text and icons</string>
+    <string name="sk_section_buttons" maxLength="41">Buttons</string>
+    <string name="sk_section_dialogs" maxLength="41">Dialogs</string>
+    <string name="sk_section_switches" maxLength="41">Switches</string>
+    <string name="sk_section_marks" maxLength="41">Check boxes and radio buttons</string>
+    <string name="sk_section_menus" maxLength="41">Menus</string>
+    <string name="sk_section_lists" maxLength="41">Lists</string>
+    <string name="sk_section_fields" maxLength="41">Text fields</string>
+    <string name="sk_section_bars" maxLength="41">Bars</string>
+    <string name="sk_section_drawer" maxLength="41">Navigation drawer</string>
+    <string name="sk_section_deck" maxLength="41">Deck list</string>
+    <string name="sk_section_study" maxLength="41">Study screen</string>
+    <string name="sk_section_browser" maxLength="41">Card browser</string>
+    <string name="sk_section_settings" maxLength="41">Settings screens</string>
+    <string name="sk_section_sheets" maxLength="41">Sheets and messages</string>
+    <string name="sk_section_pages" maxLength="41">Web pages</string>
+    <string name="sk_section_maintenance" maxLength="41">Maintenance</string>
     <string name="sk_role_label_background">Background</string>
     <string name="sk_role_label_accent">Accent</string>
     <string name="sk_role_label_text">Text</string>

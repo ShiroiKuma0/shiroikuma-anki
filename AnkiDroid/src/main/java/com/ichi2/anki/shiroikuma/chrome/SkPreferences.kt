@@ -136,32 +136,25 @@ object SkPreferences {
         }
         if (title == null || pref == null || pref is PreferenceCategory) return
 
-        // the icon is as tall as the label's line, never under 18 dp
-        (row.findViewById<View>(android.R.id.icon) as? ImageView)?.let { icon ->
-            if (SkIcons.isOurs(icon.drawable)) {
-                val size = maxOf(Pills.dp(context, 18f), (title.textSize * 1.25f).toInt())
-                val lp = icon.layoutParams
-                if (lp != null && (lp.width != size || lp.height != size)) {
-                    lp.width = size
-                    lp.height = size
-                    icon.layoutParams = lp
-                }
-                if (icon.colorFilter != null) icon.clearColorFilter()
-            } else if (icon.drawable != null && icon.drawable !is android.graphics.drawable.GradientDrawable) {
-                // an icon upstream brought: it takes the colour of what its row does
-                val does = iconOf(pref).second
-                if (does != Does.VIEW) icon.setColorFilter(SkIcons.color(does))
-            }
-        }
+        // The icon belongs to its label: it sits right before it — inside the pill of an action
+        // row, as in a menu — never in a column of its own across the row (白い熊, 2026-11-22).
+        // It is as tall as the label's line, never under 18 dp, and coloured by what the row does.
+        row.findViewById<View>(androidx.preference.R.id.icon_frame)?.let { if (it.visibility != View.GONE) it.visibility = View.GONE }
+        (row.findViewById<View>(android.R.id.icon) as? ImageView)?.let { if (it.visibility != View.GONE) it.visibility = View.GONE }
 
         val action = isAction(pref)
         val wanted = if (action) (if (pref.extras.getBoolean(EXTRA_MAIN, false)) 2 else 1) else 0
-        if (title.getTag(R.id.tag_sk_dialog_styled) != wanted) {
-            title.setTag(R.id.tag_sk_dialog_styled, wanted)
+        val signature = "${pref.key}|${pref.title}|$wanted|${SkRoles.generation}|${title.textSize}|${pref.icon != null}"
+        if (title.getTag(R.id.tag_sk_dialog_styled) != signature) {
+            title.setTag(R.id.tag_sk_dialog_styled, signature)
+            val does = iconOf(pref).second
+            val deletes = action && does == Does.DELETE
+            val ink = if (deletes) SkRoles[SkRole.DELETE] else SkRoles[SkRole.PILL_TEXT]
+            val size = maxOf(Pills.dp(context, 18f), (title.textSize * 1.25f).toInt())
+            val icon = labelIcon(pref, if (deletes) ink else null, size)
             if (action) {
                 val main = wanted == 2
-                val ink = if (iconOf(pref).second == Does.DELETE) SkRoles[SkRole.DELETE] else SkRoles[SkRole.PILL_TEXT]
-                val frame = if (ink == SkRoles[SkRole.DELETE]) ink else SkRoles[SkRole.PILL_FRAME]
+                val frame = if (deletes) ink else SkRoles[SkRole.PILL_FRAME]
                 title.background = Pills.background(context, frame, main)
                 title.setPadding(Pills.dp(context, 14f), Pills.dp(context, 7f), Pills.dp(context, 14f), Pills.dp(context, 7f))
                 title.setTypeface(Typeface.create(title.typeface, Typeface.NORMAL), if (main) Typeface.BOLD else Typeface.NORMAL)
@@ -171,14 +164,18 @@ object SkPreferences {
                     it.bottomMargin = Pills.dp(context, 3f)
                     title.layoutParams = it
                 }
-                val arrow = if (opens(pref)) SkIcons.drawable(context, Icon.CHEVRON, ink, 14f) else null
-                title.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, arrow, null)
-                title.compoundDrawablePadding = Pills.dp(context, 8f)
+                val arrow =
+                    if (opens(pref)) {
+                        SkIcons.drawable(context, Icon.CHEVRON, ink, 14f).apply { setBounds(0, 0, intrinsicWidth, intrinsicHeight) }
+                    } else {
+                        null
+                    }
+                title.setCompoundDrawablesRelative(icon, null, arrow, null)
                 title.isSingleLine = false
             } else {
                 title.background = null
                 title.setPadding(0, 0, 0, 0)
-                title.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
+                title.setCompoundDrawablesRelative(icon, null, null, null)
                 (title.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
                     if (it.topMargin != 0 || it.bottomMargin != 0) {
                         it.topMargin = 0
@@ -187,6 +184,8 @@ object SkPreferences {
                     }
                 }
             }
+            title.compoundDrawablePadding = Pills.dp(context, 9f)
+            title.gravity = android.view.Gravity.CENTER_VERTICAL
         }
 
         // an explained row: bold label, dim-gold description, a 2 dp dim-gold rule down its left
@@ -205,6 +204,29 @@ object SkPreferences {
                 if (!action) title.setTypeface(Typeface.create(title.typeface, Typeface.NORMAL), Typeface.NORMAL)
             }
         }
+    }
+
+    /**
+     * The icon of [pref] as a drawable for the start of its label: [size] square, in [tint] if
+     * given, else in the colour of what the row does. One of our own icons already has it.
+     */
+    private fun labelIcon(
+        pref: Preference,
+        tint: Int?,
+        size: Int,
+    ): Drawable? {
+        val source = pref.icon ?: return null
+        val (glyph, does) = iconOf(pref)
+        val drawable =
+            if (SkIcons.isOurs(source)) {
+                if (tint != null) SkIcons.drawable(pref.context, glyph, tint, 22f) else source
+            } else {
+                val copy = source.constantState?.newDrawable(pref.context.resources)?.mutate() ?: source.mutate()
+                copy.setTint(tint ?: if (does == Does.VIEW) SkRoles[SkRole.SETTINGS_ICON] else SkIcons.color(does))
+                copy
+            }
+        drawable.setBounds(0, 0, size, size)
+        return drawable
     }
 
     /** A thin bar down the left edge of an explained row */

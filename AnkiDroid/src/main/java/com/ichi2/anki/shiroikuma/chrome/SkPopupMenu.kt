@@ -46,18 +46,42 @@ class SkPopupMenu(
     }
 
     companion object {
-        /** How far up the menu must start to fit, or null when it fits below its anchor */
-        fun verticalOffset(
-            anchor: View,
+        /**
+         * For a menu anchored at a point of [parent] (the mouse context menu): the y to anchor it
+         * at so that it fits above the bottom of the window instead of scrolling.
+         */
+        fun fittedY(
+            parent: View,
+            y: Float,
             menu: Menu,
-        ): Int? {
-            val density = anchor.resources.displayMetrics.density
+        ): Float {
+            val frame = Rect()
+            parent.getWindowVisibleDisplayFrame(frame)
+            val location = IntArray(2)
+            parent.getLocationOnScreen(location)
+            val below = frame.bottom - (location[1] + y)
+            val needed = neededHeight(parent, menu)
+            return if (needed <= below) y else maxOf(0f, y - (needed - below))
+        }
+
+        private fun neededHeight(
+            view: View,
+            menu: Menu,
+        ): Int {
             var rows = 0f
             for (i in 0 until menu.size()) {
                 val item = menu.getItem(i)
                 if (item.isVisible) rows += if (item.isCheckable) 36f else 54f
             }
-            val needed = ((rows + 16f) * density).toInt()
+            return ((rows + 16f) * view.resources.displayMetrics.density).toInt()
+        }
+
+        /** How far up the menu must start to fit, or null when it fits below its anchor */
+        fun verticalOffset(
+            anchor: View,
+            menu: Menu,
+        ): Int? {
+            val needed = neededHeight(anchor, menu)
             val frame = Rect()
             anchor.getWindowVisibleDisplayFrame(frame)
             val location = IntArray(2)

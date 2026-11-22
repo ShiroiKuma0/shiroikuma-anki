@@ -6,6 +6,7 @@ package com.ichi2.anki.contextmenu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import com.ichi2.anki.shiroikuma.chrome.SkPopupMenu
 import com.ichi2.anki.common.android.R as CommonR
 
 /**
@@ -51,6 +52,8 @@ open class MouseContextMenuHandler(
         menuContentProvider.populateMenu(popupMenu.menu)
 
         menuContentProvider.onPrepareMenu(popupMenu.menu)
+        // Fork: a menu opened low on the screen is moved up rather than left to scroll
+        anchorView.y = SkPopupMenu.fittedY(viewGroup, y, popupMenu.menu)
 
         popupMenu.setOnMenuItemClickListener { menuItem ->
             menuContentProvider.onMenuItemSelected(menuItem)

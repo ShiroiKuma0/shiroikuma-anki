@@ -8,7 +8,7 @@
     <View
         android:layout_width="1dp"
         android:layout_height="match_parent"
-        android:background="#66888888"
+        android:background="@color/sk_role_list_divider"
         android:layout_marginVertical="16dp"
         />
 

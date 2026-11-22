@@ -5,6 +5,7 @@ package com.ichi2.anki.shiroikuma
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.widget.FrameLayout
 import androidx.annotation.Keep
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatCheckBox
@@ -105,6 +106,17 @@ class ShiroikumaViewInflater : MaterialComponentsViewInflater() {
                 FloatingActionButton(context, attrs).also { SkWidgets.fab(it) }
             "com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton" ->
                 ExtendedFloatingActionButton(context, attrs).also { SkWidgets.button(it, true) }
+            // the panel of a bottom sheet dialog
+            "FrameLayout" ->
+                if (attrs.getAttributeResourceValue(ANDROID_NS, "id", 0) == com.google.android.material.R.id.design_bottom_sheet) {
+                    FrameLayout(context, attrs).also { SkWidgets.sheet(it) }
+                } else {
+                    null
+                }
             else -> super.createView(context, name, attrs)
         }
+
+    private companion object {
+        const val ANDROID_NS = "http://schemas.android.com/apk/res/android"
+    }
 }

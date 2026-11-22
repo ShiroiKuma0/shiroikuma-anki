@@ -9,7 +9,8 @@ import java.util.Locale
  * Fork: the role colours of the web pages AnkiDroid takes from Anki desktop (deck options,
  * statistics, card info, import). They are styled through Anki's own CSS variables, so a page
  * is given a small style sheet that sets those variables from the roles of the "Web pages"
- * section; buttons become outlined pills. Cards are not pages: they stay as the note
+ * section; buttons become outlined pills. The variable names were checked against the CSS the
+ * backend bundles (anki-backend-android 0.1.77): Anki's own and Bootstrap's. Cards are not pages: they stay as the note
  * templates draw them (白い熊, 2026-11-22).
  */
 object SkPages {
@@ -22,6 +23,8 @@ object SkPages {
             Color.blue(color),
             Color.alpha(color) / 255f,
         )
+
+    private fun rgb(color: Int): String = "${Color.red(color)},${Color.green(color)},${Color.blue(color)}"
 
     fun styleSheet(): String {
         val ground = css(SkRoles[SkRole.PAGE_GROUND])
@@ -73,8 +76,22 @@ object SkPages {
                 "bs-body-color" to text,
                 "bs-border-color" to frame,
                 "bs-link-color" to accent,
+                "bs-link-hover-color" to accent,
+                "bs-secondary-bg" to ground,
+                "bs-secondary-color" to quiet,
+                "bs-tertiary-bg" to ground,
+                "bs-emphasis-color" to text,
+                "bs-tooltip-bg" to ground,
+                "bs-body-bg-rgb" to rgb(SkRoles[SkRole.PAGE_GROUND]),
+                "bs-body-color-rgb" to rgb(SkRoles[SkRole.PAGE_TEXT]),
+                "bs-link-color-rgb" to rgb(SkRoles[SkRole.PAGE_ACCENT]),
+                "bs-emphasis-color-rgb" to rgb(SkRoles[SkRole.PAGE_TEXT]),
             ).joinToString("") { "--${it.first}:${it.second} !important;" }
         return ":root,:root.night-mode,body,body.night-mode{$vars color:$text;}" +
+            ".btn{--bs-btn-bg:transparent;--bs-btn-color:$accent;--bs-btn-border-color:$accent;" +
+            "--bs-btn-hover-bg:$pressed;--bs-btn-hover-color:$accent;--bs-btn-hover-border-color:$accent;" +
+            "--bs-btn-active-bg:$pressed;--bs-btn-active-color:$accent;--bs-btn-active-border-color:$accent;" +
+            "--bs-btn-disabled-bg:transparent;--bs-btn-disabled-color:$disabled;--bs-btn-disabled-border-color:$disabled;}" +
             "button,.btn,select,input[type=button]{background:transparent !important;color:$accent !important;" +
             "border:1.25px solid $accent !important;border-radius:100px !important;box-shadow:none !important;" +
             "background-image:none !important;}" +

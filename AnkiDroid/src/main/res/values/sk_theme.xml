@@ -122,6 +122,9 @@
         <item name="elevationOverlayEnabled">false</item>
         <!-- upstream's own outline for widgets (made for its E-Ink theme): a regular pill's frame -->
         <item name="widgetStrokeWidth">1.25dp</item>
+        <!-- the older study screen's answer buttons: an outlined pill -->
+        <item name="answerButtonRef">@drawable/sk_answer_button</item>
+        <item name="answerButtonRippleRef">@drawable/sk_answer_button</item>
         <item name="viewInflaterClass">com.ichi2.anki.shiroikuma.ShiroikumaViewInflater</item>
     </style>
 </resources>

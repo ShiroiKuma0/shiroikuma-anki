@@ -95,6 +95,9 @@ class SkSectionCategory(
 
     var sectionIcon: SkIcons.Icon = SkIcons.Icon.PALETTE
 
+    /** What the section is about: the colour of its heading icon */
+    var sectionDoes: SkIcons.Does = SkIcons.Does.VIEW
+
     val sectionKey: String get() = key.removePrefix(PREFIX)
 
     init {
@@ -113,7 +116,7 @@ class SkSectionCategory(
         holder.findViewById(R.id.sk_section_divider)?.setBackgroundColor(SkRoles[SkRole.MENU_DIVIDER])
         val size = maxOf(Pills.dp(context, 18f), ((title?.textSize ?: 0f) * 1.25f).toInt())
         (holder.findViewById(R.id.sk_section_icon) as? ImageView)?.apply {
-            setImageDrawable(SkIcons.drawable(context, sectionIcon, heading, 24f))
+            setImageDrawable(SkIcons.drawable(context, sectionIcon, sectionDoes, 24f))
             layoutParams =
                 layoutParams.apply {
                     width = size
