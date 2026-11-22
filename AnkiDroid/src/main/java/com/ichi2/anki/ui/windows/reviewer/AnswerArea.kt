@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -37,7 +37,7 @@ import anki.scheduler.CardAnswer.Rating
 import com.ichi2.anki.R
 import com.ichi2.compose.theme.ankiColors
 import com.ichi2.compose.theme.ankiDimensions
-import com.ichi2.compose.theme.widgetBorder
+import com.ichi2.compose.ui.components.ForkPills
 import com.ichi2.anki.common.android.R as CommonR
 
 @Composable
@@ -157,10 +157,11 @@ private fun AnswerButton(
         ElevatedButton(
             onClick = onClick,
             modifier = modifier.padding(vertical = 4.dp),
-            shape = RoundedCornerShape(dimensionResource(R.dimen.answer_button_corner_radius)),
+            // Fork: an outlined pill; the answer's own colour goes to its frame and label
+            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = backgroundColor, contentColor = textColor),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = elevation, pressedElevation = elevation),
-            border = MaterialTheme.widgetBorder,
+            border = ForkPills.border(textColor),
             contentPadding = PaddingValues(0.dp),
         ) {
             Text(text, textAlign = TextAlign.Center)

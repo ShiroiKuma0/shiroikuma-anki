@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="54dp"
+    android:paddingStart="28dp"
     android:paddingEnd="16dp"
     android:paddingTop="10dp"
     android:paddingBottom="2dp">
@@ -20,14 +20,13 @@
             android:id="@android:id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#FFFFFF00"
             android:textSize="17sp"
             android:textStyle="bold"/>
 
         <View
+            android:id="@+id/sk_sub_underline"
             android:layout_width="match_parent"
             android:layout_height="1.5dp"
-            android:layout_marginTop="2dp"
-            android:background="#FFFFFF00"/>
+            android:layout_marginTop="2dp"/>
     </LinearLayout>
 </LinearLayout>

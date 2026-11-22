@@ -3,10 +3,13 @@
 
 package com.ichi2.compose.ui.components
 
+import androidx.compose.foundation.border
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.ichi2.compose.theme.ankiColors
 
 /**
@@ -22,7 +25,13 @@ fun AnkiDroidExtendedFab(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        modifier = modifier,
+        // Fork: an outlined ring, the ground showing through
+        modifier =
+            modifier.border(
+                ForkPills.border(MaterialTheme.ankiColors.onFab, main = true),
+                FloatingActionButtonDefaults.extendedFabShape,
+            ),
+        elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
         containerColor = MaterialTheme.ankiColors.fabContainer,
         contentColor = MaterialTheme.ankiColors.onFab,
         icon = icon,

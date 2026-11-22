@@ -5,7 +5,6 @@ package com.ichi2.compose.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,7 +23,8 @@ fun HeroToolbarActionButton(
     onClick: () -> Unit = {},
 ) {
     Box(modifier.padding(horizontal = 8.dp)) {
-        Button(onClick = onClick, modifier = Modifier.heightIn(min = 48.dp), enabled = enabled) {
+        // Fork: the screen's main action, as an outlined pill
+        ForkPillButton(onClick = onClick, modifier = Modifier.heightIn(min = 48.dp), main = true, enabled = enabled) {
             Text(text = label)
         }
     }

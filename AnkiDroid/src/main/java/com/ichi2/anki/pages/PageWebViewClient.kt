@@ -12,6 +12,7 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.OnPageFinishedCallback
+import com.ichi2.anki.shiroikuma.chrome.SkPages
 import com.ichi2.anki.utils.openUrl
 import com.ichi2.anki.workarounds.SafeWebViewClient
 import com.ichi2.anki.workarounds.SafeWebViewLayout
@@ -103,6 +104,8 @@ open class PageWebViewClient : SafeWebViewClient() {
                 """document.body.style.setProperty("background-color", "$bgColor", "important");
                     console.log("Background color set");""",
             )
+            // Fork: the page takes the "Web pages" colour roles through Anki's CSS variables
+            webView.evaluateAfterDOMContentLoaded(SkPages.script())
         }
     }
 

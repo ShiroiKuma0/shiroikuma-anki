@@ -42,6 +42,8 @@ class PreferenceFragmentsProvider : TestParameterValuesProvider() {
                 SwitchProfilesFragment::class,
                 DeveloperOptionsFragment::class,
                 AboutFragment::class,
+                // Fork: the 白い熊 暗記 UI page
+                ShiroikumaUiSettingsFragment::class,
             )
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Fork: kxkb-style slider row for the 白い熊 暗記 UI page — the upstream
-     preference_slider re-laid indented (72dp) and tight, without the icon
-     frame. Keeps the ids SliderPreference binds (title, summary, value
+     preference_slider re-laid tight, with the row icon at its start like every
+     other row of the page. Keeps the ids SliderPreference binds (title, summary, value
      display, slider). Assigned programmatically: SliderPreference hardcodes
      its layoutResource in init, so XML android:layout would be overwritten. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -9,15 +9,36 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:minHeight="0dp"
-    android:paddingStart="72dp"
+    android:paddingStart="28dp"
     android:paddingEnd="16dp"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp"
     android:background="?android:attr/selectableItemBackground"
+    android:baselineAligned="false"
     android:clipChildren="false"
     android:clipToPadding="false">
+
+    <FrameLayout
+        android:id="@+id/icon_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp">
+        <ImageView
+            android:id="@android:id/icon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -29,7 +50,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:textColor="#FFFFFF00"
             android:textSize="16sp"
             android:ellipsize="marquee"
             app:layout_constraintTop_toTopOf="parent"
@@ -43,7 +63,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="start"
             android:textAlignment="viewStart"
-            android:textColor="#FF9E9E9E"
             android:textSize="13sp"
             android:maxLines="4"
             app:layout_constraintTop_toBottomOf="@android:id/title"
@@ -54,7 +73,6 @@
             android:id="@+id/value_display"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#FFFFFF00"
             android:textSize="15sp"
             android:maxLines="1"
             app:layout_constraintTop_toTopOf="parent"
@@ -71,4 +89,5 @@
         android:saveEnabled="false"
         android:stepSize="1"
         />
+    </LinearLayout>
 </LinearLayout>

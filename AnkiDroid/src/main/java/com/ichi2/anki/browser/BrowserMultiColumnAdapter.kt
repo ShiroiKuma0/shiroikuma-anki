@@ -18,6 +18,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.ThemeUtils
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -153,7 +154,9 @@ class BrowserMultiColumnAdapter(
             val pressedColor: Int
             val focusedColor: Int
 
-            if (nightMode) {
+            // Fork: the row colours are roles, black by default whatever theme is picked, and a
+            // dark colour cannot be darkened into a visible pressed state
+            if (nightMode || ColorUtils.calculateLuminance(color) < 0.2) {
                 // 25% was determined by visual inspection
                 pressedColor = lightenColorAbsolute(color, 0.25f)
                 focusedColor = pressedColor

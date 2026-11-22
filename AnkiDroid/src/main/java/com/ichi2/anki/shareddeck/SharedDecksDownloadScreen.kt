@@ -45,7 +45,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,7 +53,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -82,6 +80,7 @@ import com.ichi2.anki.R
 import com.ichi2.compose.theme.AnkiDroidTheme
 import com.ichi2.compose.theme.dimensions
 import com.ichi2.compose.theme.widgetBorder
+import com.ichi2.compose.ui.components.ForkPillButton
 import com.ichi2.compose.ui.preview.ThemePreviews
 
 private val MaxContentWidth = 600.dp
@@ -518,7 +517,8 @@ private fun Actions(
                     Text(stringResource(CommonString.cancel_download))
                 }
             DownloadPhase.Complete ->
-                Button(onClick = onImportClick) {
+                // Fork: the main action of the block, as an outlined pill
+                ForkPillButton(onClick = onImportClick, main = true) {
                     Text(stringResource(CommonString.import_deck))
                 }
             DownloadPhase.Failed -> {
@@ -528,7 +528,7 @@ private fun Actions(
                 ) {
                     Text(stringResource(CommonString.try_again))
                 }
-                TextButton(onClick = onOpenInBrowserClick) {
+                ForkPillButton(onClick = onOpenInBrowserClick) {
                     Text(stringResource(CommonString.open_in_browser))
                 }
             }

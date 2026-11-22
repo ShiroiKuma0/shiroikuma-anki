@@ -32,7 +32,9 @@ import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
+import androidx.preference.PreferenceGroupAdapter
 import androidx.preference.SwitchPreferenceCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
@@ -41,6 +43,17 @@ import com.ichi2.anki.shiroikuma.SecondaryActionPreference
 import com.ichi2.anki.shiroikuma.ShiroikumaDialogs
 import com.ichi2.anki.shiroikuma.ShiroikumaExport
 import com.ichi2.anki.shiroikuma.ShiroikumaUi
+import com.ichi2.anki.shiroikuma.chrome.SectionIndex
+import com.ichi2.anki.shiroikuma.chrome.SkIcons
+import com.ichi2.anki.shiroikuma.chrome.SkIndexPreference
+import com.ichi2.anki.shiroikuma.chrome.SkPageState
+import com.ichi2.anki.shiroikuma.chrome.SkPreferences
+import com.ichi2.anki.shiroikuma.chrome.SkRole
+import com.ichi2.anki.shiroikuma.chrome.SkRolePreference
+import com.ichi2.anki.shiroikuma.chrome.SkRoles
+import com.ichi2.anki.shiroikuma.chrome.SkSection
+import com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+import com.ichi2.anki.shiroikuma.chrome.SkTheme
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.preferences.SliderPreference
 import com.ichi2.utils.ContentResolverUtil
@@ -238,45 +251,6 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         }
 
     override fun initSubscreen() {
-        setupColorPreference(R.string.pref_sk_menu_background_key, ShiroikumaUi.DEFAULT_MENU_BACKGROUND)
-        setupColorPreference(R.string.pref_sk_menu_text_color_key, ShiroikumaUi.DEFAULT_MENU_TEXT) {
-            refreshFontPreview(ShiroikumaUi.ROLE_MENU)
-        }
-        setupColorPreference(R.string.pref_sk_menu_icon_color_key, ShiroikumaUi.DEFAULT_MENU_ICON)
-        setupColorPreference(R.string.pref_sk_menu_selected_color_key, ShiroikumaUi.DEFAULT_MENU_SELECTED)
-        setupColorPreference(R.string.pref_sk_menu_selected_background_key, ShiroikumaUi.DEFAULT_MENU_SELECTED_BACKGROUND)
-
-        setupColorPreference(R.string.pref_sk_deck_name_color_key, ShiroikumaUi.DEFAULT_DECK_NAME) {
-            refreshFontPreview(ShiroikumaUi.ROLE_DECK)
-        }
-        setupColorPreference(R.string.pref_sk_studied_today_color_key, ShiroikumaUi.DEFAULT_STUDIED_TODAY)
-        setupColorPreference(R.string.pref_sk_deck_detail_name_color_key, ShiroikumaUi.DEFAULT_DECK_DETAIL_NAME)
-        setupColorPreference(R.string.pref_sk_toolbar_title_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_TITLE)
-        setupColorPreference(R.string.pref_sk_toolbar_subtitle_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_SUBTITLE)
-        setupColorPreference(R.string.pref_sk_toolbar_icon_color_key, ShiroikumaUi.DEFAULT_TOOLBAR_ICON)
-        setupColorPreference(R.string.pref_sk_study_text_color_key, ShiroikumaUi.DEFAULT_STUDY_TEXT)
-        setupColorPreference(R.string.pref_sk_study_border_color_key, ShiroikumaUi.DEFAULT_STUDY_BORDER)
-        setupColorPreference(R.string.pref_sk_study_background_key, ShiroikumaUi.DEFAULT_STUDY_BACKGROUND)
-        setupColorPreference(R.string.pref_sk_pane_divider_color_key, ShiroikumaUi.DEFAULT_PANE_DIVIDER)
-
-        setupColorPreference(R.string.pref_sk_settings_title_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TITLE) {
-            refreshFontPreview(ShiroikumaUi.ROLE_SETTINGS)
-        }
-        setupColorPreference(R.string.pref_sk_settings_summary_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SUMMARY)
-        setupColorPreference(R.string.pref_sk_settings_icon_color_key, ShiroikumaUi.DEFAULT_SETTINGS_ICON)
-        setupColorPreference(R.string.pref_sk_settings_toggle_color_key, ShiroikumaUi.DEFAULT_SETTINGS_TOGGLE)
-        setupColorPreference(R.string.pref_sk_settings_slider_color_key, ShiroikumaUi.DEFAULT_SETTINGS_SLIDER)
-        setupColorPreference(R.string.pref_sk_settings_header_color_key, ShiroikumaUi.DEFAULT_SETTINGS_HEADER)
-
-        setupColorPreference(R.string.pref_sk_dialog_ground_key, ShiroikumaDialogs.DEFAULT_GROUND)
-        setupColorPreference(R.string.pref_sk_dialog_frame_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_title_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_text_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_button_text_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_button_frame_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_mark_key, ShiroikumaDialogs.DEFAULT_ACCENT)
-        setupColorPreference(R.string.pref_sk_dialog_delete_key, ShiroikumaDialogs.DEFAULT_DELETE)
-
         for (fontGroup in fontGroups) setupFontGroup(fontGroup)
 
         requirePreference<Preference>(R.string.pref_sk_eximport_key).setOnPreferenceClickListener {
@@ -300,6 +274,170 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         // SliderPreference hardcodes its layoutResource in init, so the
         // kxkb-style indented slider layout must be assigned here
         applySliderLayouts(preferenceScreen)
+        buildPage()
+    }
+
+    // The page: a folding accordion with a draggable chip index on top. The sections are the
+    // SkSectionCategory nodes of the XML; their colour rows come from the role table.
+
+    private val sections = mutableListOf<SkSectionCategory>()
+    private var indexPref: SkIndexPreference? = null
+    private var linkPref: Preference? = null
+
+    /** Rows hidden for a reason of their own (the automation token), whatever the fold state */
+    private val hiddenRows = mutableSetOf<String>()
+
+    private fun buildPage() {
+        val context = requireContext()
+        val screen = preferenceScreen
+        SkTheme.markCurrent(requireActivity())
+        sections.clear()
+        for (section in SkSection.entries) {
+            val cat = screen.findPreference<SkSectionCategory>(SkSectionCategory.PREFIX + section.key) ?: continue
+            cat.sectionIcon = SECTION_ICONS[section] ?: SkIcons.Icon.PALETTE
+            cat.onToggle = { setSectionOpen(it, !SkPageState.isOpen(context, it.sectionKey)) }
+            sections += cat
+            SkRole.entries.filter { it.section == section }.forEachIndexed { i, role ->
+                cat.addPreference(
+                    SkRolePreference(context, role).apply {
+                        order = -1000 + i
+                        setOnPreferenceClickListener {
+                            showColorDialog(role)
+                            true
+                        }
+                    },
+                )
+            }
+        }
+
+        sections.firstOrNull { it.sectionKey == SkSection.MAINTENANCE.key }?.let { maintenance ->
+            maintenance.addPreference(
+                actionRow("sk_ui_reset_order", R.string.sk_reset_section_order, R.string.sk_reset_section_order_summary) {
+                    SkPageState.resetOrder(context)
+                    applySectionOrder()
+                },
+            )
+            maintenance.addPreference(
+                actionRow("sk_ui_reset_colours", R.string.sk_reset_all_colours, R.string.sk_reset_all_colours_summary) {
+                    MaterialAlertDialogBuilder(context)
+                        .setMessage(R.string.sk_reset_all_colours_confirm)
+                        .setPositiveButton(CommonR.string.dialog_ok) { _, _ ->
+                            SkRoles.resetAll()
+                            requireActivity().recreate()
+                        }.setNegativeButton(CommonR.string.dialog_cancel, null)
+                        .show()
+                },
+            )
+        }
+        // the section's one panel is its main action; it opens something
+        requirePreference<Preference>(R.string.pref_sk_eximport_key).extras.apply {
+            putBoolean(SkPreferences.EXTRA_MAIN, true)
+            putBoolean(SkPreferences.EXTRA_OPENS, true)
+        }
+        for (fontGroup in fontGroups) {
+            requirePreference<Preference>(fontGroup.fontKey).extras.putBoolean(SkPreferences.EXTRA_OPENS, true)
+        }
+
+        // the link to the app's own settings: the first, thick pill of the page
+        linkPref =
+            actionRow("sk_ui_app_settings", R.string.sk_app_settings, R.string.sk_app_settings_summary) {
+                startActivity(PreferencesActivity.getIntent(context))
+            }.apply {
+                extras.putBoolean(SkPreferences.EXTRA_MAIN, true)
+                extras.putBoolean(SkPreferences.EXTRA_OPENS, true)
+            }
+        indexPref =
+            SkIndexPreference(
+                context,
+                { orderedSections().map { SectionIndex.Item(it.sectionKey, it.title ?: "") } },
+                object : SectionIndex.Listener {
+                    override fun onJump(key: String) {
+                        sections.firstOrNull { it.sectionKey == key }?.let { jumpToSection(it) }
+                    }
+
+                    override fun onReordered(order: List<String>) {
+                        // posted: the drag is still being dispatched to the chips this rebuild replaces
+                        view?.post {
+                            SkPageState.setOrder(context, order)
+                            applySectionOrder()
+                        }
+                    }
+                },
+            )
+        screen.addPreference(linkPref!!)
+        screen.addPreference(indexPref!!)
+        applySectionOrder()
+        sections.forEach(::applyFold)
+        SkPreferences.decorate(screen)
+    }
+
+    private fun actionRow(
+        rowKey: String,
+        @StringRes titleRes: Int,
+        @StringRes summaryRes: Int,
+        onClick: () -> Unit,
+    ): Preference =
+        Preference(requireContext()).apply {
+            key = rowKey
+            isPersistent = false
+            layoutResource = R.layout.sk_preference_row
+            setTitle(titleRes)
+            setSummary(summaryRes)
+            setOnPreferenceClickListener {
+                onClick()
+                true
+            }
+        }
+
+    private fun orderedSections(): List<SkSectionCategory> {
+        val order = SkPageState.order(requireContext(), sections.map { it.sectionKey })
+        return order.mapNotNull { k -> sections.firstOrNull { it.sectionKey == k } }
+    }
+
+    /** The settings link and the index stay on top; the sections follow in their stored order */
+    private fun applySectionOrder() {
+        linkPref?.order = 0
+        indexPref?.order = 1
+        orderedSections().forEachIndexed { i, cat -> cat.order = 10 + i }
+        indexPref?.refresh()
+    }
+
+    private fun applyFold(cat: SkSectionCategory) {
+        val open = SkPageState.isOpen(requireContext(), cat.sectionKey)
+        for (i in 0 until cat.preferenceCount) {
+            val row = cat.getPreference(i)
+            row.isVisible = open && row.key !in hiddenRows
+        }
+    }
+
+    private fun setSectionOpen(
+        cat: SkSectionCategory,
+        open: Boolean,
+    ) {
+        SkPageState.setOpen(requireContext(), cat.sectionKey, open)
+        applyFold(cat)
+        cat.refresh()
+    }
+
+    /** A tap on a chip: unfold the section and bring its heading to the top of the page */
+    @SuppressLint("RestrictedApi")
+    private fun jumpToSection(cat: SkSectionCategory) {
+        setSectionOpen(cat, true)
+        listView?.post {
+            val list = listView ?: return@post
+            val position = (list.adapter as? PreferenceGroupAdapter)?.getPreferenceAdapterPosition(cat) ?: return@post
+            if (position >= 0) (list.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(position, 0)
+        }
+    }
+
+    /** Shows or hides a row for a reason of its own, on top of its section's fold state */
+    private fun setRowHidden(
+        row: Preference,
+        hidden: Boolean,
+    ) {
+        if (hidden) hiddenRows.add(row.key) else hiddenRows.remove(row.key)
+        val cat = row.parent as? SkSectionCategory
+        row.isVisible = !hidden && (cat == null || SkPageState.isOpen(requireContext(), cat.sectionKey))
     }
 
     private fun applySliderLayouts(preferenceGroup: PreferenceGroup) {
@@ -313,10 +451,8 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
 
     private fun resetAll() {
         ShiroikumaUi.resetAll(requireContext())
-        // rebuild the screen so every swatch/summary/slider shows its default again
-        preferenceScreen.removeAll()
-        addPreferencesFromResource(preferenceResource)
-        initSubscreen()
+        // every screen is rebuilt: upstream's layouts read the colours through the theme
+        requireActivity().recreate()
     }
 
     /** Relaunch into a fresh DeckPicker so colours, controls and theme all reload. */
@@ -357,11 +493,11 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         val requireToken = requirePreference<SwitchPreferenceCompat>(R.string.pref_sk_automation_require_token_key)
         val tokenRow = requirePreference<SecondaryActionPreference>(R.string.pref_sk_automation_token_key)
         requireToken.isChecked = AutomationAuth.requireToken(context)
-        tokenRow.isVisible = requireToken.isChecked
+        setRowHidden(tokenRow, !requireToken.isChecked)
         requireToken.setOnPreferenceChangeListener { _, newValue ->
             val on = newValue as Boolean
             AutomationAuth.setRequireToken(context, on)
-            tokenRow.isVisible = on
+            setRowHidden(tokenRow, !on)
             true
         }
 
@@ -991,36 +1127,11 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
         preview.title = ShiroikumaUi.buildFontPreview(requireContext(), role, sizeSp, weight)
     }
 
-    private fun setupColorPreference(
-        @StringRes keyRes: Int,
-        default: Int,
-        extraOnChanged: (() -> Unit)? = null,
-    ) {
-        val preference = requirePreference<Preference>(keyRes)
-
-        fun refresh() {
-            val color = ShiroikumaUi.color(requireContext(), keyRes, default)
-            preference.icon = ShiroikumaUi.swatch(color)
-            preference.summary = ShiroikumaUi.toHex(color)
-            extraOnChanged?.invoke()
-        }
-        refresh()
-
-        preference.setOnPreferenceClickListener {
-            showColorDialog(keyRes, default, ::refresh)
-            true
-        }
-    }
-
     /** Colour picker: four RGBA sliders with a live preview swatch */
     @SuppressLint("CheckResult", "SetTextI18n")
-    private fun showColorDialog(
-        @StringRes keyRes: Int,
-        default: Int,
-        onChanged: () -> Unit,
-    ) {
+    private fun showColorDialog(role: SkRole) {
         val context = requireContext()
-        val initial = ShiroikumaUi.color(context, keyRes, default)
+        val initial = SkRoles[role]
         val channels = intArrayOf(Color.red(initial), Color.green(initial), Color.blue(initial), Color.alpha(initial))
 
         fun current() = Color.argb(channels[3], channels[0], channels[1], channels[2])
@@ -1102,19 +1213,44 @@ class ShiroikumaUiSettingsFragment : SettingsFragment() {
             }
 
         MaterialAlertDialogBuilder(context)
-            .setTitle(requirePreference<Preference>(keyRes).title)
+            .setTitle(role.labelRes)
             .setView(container)
             .setPositiveButton(CommonR.string.dialog_ok) { _, _ ->
-                ShiroikumaUi.setColor(context, keyRes, current())
-                onChanged()
+                SkRoles.set(role, current())
+                // every screen is rebuilt: upstream's layouts read the colours through the theme
+                requireActivity().recreate()
             }.setNeutralButton(R.string.sk_default) { _, _ ->
-                ShiroikumaUi.setColor(context, keyRes, default)
-                onChanged()
+                // "Default" resets this one role
+                SkRoles.set(role, null)
+                requireActivity().recreate()
             }.setNegativeButton(CommonR.string.dialog_cancel, null)
             .show()
     }
 
     companion object {
+        private val SECTION_ICONS =
+            mapOf(
+                SkSection.EXIMPORT to SkIcons.Icon.EXPORT,
+                SkSection.FOUNDATION to SkIcons.Icon.PALETTE,
+                SkSection.TEXT to SkIcons.Icon.TEXT,
+                SkSection.BUTTONS to SkIcons.Icon.KEYCAP,
+                SkSection.DIALOGS to SkIcons.Icon.COPY,
+                SkSection.SWITCHES to SkIcons.Icon.TOGGLE,
+                SkSection.MARKS to SkIcons.Icon.CHECK,
+                SkSection.MENUS to SkIcons.Icon.LIST,
+                SkSection.LISTS to SkIcons.Icon.LAYERS,
+                SkSection.FIELDS to SkIcons.Icon.EDIT,
+                SkSection.BARS to SkIcons.Icon.DEVICE,
+                SkSection.DRAWER to SkIcons.Icon.LEFT,
+                SkSection.DECK to SkIcons.Icon.BOOK,
+                SkSection.STUDY to SkIcons.Icon.PLAY,
+                SkSection.BROWSER to SkIcons.Icon.EYE,
+                SkSection.SETTINGS to SkIcons.Icon.SLIDERS,
+                SkSection.SHEETS to SkIcons.Icon.INFO,
+                SkSection.PAGES to SkIcons.Icon.GLOBE,
+                SkSection.MAINTENANCE to SkIcons.Icon.RESET,
+            )
+
         private const val EXIM_BLACK = 0xFF000000.toInt()
         private const val EXIM_YELLOW = 0xFFFFFF00.toInt()
         private const val EXIM_DIM = 0xFFCCCC66.toInt()

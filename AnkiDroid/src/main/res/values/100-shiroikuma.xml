@@ -110,9 +110,6 @@
     <string name="sk_format_dp">%s dp</string>
 
     <!-- Section / subheading titles for the reorganized page -->
-    <string name="sk_section_menu">Menu</string>
-    <string name="sk_section_deck_picker">Deck picker</string>
-    <string name="sk_section_settings">Settings</string>
     <string name="sk_sub_colours">Colours</string>
     <string name="sk_sub_font">Font</string>
     <string name="sk_sub_header">Header</string>
@@ -189,7 +186,6 @@
     <string name="sk_all_files_gate_skip">Not now</string>
 
     <!-- Dialogs -->
-    <string name="sk_section_dialogs">Dialogs</string>
     <string name="sk_sub_warnings">Warnings</string>
     <string name="sk_dialog_ground">Background</string>
     <string name="sk_dialog_frame">Frame</string>
@@ -203,10 +199,13 @@
     <string name="sk_webview_warning_summary">Shown at start and on pages that need a newer system WebView. Off after “Don’t show again”.</string>
     <string name="sk_dont_show_again">Don’t show again</string>
 
-    <!-- Fork: applied to every theme in code (ShiroikumaDialogs.install); carries no colour -->
-    <style name="ThemeOverlay.Shiroikuma" parent="">
-        <item name="viewInflaterClass">com.ichi2.anki.shiroikuma.ShiroikumaViewInflater</item>
-    </style>
+    <string name="sk_app_settings">App settings</string>
+    <string name="sk_app_settings_summary">Everything AnkiDroid itself can be set to do.</string>
+    <string name="sk_reset_section_order">Reset section order</string>
+    <string name="sk_reset_section_order_summary">Puts the sections of this page back in their built order.</string>
+    <string name="sk_reset_all_colours">Reset all colours</string>
+    <string name="sk_reset_all_colours_summary">Every colour role goes back to its default; fonts and sizes stay.</string>
+    <string name="sk_reset_all_colours_confirm">Reset every colour to its default?</string>
     <item name="tag_sk_dialog_styled" type="id"/>
     <item name="tag_sk_dialog_keep" type="id"/>
 </resources>

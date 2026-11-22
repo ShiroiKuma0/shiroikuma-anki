@@ -1,81 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Fork: the 白い熊 暗記 UI page — colour and font management for the app UI.
-     Organized into sections (yellow divider above each) with indented items
-     under subheadings. -->
+     A folding accordion: every top-level section is an SkSectionCategory keyed
+     sk_sec_<section>, folded by default. The colour rows of a section (one per role
+     of chrome/SkRoleTable) and the page's link, chip index and maintenance actions
+     are added in code (ShiroikumaUiSettingsFragment.buildPage). -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/shiroikuma_ui_title"
     android:key="@string/pref_shiroikuma_ui_screen_key">
 
-    <PreferenceCategory
-        android:title="@string/sk_cat_eximport"
-        android:layout="@layout/sk_preference_category_first">
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_eximport"
+        android:title="@string/sk_section_eximport">
         <Preference
             android:key="@string/pref_sk_eximport_key"
             android:title="@string/sk_cat_eximport"
             android:summary="@string/sk_eim_row_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
-        <!-- The automation surface lives with the backup it triggers, never in
-             a section of its own: the master switch (default ON since contract
-             v2), then "Use authorization token?" (default OFF), then the token
-             itself — shown only while it is being asked for, because a
-             48-character secret under an off switch invites pasting it
-             somewhere it will do nothing. All three are device-local
-             (AutomationAuth), hence persistent="false". -->
         <SwitchPreferenceCompat
             android:key="@string/pref_sk_automation_enabled_key"
             android:title="@string/sk_automation_switch"
             android:summary="@string/sk_automation_switch_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <SwitchPreferenceCompat
             android:key="@string/pref_sk_automation_require_token_key"
             android:title="@string/sk_automation_require_token"
             android:summary="@string/sk_automation_require_token_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <com.ichi2.anki.shiroikuma.SecondaryActionPreference
             android:key="@string/pref_sk_automation_token_key"
             android:title="@string/sk_automation_token"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
-    </PreferenceCategory>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_section_menu"
-        android:layout="@layout/sk_preference_category">
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_foundation"
+        android:title="@string/sk_section_foundation">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_text"
+        android:title="@string/sk_section_text">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_buttons"
+        android:title="@string/sk_section_buttons">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_dialogs"
+        android:title="@string/sk_section_dialogs">
         <Preference
-            android:title="@string/sk_sub_colours"
+            android:title="@string/sk_sub_warnings"
             android:layout="@layout/sk_preference_subheader"
             android:selectable="false"
             android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_menu_background_key"
-            android:title="@string/sk_menu_background"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_menu_text_color_key"
-            android:title="@string/sk_menu_text_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_menu_icon_color_key"
-            android:title="@string/sk_menu_icon_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_menu_selected_color_key"
-            android:title="@string/sk_menu_selected_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_menu_selected_background_key"
-            android:title="@string/sk_menu_selected_background"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
+        <SwitchPreferenceCompat
+            android:key="@string/pref_sk_webview_warning_key"
+            android:defaultValue="true"
+            android:title="@string/sk_webview_warning"
+            android:summary="@string/sk_webview_warning_summary"
+            android:layout="@layout/sk_preference_row"/>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_switches"
+        android:title="@string/sk_section_switches">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_marks"
+        android:title="@string/sk_section_marks">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_menus"
+        android:title="@string/sk_section_menus">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_lists"
+        android:title="@string/sk_section_lists">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_fields"
+        android:title="@string/sk_section_fields">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_bars"
+        android:title="@string/sk_section_bars">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_drawer"
+        android:title="@string/sk_section_drawer">
         <Preference
             android:title="@string/sk_sub_font"
             android:layout="@layout/sk_preference_subheader"
@@ -84,13 +109,13 @@
         <Preference
             android:key="@string/pref_sk_menu_font_key"
             android:title="@string/sk_menu_font"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_menu_font_reset_key"
             android:title="@string/sk_menu_font_reset"
             android:summary="@string/sk_menu_font_reset_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <com.ichi2.preferences.SliderPreference
             android:key="@string/pref_sk_menu_font_size_key"
@@ -111,10 +136,9 @@
             app:displayFormat="@string/sk_format_plain"/>
         <Preference
             android:key="@string/pref_sk_menu_font_preview_key"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"
             android:selectable="false"/>
-
         <Preference
             android:title="@string/sk_sub_header"
             android:layout="@layout/sk_preference_subheader"
@@ -125,32 +149,11 @@
             android:defaultValue="true"
             android:title="@string/sk_menu_show_header"
             android:summary="@string/sk_menu_show_header_summary"/>
-    </PreferenceCategory>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_section_deck_picker"
-        android:layout="@layout/sk_preference_category">
-        <Preference
-            android:title="@string/sk_sub_colours"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_deck_name_color_key"
-            android:title="@string/sk_deck_name_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_studied_today_color_key"
-            android:title="@string/sk_studied_today_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_deck_detail_name_color_key"
-            android:title="@string/sk_deck_detail_name_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_deck"
+        android:title="@string/sk_section_deck">
         <Preference
             android:title="@string/sk_sub_font"
             android:layout="@layout/sk_preference_subheader"
@@ -159,13 +162,13 @@
         <Preference
             android:key="@string/pref_sk_deck_font_key"
             android:title="@string/sk_menu_font"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_deck_font_reset_key"
             android:title="@string/sk_menu_font_reset"
             android:summary="@string/sk_menu_font_reset_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <com.ichi2.preferences.SliderPreference
             android:key="@string/pref_sk_deck_font_size_key"
@@ -187,52 +190,9 @@
             app:displayFormat="@string/sk_format_plain"/>
         <Preference
             android:key="@string/pref_sk_deck_font_preview_key"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"
             android:selectable="false"/>
-
-        <Preference
-            android:title="@string/sk_sub_toolbar"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_toolbar_title_color_key"
-            android:title="@string/sk_toolbar_title_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_toolbar_subtitle_color_key"
-            android:title="@string/sk_toolbar_subtitle_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_toolbar_icon_color_key"
-            android:title="@string/sk_toolbar_icon_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-
-        <Preference
-            android:title="@string/sk_sub_study_button"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_text_color_key"
-            android:title="@string/sk_study_text_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_border_color_key"
-            android:title="@string/sk_study_border_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_study_background_key"
-            android:title="@string/sk_study_background"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-
         <Preference
             android:title="@string/sk_sub_rows"
             android:layout="@layout/sk_preference_subheader"
@@ -247,16 +207,10 @@
             android:valueTo="24"
             android:stepSize="1"
             app:displayFormat="@string/sk_format_dp"/>
-
         <Preference
             android:title="@string/sk_sub_pane_divider"
             android:layout="@layout/sk_preference_subheader"
             android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_pane_divider_color_key"
-            android:title="@string/sk_pane_divider_color"
-            android:layout="@layout/sk_preference_indented"
             android:persistent="false"/>
         <com.ichi2.preferences.SliderPreference
             android:key="@string/pref_sk_pane_divider_width_key"
@@ -266,47 +220,21 @@
             android:valueTo="8"
             android:stepSize="1"
             app:displayFormat="@string/sk_format_dp"/>
-    </PreferenceCategory>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_section_settings"
-        android:layout="@layout/sk_preference_category">
-        <Preference
-            android:title="@string/sk_sub_colours"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_title_color_key"
-            android:title="@string/sk_settings_title_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_summary_color_key"
-            android:title="@string/sk_settings_summary_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_icon_color_key"
-            android:title="@string/sk_settings_icon_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_toggle_color_key"
-            android:title="@string/sk_settings_toggle_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_slider_color_key"
-            android:title="@string/sk_settings_slider_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_settings_header_color_key"
-            android:title="@string/sk_settings_header_color"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_study"
+        android:title="@string/sk_section_study">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_browser"
+        android:title="@string/sk_section_browser">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
+
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_settings"
+        android:title="@string/sk_section_settings">
         <Preference
             android:title="@string/sk_sub_font"
             android:layout="@layout/sk_preference_subheader"
@@ -315,13 +243,13 @@
         <Preference
             android:key="@string/pref_sk_settings_font_key"
             android:title="@string/sk_menu_font"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <Preference
             android:key="@string/pref_sk_settings_font_reset_key"
             android:title="@string/sk_menu_font_reset"
             android:summary="@string/sk_menu_font_reset_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
         <com.ichi2.preferences.SliderPreference
             android:key="@string/pref_sk_settings_font_size_key"
@@ -343,81 +271,29 @@
             app:displayFormat="@string/sk_format_plain"/>
         <Preference
             android:key="@string/pref_sk_settings_font_preview_key"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"
             android:selectable="false"/>
-    </PreferenceCategory>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_section_dialogs"
-        android:layout="@layout/sk_preference_category">
-        <Preference
-            android:title="@string/sk_sub_colours"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_ground_key"
-            android:title="@string/sk_dialog_ground"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_frame_key"
-            android:title="@string/sk_dialog_frame"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_title_key"
-            android:title="@string/sk_dialog_title"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_text_key"
-            android:title="@string/sk_dialog_text"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_button_text_key"
-            android:title="@string/sk_dialog_button_text"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_button_frame_key"
-            android:title="@string/sk_dialog_button_frame"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_mark_key"
-            android:title="@string/sk_dialog_mark"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
-        <Preference
-            android:key="@string/pref_sk_dialog_delete_key"
-            android:title="@string/sk_dialog_delete"
-            android:layout="@layout/sk_preference_indented"
-            android:persistent="false"/>
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_sheets"
+        android:title="@string/sk_section_sheets">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-        <Preference
-            android:title="@string/sk_sub_warnings"
-            android:layout="@layout/sk_preference_subheader"
-            android:selectable="false"
-            android:persistent="false"/>
-        <SwitchPreferenceCompat
-            android:key="@string/pref_sk_webview_warning_key"
-            android:defaultValue="true"
-            android:title="@string/sk_webview_warning"
-            android:summary="@string/sk_webview_warning_summary"
-            android:layout="@layout/sk_preference_indented"/>
-    </PreferenceCategory>
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_pages"
+        android:title="@string/sk_section_pages">
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 
-    <PreferenceCategory
-        android:title="@string/sk_cat_reset"
-        android:layout="@layout/sk_preference_category">
+    <com.ichi2.anki.shiroikuma.chrome.SkSectionCategory
+        android:key="sk_sec_maintenance"
+        android:title="@string/sk_section_maintenance">
         <Preference
             android:key="@string/pref_sk_reset_key"
             android:title="@string/sk_reset_all"
             android:summary="@string/sk_reset_all_summary"
-            android:layout="@layout/sk_preference_indented"
+            android:layout="@layout/sk_preference_row"
             android:persistent="false"/>
-    </PreferenceCategory>
+    </com.ichi2.anki.shiroikuma.chrome.SkSectionCategory>
 </PreferenceScreen>

@@ -61,6 +61,7 @@ import com.ichi2.anki.CommonString
 import com.ichi2.anki.R
 import com.ichi2.anki.settings.enums.Theme
 import com.ichi2.compose.theme.widgetBorder
+import com.ichi2.compose.ui.components.ForkSwitch
 import com.ichi2.compose.ui.preview.AnkiDroidPreview
 import com.ichi2.compose.ui.preview.AnkiDroidThemeProvider
 import com.ichi2.anki.common.android.R as CommonR
@@ -113,7 +114,8 @@ fun PreferenceSwitchCard(
                 color = contentColor,
                 modifier = Modifier.weight(1f),
             )
-            Switch(
+            // Fork: the outlined switch
+            ForkSwitch(
                 checked = isChecked,
                 onCheckedChange = null,
                 modifier =

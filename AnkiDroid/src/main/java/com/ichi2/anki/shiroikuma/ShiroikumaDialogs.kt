@@ -29,15 +29,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputLayout
 import com.ichi2.anki.R
-import com.ichi2.compose.ui.dialogs.ForkDialogChrome
-import com.ichi2.compose.ui.dialogs.ForkDialogPalette
+import com.ichi2.anki.shiroikuma.chrome.SkRole
+import com.ichi2.anki.shiroikuma.chrome.SkRoles
+import com.ichi2.anki.shiroikuma.chrome.SkWidgets
 import com.ichi2.anki.common.android.R as CommonR
 
 /**
  * Fork: the black-yellow look of every dialog in the app.
  *
  * Upstream builds its dialogs at some 130 call sites, so nothing here is applied per
- * call site. [install] puts [ShiroikumaViewInflater] into the theme; a view it creates
+ * call site. The theme names [ShiroikumaViewInflater] (see chrome/SkTheme); a view it creates
  * for a dialog (a floating window) is styled at once and, when it reaches its window,
  * triggers one pass over the whole dialog: the panel becomes a framed black box, every
  * button an outlined pill, and all text takes the dialog's colour roles. Rows created
@@ -62,31 +63,18 @@ object ShiroikumaDialogs {
         val delete: Int,
     )
 
+    @Suppress("UNUSED_PARAMETER")
     fun roles(context: Context): Roles =
         Roles(
-            ground = ShiroikumaUi.color(context, R.string.pref_sk_dialog_ground_key, DEFAULT_GROUND),
-            frame = ShiroikumaUi.color(context, R.string.pref_sk_dialog_frame_key, DEFAULT_ACCENT),
-            title = ShiroikumaUi.color(context, R.string.pref_sk_dialog_title_key, DEFAULT_ACCENT),
-            text = ShiroikumaUi.color(context, R.string.pref_sk_dialog_text_key, DEFAULT_ACCENT),
-            buttonText = ShiroikumaUi.color(context, R.string.pref_sk_dialog_button_text_key, DEFAULT_ACCENT),
-            buttonFrame = ShiroikumaUi.color(context, R.string.pref_sk_dialog_button_frame_key, DEFAULT_ACCENT),
-            mark = ShiroikumaUi.color(context, R.string.pref_sk_dialog_mark_key, DEFAULT_ACCENT),
-            delete = ShiroikumaUi.color(context, R.string.pref_sk_dialog_delete_key, DEFAULT_DELETE),
+            ground = SkRoles[SkRole.DIALOG_GROUND],
+            frame = SkRoles[SkRole.DIALOG_FRAME],
+            title = SkRoles[SkRole.DIALOG_TITLE],
+            text = SkRoles[SkRole.DIALOG_TEXT],
+            buttonText = SkRoles[SkRole.DIALOG_BUTTON_TEXT],
+            buttonFrame = SkRoles[SkRole.DIALOG_BUTTON_FRAME],
+            mark = SkRoles[SkRole.DIALOG_MARK],
+            delete = SkRoles[SkRole.DIALOG_DELETE],
         )
-
-    /**
-     * Called for every themed context (from `Themes.setTheme`): routes view inflation
-     * through [ShiroikumaViewInflater] and hands the Compose dialogs their colours.
-     */
-    fun install(context: Context) {
-        context.theme.applyStyle(R.style.ThemeOverlay_Shiroikuma, true)
-        if (ForkDialogChrome.palette == null) {
-            ForkDialogChrome.palette = { c ->
-                val r = roles(c)
-                ForkDialogPalette(r.ground, r.frame, r.title, r.text, r.buttonText, r.buttonFrame, r.delete)
-            }
-        }
-    }
 
     /** A dialog that draws its own panel (the Export / Import boxes) opts out of the window pass */
     fun keepOwnChrome(dialog: Dialog) {
@@ -102,8 +90,8 @@ object ShiroikumaDialogs {
     }
 
     /** Entry point of [ShiroikumaViewInflater]: [view] was just created from a layout */
-    fun onViewCreated(view: View) {
-        if (!isDialogContext(view.context)) return
+    fun onViewCreated(view: View): Boolean {
+        if (!isDialogContext(view.context)) return false
         styleView(view, roles(view.context))
         view.addOnAttachStateChangeListener(
             object : View.OnAttachStateChangeListener {
@@ -116,6 +104,7 @@ object ShiroikumaDialogs {
                 override fun onViewDetachedFromWindow(v: View) = Unit
             },
         )
+        return true
     }
 
     private fun styleWindowOnce(root: View) {
@@ -198,7 +187,10 @@ object ShiroikumaDialogs {
                 view.setEndIconTintList(ColorStateList.valueOf(r.text))
             }
             // a switch is not a selection mark; it keeps its own look
-            is SwitchCompat -> view.setTextColor(r.text)
+            is SwitchCompat -> {
+                view.setTextColor(r.text)
+                SkWidgets.switch(view)
+            }
             is CompoundButton -> {
                 view.setTextColor(r.text)
                 view.buttonTintList = stateful(r.mark)

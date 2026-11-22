@@ -26,7 +26,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.StringRes
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.edit
 import androidx.core.view.children
 import androidx.core.view.isVisible
@@ -36,6 +35,11 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.slider.Slider
 import com.ichi2.anki.R
 import com.ichi2.anki.common.preferences.sharedPrefs
+import com.ichi2.anki.shiroikuma.chrome.SkIcons
+import com.ichi2.anki.shiroikuma.chrome.SkPageState
+import com.ichi2.anki.shiroikuma.chrome.SkPreferences
+import com.ichi2.anki.shiroikuma.chrome.SkRole
+import com.ichi2.anki.shiroikuma.chrome.SkRoles
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
@@ -88,7 +92,13 @@ object ShiroikumaUi {
         context: Context,
         @StringRes keyRes: Int,
         default: Int,
-    ): Int = context.sharedPrefs().getInt(context.getString(keyRes), default)
+    ): Int {
+        // a key of the role table reads its role, whose default derives from the foundation
+        // colours; [default] only serves a key that is not a role
+        val key = context.getString(keyRes)
+        SkRoles.attach(context)
+        return SkRoles.byKey(key)?.let { SkRoles[it] } ?: context.sharedPrefs().getInt(key, default)
+    }
 
     fun setColor(
         context: Context,
@@ -114,8 +124,8 @@ object ShiroikumaUi {
         val checkedStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
         navigationView.itemTextColor =
             ColorStateList(checkedStates, intArrayOf(selected, color(context, R.string.pref_sk_menu_text_color_key, DEFAULT_MENU_TEXT)))
-        navigationView.itemIconTintList =
-            ColorStateList(checkedStates, intArrayOf(selected, color(context, R.string.pref_sk_menu_icon_color_key, DEFAULT_MENU_ICON)))
+        // each icon takes the colour of what its row does, so the drawer is read by colour first
+        navigationView.itemIconTintList = null
         navigationView.itemBackground =
             StateListDrawable().apply {
                 addState(
@@ -132,8 +142,17 @@ object ShiroikumaUi {
         val typeface = styledTypeface(context, ROLE_MENU)
         val sizeSp = fontSizeSp(context, ROLE_MENU)
         val menu = navigationView.menu
+        val plainIcon = color(context, R.string.pref_sk_menu_icon_color_key, DEFAULT_MENU_ICON)
         for (i in 0 until menu.size()) {
-            applyItemStyle(menu.getItem(i), typeface, sizeSp)
+            val item = menu.getItem(i)
+            applyItemStyle(item, typeface, sizeSp)
+            val tint =
+                when (item.itemId) {
+                    R.id.nav_decks -> SkRoles[SkRole.ICON_CONNECT]
+                    R.id.nav_browser -> SkRoles[SkRole.ICON_CONTACT]
+                    else -> plainIcon
+                }
+            item.icon = item.icon?.mutate()?.also { it.setTint(tint) }
         }
     }
 
@@ -262,7 +281,6 @@ object ShiroikumaUi {
         val titleColor = color(context, R.string.pref_sk_settings_title_color_key, DEFAULT_SETTINGS_TITLE)
         val summaryColor = color(context, R.string.pref_sk_settings_summary_color_key, DEFAULT_SETTINGS_SUMMARY)
         val iconColor = color(context, R.string.pref_sk_settings_icon_color_key, DEFAULT_SETTINGS_ICON)
-        val toggleColor = color(context, R.string.pref_sk_settings_toggle_color_key, DEFAULT_SETTINGS_TOGGLE)
         val sliderColor = color(context, R.string.pref_sk_settings_slider_color_key, DEFAULT_SETTINGS_SLIDER)
         val typeface = styledTypeface(context, ROLE_SETTINGS)
         val titleSizeSp = fontSizeSp(context, ROLE_SETTINGS)
@@ -287,9 +305,12 @@ object ShiroikumaUi {
             }
             // colour preference icons, except our own colour swatches
             view.findViewById<ImageView>(android.R.id.icon)?.let { icon ->
-                if (icon.drawable !is GradientDrawable && icon.colorFilter == null) icon.setColorFilter(iconColor)
+                if (icon.drawable !is GradientDrawable && !SkIcons.isOurs(icon.drawable) && icon.colorFilter == null) {
+                    icon.setColorFilter(iconColor)
+                }
             }
-            (view as? ViewGroup)?.let { tintWidgets(it, toggleColor, sliderColor) }
+            (view as? ViewGroup)?.let { tintWidgets(it, sliderColor) }
+            SkPreferences.styleRow(list, view)
         }
 
         list.addOnChildAttachStateChangeListener(
@@ -305,24 +326,13 @@ object ShiroikumaUi {
         }
     }
 
+    // switches are drawn by the view inflater (chrome/SkWidgets.switch)
     private fun tintWidgets(
         root: ViewGroup,
-        toggleColor: Int,
         sliderColor: Int,
     ) {
         for (child in root.children) {
             when (child) {
-                is SwitchCompat -> {
-                    if (child.tag == toggleColor) continue
-                    child.tag = toggleColor
-                    val checkedStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-                    child.thumbTintList = ColorStateList(checkedStates, intArrayOf(toggleColor, 0xFFBDBDBD.toInt()))
-                    child.trackTintList =
-                        ColorStateList(
-                            checkedStates,
-                            intArrayOf((toggleColor and 0x00FFFFFF) or 0x66000000, 0xFF616161.toInt()),
-                        )
-                }
                 is Slider -> {
                     if (child.tag == sliderColor) continue
                     child.tag = sliderColor
@@ -332,7 +342,7 @@ object ShiroikumaUi {
                     child.trackInactiveTintList = ColorStateList.valueOf((sliderColor and 0x00FFFFFF) or 0x4D000000)
                     child.haloTintList = ColorStateList.valueOf((sliderColor and 0x00FFFFFF) or 0x33000000)
                 }
-                is ViewGroup -> tintWidgets(child, toggleColor, sliderColor)
+                is ViewGroup -> tintWidgets(child, sliderColor)
             }
         }
     }
@@ -509,6 +519,9 @@ object ShiroikumaUi {
     }
 
     fun resetAll(context: Context) {
+        SkRoles.attach(context)
+        SkRoles.resetAll()
+        SkPageState.resetOrder(context)
         for (role in FONT_ROLES) resetFont(context, role)
         context.sharedPrefs().edit {
             for (keyRes in listOf(

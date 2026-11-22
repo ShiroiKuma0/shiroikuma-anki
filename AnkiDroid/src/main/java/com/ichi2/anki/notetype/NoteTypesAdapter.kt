@@ -5,7 +5,6 @@ package com.ichi2.anki.notetype
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -14,6 +13,7 @@ import com.ichi2.anki.CommonPlurals
 import com.ichi2.anki.R
 import com.ichi2.anki.databinding.ItemManageNoteTypeBinding
 import com.ichi2.anki.notetype.NoteTypesAdapter.NoteTypeViewHolder
+import com.ichi2.anki.shiroikuma.chrome.SkPopupMenu
 import com.ichi2.anki.utils.ext.usingStyledAttributes
 import com.ichi2.anki.common.android.R as CommonR
 
@@ -103,7 +103,8 @@ internal class NoteTypesAdapter(
             }
             binding.editCardsButton.setOnClickListener { noteTypeItemState?.let(onEditCards) }
             binding.moreActionsButton.setOnClickListener {
-                PopupMenu(context, binding.moreActionsButton)
+                // Fork: shifted up rather than scrolling when the row is low on the screen
+                SkPopupMenu(context, binding.moreActionsButton)
                     .apply {
                         inflate(R.menu.note_types_more_actions)
                         setOnMenuItemClickListener { item ->
